@@ -1,0 +1,75 @@
+plugins {
+    alias(libs.plugins.android.application)
+}
+
+def localProps = new Properties()
+def localPropsFile = rootProject.file("local.properties")
+if (localPropsFile.exists()) {
+    localProps.load(new FileInputStream(localPropsFile))
+}
+
+def gradleProps = new Properties()
+def gradlePropsFile = rootProject.file("gradle.properties")
+if (gradlePropsFile.exists()){
+    gradleProps.load(new FileInputStream(gradlePropsFile))
+}
+
+android {
+    namespace 'com.github.borz7zy.telegramm'
+    compileSdk {
+        version = release(36)
+    }
+
+    defaultConfig {
+        applicationId "com.github.borz7zy.telegramm"
+        minSdk 29
+        targetSdk 36
+        versionCode gradleProps.getProperty("app.versionCode").toInteger()
+        versionName gradleProps.getProperty("app.version").toString()
+        resValue "string", "api_id",
+                localProps.getProperty("api_id", "")
+        resValue "string", "api_hash",
+                localProps.getProperty("api_hash", "")
+        resValue "string", "version_code",
+                gradleProps.getProperty("app.versionCode", "1")
+        resValue "string", "version_name",
+                gradleProps.getProperty("app.version", "0.0.0")
+
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    buildFeatures {
+        viewBinding true
+    }
+}
+
+dependencies {
+    implementation libs.appcompat
+    implementation libs.material
+    implementation libs.recyclerview
+    implementation libs.constraintlayout
+    implementation libs.lifecycle.livedata.ktx
+    implementation libs.lifecycle.viewmodel.ktx
+    implementation libs.navigation.fragment
+    implementation libs.navigation.ui
+    implementation 'androidx.core:core:1.17.0'
+    implementation 'androidx.dynamicanimation:dynamicanimation:1.0.0'
+
+    implementation 'com.github.Dimezis:BlurView:version-3.2.0'
+    implementation 'com.github.bumptech.glide:glide:4.16.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.16.0'
+    implementation project(':tdlib')
+    implementation libs.fragment
+    implementation libs.preference
+}

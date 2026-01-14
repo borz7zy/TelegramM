@@ -1,0 +1,11 @@
+<resources>
+    <declare-styleable name="M3Button">
+        <attr name="m3CornerRadius" format="dimension"/>
+        <attr name="m3ContainerColor" format="color"/>
+        <attr name="m3ContentColor" format="color"/>
+        <attr name="m3RippleColor" format="color"/>
+        <attr name="m3DisabledAlpha" format="float"/>
+        <attr name="m3Elevation" format="dimension"/>
+        <attr name="m3PressedElevation" format="dimension"/>
+    </declare-styleable>
+</resources>

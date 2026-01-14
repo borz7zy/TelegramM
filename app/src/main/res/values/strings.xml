@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">Telegram M</string>
+    <string name="enter_phone_number">Enter phone number</string>
+    <string name="next_step">Next step</string>
+    <string name="messages_header">Messages</string>
+    <string name="sync_header">Sync</string>
+
+    <string name="signature_title">Your signature</string>
+    <string name="reply_title" translatable="false">Default reply action</string>
+
+    <string name="sync_title" translatable="false">Sync email periodically</string>
+    <string name="attachment_title" translatable="false">Download incoming attachments</string>
+    <string name="attachment_summary_on" translatable="false">Automatically download attachments for incoming emails
+    </string>
+    <string name="attachment_summary_off" translatable="false">Only download attachments when manually requested</string>
+    <string name="changed_chat_title">Chat name changed to \"%0\"</string>
+    <string name="chat_change_photo">Chat photo changed</string>
+    <string name="chat_remove_photo">Chat photo has been removed</string>
+    <string name="gave">gave</string>
+    <string name="premium_content_for">for</string>
+    <string name="months">months</string>
+    <string name="deleted_account">Deleted Account</string>
+</resources>

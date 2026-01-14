@@ -1,0 +1,1 @@
+To compile the project, add api_id and api_hash to local.properties. You can get them here: my.telegram.org/apps

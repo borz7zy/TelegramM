@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:background="?attr/selectableItemBackground"
+    android:padding="12dp">
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/card_avatar"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        app:cardCornerRadius="28dp"
+        app:cardElevation="0dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/dialog_avatar"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:src="@drawable/bg_badge"/>
+
+    </androidx.cardview.widget.CardView>
+
+    <TextView
+        android:id="@+id/dialog_name"
+        style="@style/TgTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="8dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:singleLine="true"
+        app:layout_constraintEnd_toStartOf="@id/tv_time"
+        app:layout_constraintStart_toEndOf="@id/card_avatar"
+        app:layout_constraintTop_toTopOf="@id/card_avatar"
+        tools:text="Сквад 79 сисек A.K.A лучшие уголовники в подвале" />
+
+    <TextView
+        android:id="@+id/tv_time"
+        style="@style/TgSubtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/dialog_name"
+        tools:text="14:88" />
+
+    <TextView
+        android:id="@+id/dialog_message"
+        style="@style/TgSubtitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="8dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        app:layout_constraintEnd_toStartOf="@id/badge_unread"
+        app:layout_constraintStart_toStartOf="@id/dialog_name"
+        app:layout_constraintTop_toBottomOf="@id/dialog_name"
+        tools:text="Всем привет я новенький" />
+
+    <TextView
+        style="@style/Text.GoogleSans.Bold"
+        android:id="@+id/badge_unread"
+        android:layout_width="wrap_content"
+        android:minWidth="24dp"
+        android:layout_height="24dp"
+        android:background="@drawable/bg_badge"
+        android:gravity="center"
+        tools:text="1"
+        android:textColor="@android:color/white"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="@id/dialog_message"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/dialog_message" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

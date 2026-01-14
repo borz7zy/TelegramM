@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Telegram M</string>
+    <string name="enter_phone_number">Введите номер телефона</string>
+    <string name="next_step">Далее</string>
+    <string name="messages_header">Сообщения</string>
+    <string name="sync_header">Синхронизация</string>
+    <string name="signature_title">Ваша подпись</string>
+    <string name="changed_chat_title">Название чата изменено на \"%0\"</string>
+    <string name="chat_change_photo">Фото чата изменено</string>
+    <string name="chat_remove_photo">Фото чата удалено</string>
+    <string name="gave">подарил</string>
+    <string name="premium_content_for">на</string>
+    <string name="months">месяцев</string>
+    <string name="deleted_account">Удаленный Аккаунт</string>
+</resources>

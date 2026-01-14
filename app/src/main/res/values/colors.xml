@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="m3_primary">#6750A4</color>
+    <color name="m3_onPrimary">#FFFFFF</color>
+
+    <color name="m3_surface">#FFFBFE</color>
+    <color name="m3_onSurface">#1C1B1F</color>
+
+    <color name="m3_outline">#79747E</color>
+
+    <color name="tg_background">#1C1F26</color>
+    <color name="tg_background_t">#801C1F26</color>
+    <color name="tg_surface">#252933</color>
+    <color name="tg_primary">#6E9BFF</color>
+    <color name="tg_text_primary">#FFFFFF</color>
+    <color name="tg_text_secondary">#8A9099</color>
+    <color name="red_call">#FF5757</color>
+
+    <color name="tg_msg_bubble">#212b31</color>
+
+    <color name="tg_navbar_selected">#806E9BFF</color>
+
+    <color name="white">#FFFFFF</color>
+</resources>

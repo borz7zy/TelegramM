@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<font-family xmlns:app="http://schemas.android.com/apk/res-auto">
+    <!-- EXTRA LIGHT (200) -->
+    <font app:font="@font/unbounded_extra_light" app:fontStyle="normal" app:fontWeight="200" />
+
+    <!-- LIGHT (300) -->
+    <font app:font="@font/unbounded_light" app:fontStyle="normal" app:fontWeight="300" />
+
+    <!-- REGULAR (400) -->
+    <font app:font="@font/unbounded_regular" app:fontStyle="normal" app:fontWeight="400" />
+
+    <!-- MEDIUM (500) -->
+    <font app:font="@font/unbounded_medium" app:fontStyle="normal" app:fontWeight="500" />
+
+    <!-- SEMI BOLD (600) -->
+    <font app:font="@font/unbounded_semi_bold" app:fontStyle="normal" app:fontWeight="600" />
+
+    <!-- BOLD (700) -->
+    <font app:font="@font/unbounded_bold" app:fontStyle="normal" app:fontWeight="700" />
+
+    <!-- EXTRA BOLD (800) -->
+    <font app:font="@font/unbounded_extra_bold" app:fontStyle="normal" app:fontWeight="800" />
+
+    <!-- BLACK (900) -->
+    <font app:font="@font/unbounded_black" app:fontStyle="normal" app:fontWeight="900" />
+</font-family>
