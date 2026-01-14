@@ -12,6 +12,7 @@
     <string name="gave">подарил</string>
     <string name="premium_content_for">на</string>
     <string name="months">месяцев</string>
+    <string name="premium_gave">%0 подарил Вам Telegram Premium на %1 месяцев!</string>
     <string name="deleted_account">Удаленный Аккаунт</string>
     <string name="photo">Фотография</string>
     <string name="video">Видео</string>

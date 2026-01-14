@@ -168,13 +168,10 @@ public final class MessageUiMapper {
                 uiActorRef.tell(new TdMessages.RequestUserName(senderId));
             }
 
-            int months = x.monthCount;
-            gift.complete_caption = senderName + " " +
-                    context.getString(R.string.gave) + " " +
-                    "Telegram Premium " +
-                    context.getString(R.string.premium_content_for) + " " +
-                    months + " " +
-                    context.getString(R.string.months);
+            int months = x.dayCount/30;
+            gift.complete_caption = context.getString(R.string.premium_gave)
+                    .replace("%0", senderName)
+                    .replace("%1", String.valueOf(months));
 
             return new UiContent.System("Telegram Premium", gift);
         });
