@@ -272,7 +272,6 @@ public class TdClientActor extends AbstractActor {
         request.apiHash = App.getApplication().getString(R.string.api_hash);
         request.systemLanguageCode = Resources.getSystem().getConfiguration().getLocales().get(0).getLanguage();
         request.deviceModel = Build.MODEL != null ? Build.MANUFACTURER + " " + Build.MODEL : "Virtual Machine on Android";
-        Log.d("TdClientActor", "deviceModel : "+request.deviceModel);
         final String system = Build.VERSION.BASE_OS.isEmpty() ? "Android " : Build.VERSION.BASE_OS + " ";
         request.systemVersion = system + Build.VERSION.RELEASE + " (SDK: " +Build.VERSION.SDK_INT + ")";
         request.applicationVersion =
