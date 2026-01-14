@@ -12,7 +12,6 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.DiffUtil;
-import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
@@ -21,45 +20,107 @@ import com.github.borz7zy.telegramm.R;
 import com.github.borz7zy.telegramm.ui.model.DialogItem;
 import com.github.borz7zy.telegramm.utils.TdMediaRepository;
 
-public class DialogsAdapter extends ListAdapter<DialogItem, DialogsAdapter.VH> {
+import java.util.ArrayList;
+import java.util.List;
+
+public class DialogsAdapter extends RecyclerView.Adapter<DialogsAdapter.VH> {
 
     public interface OnDialogClickListener {
         void onDialogClick(DialogItem item);
     }
 
+    public interface OnStartDragListener{
+        void onStartDrag(RecyclerView.ViewHolder vh);
+    }
+
     private OnDialogClickListener clickListener;
+    private OnStartDragListener dragListener;
 
     public void setOnDialogClickListener(OnDialogClickListener l) {
         this.clickListener = l;
     }
 
-    private static final DiffUtil.ItemCallback<DialogItem> DIFF = new DiffUtil.ItemCallback<>() {
-        @Override
-        public boolean areItemsTheSame(@NonNull DialogItem oldItem, @NonNull DialogItem newItem) {
-            return oldItem.chatId == newItem.chatId;
-        }
+    public void setOnDragListener(OnStartDragListener l){
+        dragListener = l;
+    }
 
-        @Override
-        public boolean areContentsTheSame(@NonNull DialogItem oldItem, @NonNull DialogItem newItem) {
-            return oldItem.order == newItem.order
-                    && TextUtils.equals(oldItem.name, newItem.name)
-                    && TextUtils.equals(oldItem.text, newItem.text)
-                    && TextUtils.equals(oldItem.time, newItem.time)
-                    && oldItem.unread == newItem.unread
-                    && oldItem.isTyping == newItem.isTyping
-                    && oldItem.avatarFileId == newItem.avatarFileId
-                    && TextUtils.equals(oldItem.avatarPath, newItem.avatarPath);
-        }
-    };
+    private final ArrayList<DialogItem> items = new ArrayList<>();
 
-    public DialogsAdapter() {
-        super(DIFF);
-        setHasStableIds(true);
+    public DialogItem getItem(int position){
+        return items.get(position);
     }
 
     @Override
     public long getItemId(int position) {
-        return getItem(position).chatId;
+        return items.get(position).chatId;
+    }
+
+    @Override
+    public int getItemCount(){
+        return items.size();
+    }
+
+    public DialogsAdapter(){
+        setHasStableIds(true);
+    }
+
+    // DiffUtil
+    public void submitList(List<DialogItem> newList){
+        final ArrayList<DialogItem> old = new ArrayList<>(items);
+
+        DiffUtil.DiffResult diff = DiffUtil.calculateDiff(new DiffUtil.Callback(){
+            @Override
+            public int getOldListSize(){
+                return old.size();
+            }
+
+            @Override
+            public int getNewListSize(){
+                return newList.size();
+            }
+
+            @Override
+            public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+                return old.get(oldItemPosition).chatId == newList.get(newItemPosition).chatId;
+            }
+
+            @Override
+            public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+                DialogItem a = old.get(oldItemPosition), b = newList.get(newItemPosition);
+                return a.order == b.order
+                        && a.isPinned == b.isPinned
+                        && TextUtils.equals(a.name, b.name)
+                        && TextUtils.equals(a.text, b.text)
+                        && TextUtils.equals(a.time, b.time)
+                        && a.unread == b.unread
+                        && a.isTyping == b.isTyping
+                        && a.avatarFileId == b.avatarFileId
+                        && TextUtils.equals(a.avatarPath, b.avatarPath);
+            }
+        });
+
+        items.clear();
+        items.addAll(newList);
+        diff.dispatchUpdatesTo(this);
+    }
+
+    public boolean movePinned(int from, int to){
+        if (from < 0 || to < 0 || from >= items.size() || to >= items.size()) return false;
+        if (!items.get(from).isPinned || !items.get(to).isPinned) return false;
+
+        DialogItem moved = items.remove(from);
+        items.add(to, moved);
+        notifyItemMoved(from, to);
+        return true;
+    }
+
+    public ArrayList<Long> getPinnedIdsInUiOrder() {
+        ArrayList<Long> res = new ArrayList<>();
+        for (DialogItem it : items) {
+            if (it.isPinned) res.add(it.chatId);
+            else break;
+        }
+        return res;
     }
 
     @NonNull
@@ -78,7 +139,9 @@ public class DialogsAdapter extends ListAdapter<DialogItem, DialogsAdapter.VH> {
         });
 
         h.itemView.setOnLongClickListener(v -> {
+            if (!item.isPinned) return false;
             v.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+            if (dragListener != null) dragListener.onStartDrag(h);
             return true;
         });
 

@@ -10,6 +10,8 @@ import java.util.Locale;
 
 public class TgUtils {
 
+    public static float density = 1;
+
     public static String formatTime(int date) {
         return new SimpleDateFormat("HH:mm", Locale.getDefault())
                 .format(new Date(date * 1000L));
@@ -32,5 +34,12 @@ public class TgUtils {
             return App.getApplication().getString(R.string.animation);
         }
         return App.getApplication().getString(R.string.message);
+    }
+
+    public static int dp(float value) {
+        if (value == 0) {
+            return 0;
+        }
+        return (int) Math.ceil(density * value);
     }
 }

@@ -8,7 +8,7 @@ import org.drinkless.tdlib.TdApi;
 public class DialogItem {
     public final long chatId;
     public long order;
-
+    public boolean isPinned;
     public String name;
     public String time;
     public String text;
@@ -19,6 +19,7 @@ public class DialogItem {
 
     public DialogItem(long chatId,
                       long order,
+                      boolean isPinned,
                       String name,
                       String time,
                       String text,
@@ -28,6 +29,7 @@ public class DialogItem {
                       String avatarPath) {
         this.chatId = chatId;
         this.order = order;
+        this.isPinned = isPinned;
         this.name = name;
         this.time = time;
         this.text = text;
@@ -46,6 +48,7 @@ public class DialogItem {
     public void updateFromChat(TdApi.Chat chat) {
         this.name = chat.title;
         this.unread = chat.unreadCount;
+        this.isPinned = extractPinned(chat);
 
         if (chat.lastMessage != null) {
             this.text = getMessageText(chat.lastMessage);
@@ -56,6 +59,16 @@ public class DialogItem {
         }
 
         updateAvatar(chat.photo);
+    }
+
+    private static boolean extractPinned(TdApi.Chat chat) {
+        if (chat == null || chat.positions == null) return false;
+        for (TdApi.ChatPosition p : chat.positions) {
+            if (p.list instanceof TdApi.ChatListMain) {
+                return p.isPinned;
+            }
+        }
+        return false;
     }
 
     private void updateAvatar(TdApi.ChatPhotoInfo photo) {
@@ -74,11 +87,11 @@ public class DialogItem {
         }
     }
 
-    public DialogItem copyWithOrder(long newOrder) {
-        return new DialogItem(chatId, newOrder, name, time, text, unread, isTyping, avatarFileId, avatarPath);
+    public DialogItem copyWithOrderPinned(long newOrder, boolean pinned) {
+        return new DialogItem(chatId, newOrder, pinned, name, time, text, unread, isTyping, avatarFileId, avatarPath);
     }
 
     public DialogItem copyWithTyping(boolean typing) {
-        return new DialogItem(chatId, order, name, time, text, unread, typing, avatarFileId, avatarPath);
+        return new DialogItem(chatId, order, isPinned, name, time, text, unread, typing, avatarFileId, avatarPath);
     }
 }

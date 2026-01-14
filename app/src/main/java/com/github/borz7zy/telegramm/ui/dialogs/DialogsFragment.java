@@ -9,6 +9,7 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -36,10 +37,42 @@ public class DialogsFragment extends BaseTdFragment {
 
     private int currentTop = 0;
     private int currentBottom = 0;
+    private ItemTouchHelper itemTouchHelper;
+    private boolean isReordering;
+    private boolean pendingSubmit;
+    private ArrayList<Long> pinnedOrderOverride;
+    private DialogsActor uiActor;
 
     private void submitDialogs() {
+        if (isReordering) {
+            pendingSubmit = true;
+            return;
+        }
+
         ArrayList<DialogItem> list = new ArrayList<>(dialogs.values());
-        list.sort((a, b) -> Long.compare(b.order, a.order));
+
+        final Map<Long, Integer> pinnedIndex = new HashMap<>();
+        if (pinnedOrderOverride != null) {
+            for (int i = 0; i < pinnedOrderOverride.size(); i++) {
+                pinnedIndex.put(pinnedOrderOverride.get(i), i);
+            }
+        }
+
+        list.sort((a, b) -> {
+            if (a.isPinned != b.isPinned) return a.isPinned ? -1 : 1;
+
+            if (a.isPinned) {
+                Integer ia = pinnedIndex.get(a.chatId);
+                Integer ib = pinnedIndex.get(b.chatId);
+                if (ia != null || ib != null) {
+                    if (ia == null) return 1;
+                    if (ib == null) return -1;
+                    return Integer.compare(ia, ib);
+                }
+            }
+            return Long.compare(b.order, a.order);
+        });
+
         handler.post(() -> adapter.submitList(list));
     }
 
@@ -70,6 +103,62 @@ public class DialogsFragment extends BaseTdFragment {
         adapter = new DialogsAdapter();
         rv.setAdapter(adapter);
 
+        itemTouchHelper = new ItemTouchHelper(new ItemTouchHelper.Callback(){
+            @Override
+            public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
+                int pos = viewHolder.getAdapterPosition();
+                if (pos == RecyclerView.NO_POSITION) return 0;
+
+                DialogItem item = adapter.getItem(pos);
+                if (!item.isPinned) return 0;
+
+                int drag = ItemTouchHelper.UP | ItemTouchHelper.DOWN;
+                return makeMovementFlags(drag, 0);
+            }
+
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView,
+                                  @NonNull RecyclerView.ViewHolder fromVH,
+                                  @NonNull RecyclerView.ViewHolder toVH) {
+                int from = fromVH.getAdapterPosition();
+                int to = toVH.getAdapterPosition();
+                return adapter.movePinned(from, to);
+            }
+
+            @Override public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {}
+
+            @Override
+            public void onSelectedChanged(RecyclerView.ViewHolder viewHolder, int actionState) {
+                super.onSelectedChanged(viewHolder, actionState);
+                if (actionState == ItemTouchHelper.ACTION_STATE_DRAG) {
+                    isReordering = true;
+                }
+            }
+
+            @Override
+            public void clearView(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
+                super.clearView(recyclerView, viewHolder);
+
+                // фиксируем UI-порядок pinned, чтобы не прыгало
+                pinnedOrderOverride = adapter.getPinnedIdsInUiOrder();
+
+                // отправляем TDLib SetPinnedChats
+                if (uiActor != null && !pinnedOrderOverride.isEmpty()) {
+                    uiActor.setPinnedOrder(pinnedOrderOverride);
+                }
+
+                isReordering = false;
+                if (pendingSubmit) {
+                    pendingSubmit = false;
+                    submitDialogs();
+                }
+            }
+        });
+
+        itemTouchHelper.attachToRecyclerView(rv);
+
+        adapter.setOnDragListener(vh -> itemTouchHelper.startDrag(vh));
+
         adapter.setOnDialogClickListener(item ->{
             ChatFragment.newInstance(item.chatId, item.name)
                     .show(getParentFragmentManager(), "chat_sheet");
@@ -78,7 +167,8 @@ public class DialogsFragment extends BaseTdFragment {
 
     @Override
     protected AbstractActor createActor() {
-        return new DialogsActor();
+        uiActor = new DialogsActor();
+        return uiActor;
     }
 
     // --------------------
@@ -90,6 +180,7 @@ public class DialogsFragment extends BaseTdFragment {
         protected void onReceiveMessage(Object message) {
             if (message instanceof TdMessages.ChatListUpdated) {
                 List<TdApi.Chat> chats = ((TdMessages.ChatListUpdated) message).chats;
+                pinnedOrderOverride = null;
                 dialogs.clear();
                 for (TdApi.Chat chat : chats) {
                     long order = getOrder(chat);
@@ -113,8 +204,7 @@ public class DialogsFragment extends BaseTdFragment {
                 updateChatInAdapter(u.chatId);
             }
 
-            else if (update instanceof TdApi.UpdateChatPosition) {
-                TdApi.UpdateChatPosition u = (TdApi.UpdateChatPosition) update;
+            else if (update instanceof TdApi.UpdateChatPosition u) {
                 if (u.position.list instanceof TdApi.ChatListMain) {
                     if (u.position.order == 0) {
                         if (dialogs.remove(u.chatId) != null) submitDialogs();
@@ -122,8 +212,8 @@ public class DialogsFragment extends BaseTdFragment {
                     }
                     DialogItem old = dialogs.get(u.chatId);
                     if (old != null) {
-                        dialogs.put(u.chatId, old.copyWithOrder(u.position.order));
-                            submitDialogs();
+                        dialogs.put(u.chatId, old.copyWithOrderPinned(u.position.order, u.position.isPinned));
+                        submitDialogs();
                     } else {
                         updateChatInAdapter(u.chatId);
                     }
@@ -193,6 +283,20 @@ public class DialogsFragment extends BaseTdFragment {
                     }
                 }, 3000);
             }
+        }
+
+        public void setPinnedOrder(ArrayList<Long> pinnedIds) {
+            if (clientActorRef == null) return;
+
+            long[] ids = new long[pinnedIds.size()];
+            for (int i = 0; i < pinnedIds.size(); i++) ids[i] = pinnedIds.get(i);
+
+            long rand = new Random().nextLong();
+            clientActorRef.tell(new TdMessages.SendWithId(
+                    rand,
+                    new TdApi.SetPinnedChats(new TdApi.ChatListMain(), ids),
+                    self()
+            ));
         }
     }
 
