@@ -13,4 +13,10 @@
     <string name="premium_content_for">на</string>
     <string name="months">месяцев</string>
     <string name="deleted_account">Удаленный Аккаунт</string>
+    <string name="photo">Фотография</string>
+    <string name="video">Видео</string>
+    <string name="voice_message">Голосовое сообщение</string>
+    <string name="sticker">Стикер</string>
+    <string name="message">Сообщение</string>
+    <string name="animation">Анимация</string>
 </resources>

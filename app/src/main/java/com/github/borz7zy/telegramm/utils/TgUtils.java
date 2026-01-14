@@ -1,5 +1,8 @@
 package com.github.borz7zy.telegramm.utils;
 
+import com.github.borz7zy.telegramm.App;
+import com.github.borz7zy.telegramm.R;
+
 import org.drinkless.tdlib.TdApi;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -18,16 +21,16 @@ public class TgUtils {
         if (message.content instanceof TdApi.MessageText) {
             return ((TdApi.MessageText) message.content).text.text;
         } else if (message.content instanceof TdApi.MessagePhoto) {
-            return "Фотография"; // TODO: remove hardcoded strings
+            return App.getApplication().getString(R.string.photo); // TODO: add caption
         } else if (message.content instanceof TdApi.MessageVideo) {
-            return "Видео"; // TODO: remove hardcoded strings
+            return App.getApplication().getString(R.string.video); // TODO: add caption
         } else if (message.content instanceof TdApi.MessageVoiceNote) {
-            return "Голосовое сообщение"; // TODO: remove hardcoded strings
+            return App.getApplication().getString(R.string.voice_message);
         } else if (message.content instanceof TdApi.MessageSticker u) {
-            return u.sticker.emoji + "sticker"; // TODO: remove hardcoded strings
+            return u.sticker.emoji + App.getApplication().getString(R.string.sticker);
         } else if (message.content instanceof TdApi.MessageAnimation) {
-            return "GIF"; // TODO: remove hardcoded strings
+            return App.getApplication().getString(R.string.animation);
         }
-        return "Сообщение"; // TODO: remove hardcoded strings
+        return App.getApplication().getString(R.string.message);
     }
 }
