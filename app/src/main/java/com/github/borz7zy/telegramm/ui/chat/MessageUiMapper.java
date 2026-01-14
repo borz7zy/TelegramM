@@ -164,12 +164,12 @@ public final class MessageUiMapper {
 
             String senderName = userNames.name(senderId);
             if (TextUtils.isEmpty(senderName)) {
-                senderName = "User";
+                senderName = App.getApplication().getString(R.string.user);
                 uiActorRef.tell(new TdMessages.RequestUserName(senderId));
             }
 
             int months = x.dayCount/30;
-            gift.complete_caption = context.getString(R.string.premium_gave)
+            gift.complete_caption = context.getString(R.string.premium_gave) // TODO: implement verification from whom to whom
                     .replace("%0", senderName)
                     .replace("%1", String.valueOf(months));
 

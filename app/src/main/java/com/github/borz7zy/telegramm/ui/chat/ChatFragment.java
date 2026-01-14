@@ -36,6 +36,7 @@ import com.github.borz7zy.telegramm.ui.model.MessageItem;
 import com.github.borz7zy.telegramm.ui.model.PhotoData;
 import com.github.borz7zy.telegramm.ui.widget.EdgeSwipeDismissLayout;
 import com.github.borz7zy.telegramm.ui.widget.SpringRecyclerView;
+import com.github.borz7zy.telegramm.ui.widget.TypingDrawable;
 import com.github.borz7zy.telegramm.utils.TdMediaRepository;
 
 import org.drinkless.tdlib.TdApi;
@@ -69,6 +70,10 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
 
     private long chatId;
     private String title;
+
+    private View typingBar;
+    private ImageView typingIcon;
+    private TypingDrawable typingDrawable;
 
     private RecyclerView rv;
     private LinearLayoutManager lm;
@@ -187,6 +192,17 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
 
         content = LayoutInflater.from(requireContext()).inflate(R.layout.fragment_chat, sheet, false);
         sheet.addView(content);
+
+        typingBar = content.findViewById(R.id.typing_bottom);
+        typingIcon = content.findViewById(R.id.ic_typing);
+
+        typingDrawable = new TypingDrawable(
+                requireContext(),
+                R.drawable.ic_typing_list
+        );
+
+        typingIcon.setImageDrawable(typingDrawable);
+        typingBar.setVisibility(View.GONE);
 
         edge.setTargets(sheet, scrim);
         edge.setDismissListener(ChatFragment.super::dismissAllowingStateLoss);
@@ -405,6 +421,48 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
                         tvTitle.setText(u.title);
                     });
                 }
+            }else if(update instanceof TdApi.UpdateChatAction uca){
+                if(uca.chatId == chatId){
+                    if(uca.action != null){
+                        TdApi.ChatAction ca = uca.action;
+                        switch (ca.getConstructor()) {
+                            case TdApi.ChatActionTyping.CONSTRUCTOR -> { showTyping("печатает…"); }
+                            case TdApi.ChatActionRecordingVideo.CONSTRUCTOR -> { }
+                            case TdApi.ChatActionUploadingVideo.CONSTRUCTOR -> { }
+                            case TdApi.ChatActionRecordingVoiceNote.CONSTRUCTOR -> { }
+                            case TdApi.ChatActionUploadingVoiceNote.CONSTRUCTOR -> { }
+                            case TdApi.ChatActionUploadingPhoto.CONSTRUCTOR -> { }
+                            case TdApi.ChatActionUploadingDocument.CONSTRUCTOR -> { }
+                            case TdApi.ChatActionChoosingSticker.CONSTRUCTOR -> { }
+                            case TdApi.ChatActionChoosingLocation.CONSTRUCTOR -> { }
+                            case TdApi.ChatActionChoosingContact.CONSTRUCTOR -> { }
+                            case TdApi.ChatActionStartPlayingGame.CONSTRUCTOR -> { }
+                            case TdApi.ChatActionRecordingVideoNote.CONSTRUCTOR -> { }
+                            case TdApi.ChatActionUploadingVideoNote.CONSTRUCTOR -> { }
+                            case TdApi.ChatActionWatchingAnimations.CONSTRUCTOR -> { }
+                            case TdApi.ChatActionCancel.CONSTRUCTOR -> { hideTyping(); }
+                        }
+                    }
+                }
+            }
+        }
+
+        private void showTyping(String text) {
+            if (!isAdded() || typingDrawable == null) return;
+
+            TextView tv = typingBar.findViewById(R.id.typing_text);
+            if (tv != null) tv.setText(text);
+
+            typingBar.setVisibility(View.VISIBLE);
+            typingDrawable.start();
+        }
+
+        private void hideTyping() {
+            if (typingDrawable != null) {
+                typingDrawable.stop();
+            }
+            if (typingBar != null) {
+                typingBar.setVisibility(View.GONE);
             }
         }
 

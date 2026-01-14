@@ -111,73 +111,89 @@
             android:id="@+id/input_bar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
+            android:orientation="vertical"
             android:gravity="bottom"
             android:background="@android:color/transparent"
             android:padding="8dp">
 
-            <ImageView
-                android:id="@+id/btn_attach"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_gravity="bottom"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:padding="10dp"
-                android:src="@drawable/ic_attach_outline"
-                app:tint="@android:color/white" />
+            <include
+                android:id="@+id/typing_bottom"
+                layout="@layout/item_typing"
+                android:layout_width="match_parent"
+                android:layout_height="28dp"
+                android:visibility="gone"
+                tools:visibility="visible"
+                android:layout_marginBottom="4dp"/>
 
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="1"
-                app:cardBackgroundColor="#502A2A2A"
-                app:cardElevation="0dp"
-                app:cardCornerRadius="24dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
 
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="12dp" >
+                <ImageView
+                    android:id="@+id/btn_attach"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="bottom"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_attach_outline"
+                    app:tint="@android:color/white" />
 
-                    <EditText
-                        android:id="@+id/et_message"
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    app:cardBackgroundColor="#502A2A2A"
+                    app:cardElevation="0dp"
+                    app:cardCornerRadius="24dp">
+
+                    <RelativeLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:layout_toStartOf="@id/btnClear"
-                        android:layout_marginStart="8dp"
-                        android:background="@null"
-                        android:fontFamily="@font/family_google_sans"
-                        android:includeFontPadding="false"
-                        android:hint="Message"
-                        android:textColor="@color/white"
-                        android:textColorHint="#9E9E9E"
-                        android:textSize="16sp"
-                        android:singleLine="true"
-                        android:inputType="text"/>
+                        android:paddingStart="16dp"
+                        android:paddingEnd="12dp" >
 
-                    <ImageView
-                        android:id="@+id/btnClear"
-                        android:layout_width="28dp"
-                        android:layout_height="28dp"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:src="@drawable/ic_sticker_smile_outline"
-                        android:visibility="visible"
-                        app:tint="@color/white" />
+                        <EditText
+                            android:id="@+id/et_message"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_toStartOf="@id/btnClear"
+                            android:layout_marginStart="8dp"
+                            android:background="@null"
+                            android:fontFamily="@font/family_google_sans"
+                            android:includeFontPadding="false"
+                            android:hint="Message"
+                            android:textColor="@color/white"
+                            android:textColorHint="#9E9E9E"
+                            android:textSize="16sp"
+                            android:singleLine="true"
+                            android:inputType="text"/>
 
-                </RelativeLayout>
+                        <ImageView
+                            android:id="@+id/btnClear"
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            android:src="@drawable/ic_sticker_smile_outline"
+                            android:visibility="visible"
+                            app:tint="@color/white" />
 
-            </com.google.android.material.card.MaterialCardView>
-            <ImageView
-                android:id="@+id/btn_send"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_gravity="bottom"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:padding="10dp"
-                android:src="@drawable/ic_send"
-                app:tint="@android:color/white" />
+                    </RelativeLayout>
+
+                </com.google.android.material.card.MaterialCardView>
+                <ImageView
+                    android:id="@+id/btn_send"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="bottom"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_send"
+                    app:tint="@android:color/white" />
+
+            </LinearLayout>
 
         </LinearLayout>
 
