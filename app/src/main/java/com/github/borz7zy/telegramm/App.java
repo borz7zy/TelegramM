@@ -3,6 +3,7 @@ package com.github.borz7zy.telegramm;
 import android.app.Application;
 import android.util.Log;
 
+import com.github.borz7zy.nativelru.NativeLru;
 import com.github.borz7zy.telegramm.actor.ActorRef;
 import com.github.borz7zy.telegramm.actor.ActorSystem;
 import com.github.borz7zy.telegramm.actor.AndroidMainExecutor;
@@ -21,6 +22,11 @@ public class App extends Application {
     private ActorRef accountManager;
 
     private static App INSTANCE;
+
+    private final NativeLru dialogsCache = new NativeLru(2048);
+    private final NativeLru avatarsCache = new NativeLru(2048);
+    private final NativeLru mediaPathCache = new NativeLru(8192);
+
 
     @Override
     public void onCreate() {
@@ -57,9 +63,44 @@ public class App extends Application {
         return accountManager;
     }
 
+    public NativeLru getDialogsCache(){
+        return dialogsCache;
+    }
+
+    public NativeLru getAvatarsCache(){
+        return avatarsCache;
+    }
+
+    public NativeLru getMediaPathCache(){
+        return mediaPathCache;
+    }
+
     @Override
     public void onTerminate() {
         super.onTerminate();
         system.close();
+        clearCache();
+    }
+
+    @Override
+    public void onTrimMemory(int level){
+        super.onTrimMemory(level);
+
+        if(level >= TRIM_MEMORY_RUNNING_LOW){
+            clearCache();
+        }
+    }
+
+    @Override
+    public void onLowMemory(){
+        super.onLowMemory();
+
+        clearCache();
+    }
+
+    private void clearCache(){
+        dialogsCache.clear();
+        avatarsCache.clear();
+        mediaPathCache.clear();
     }
 }

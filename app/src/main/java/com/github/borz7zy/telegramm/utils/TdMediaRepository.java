@@ -4,6 +4,7 @@ import android.text.TextUtils;
 
 import androidx.annotation.Nullable;
 
+import com.github.borz7zy.nativelru.NativeLru;
 import com.github.borz7zy.telegramm.App;
 import com.github.borz7zy.telegramm.actor.AbstractActor;
 import com.github.borz7zy.telegramm.actor.ActorRef;
@@ -29,7 +30,8 @@ public final class TdMediaRepository {
     private static final TdMediaRepository INSTANCE = new TdMediaRepository();
     public static TdMediaRepository get() { return INSTANCE; }
 
-    private final ConcurrentHashMap<Integer, String> pathCache = new ConcurrentHashMap<>();
+    private final Object nativeCacheLock = new Object();
+    private volatile NativeLru fallbackCache;
     private final ConcurrentHashMap<Integer, CopyOnWriteArrayList<Consumer<String>>> callbacks = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Integer, Boolean> inFlight = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Integer, Boolean> waitingForClient = new ConcurrentHashMap<>();
@@ -49,10 +51,31 @@ public final class TdMediaRepository {
         }
     }
 
+    private NativeLru pathCache() {
+        App app = App.getApplication();
+        if (app != null) return app.getMediaPathCache();
+
+        NativeLru c = fallbackCache;
+        if (c != null) return c;
+        synchronized (nativeCacheLock) {
+            if (fallbackCache == null) fallbackCache = new NativeLru(2048);
+            return fallbackCache;
+        }
+    }
+
     @Nullable
     public String getCachedPath(int fileId) {
-        String p = pathCache.get(fileId);
-        return TextUtils.isEmpty(p) ? null : p;
+        if (fileId == 0) return null;
+
+        Object v;
+        synchronized (nativeCacheLock) {
+            v = pathCache().get((long) fileId);
+        }
+
+        if (v instanceof String s && !TextUtils.isEmpty(s)) {
+            return s;
+        }
+        return null;
     }
 
     public void getPathOrRequest(int fileId, Consumer<String> onReady) {
@@ -92,7 +115,9 @@ public final class TdMediaRepository {
 
     private void finish(int fileId, @Nullable String path) {
         if (!TextUtils.isEmpty(path)) {
-            pathCache.put(fileId, path);
+            synchronized (nativeCacheLock) {
+                pathCache().put((long) fileId, path);
+            }
         }
 
         inFlight.remove(fileId);
@@ -178,20 +203,5 @@ public final class TdMediaRepository {
                 context().stop(self());
             }
         }
-    }
-
-    // --------------------
-    // helpers for avatars
-    // --------------------
-    public void getChatAvatarPathOrRequest(@Nullable TdApi.ChatPhotoInfo photo, boolean big, Consumer<String> onReady) {
-        if (photo == null) { onReady.accept(null); return; }
-        int fileId = big ? photo.big.id : photo.small.id;
-        getPathOrRequest(fileId, onReady);
-    }
-
-    public void getUserAvatarPathOrRequest(@Nullable TdApi.ProfilePhoto photo, boolean big, Consumer<String> onReady) {
-        if (photo == null) { onReady.accept(null); return; }
-        int fileId = big ? photo.big.id : photo.small.id;
-        getPathOrRequest(fileId, onReady);
     }
 }
