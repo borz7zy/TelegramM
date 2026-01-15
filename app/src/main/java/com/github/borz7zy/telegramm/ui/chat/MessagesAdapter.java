@@ -33,6 +33,10 @@ public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewH
 
     private int chatAvatarFileId = 0;
 
+    public static final int PAYLOAD_TEXT = 1;
+    public static final int PAYLOAD_MEDIA = 2;
+    public static final int PAYLOAD_STATUS = 4;
+
     public MessagesAdapter() {
         super(DIFF);
         setHasStableIds(true);
@@ -48,6 +52,14 @@ public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewH
         MessageItem m = getItem(position);
         if (m.ui != null && m.ui.kind() == UiContent.Kind.SYSTEM) return VT_SYSTEM;
         return m.outgoing ? VT_OUT : VT_IN;
+    }
+
+    public int findPositionById(long id) {
+        List<MessageItem> cur = getCurrentList();
+        for (int i = 0; i < cur.size(); ++i) {
+            if (cur.get(i).id == id) return i;
+        }
+        return -1;
     }
 
     @NonNull
@@ -125,6 +137,51 @@ public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewH
         bindImages(h.imageBoardTop, m.photos);
         bindIncomingAvatar(h, m);
     }
+
+    @Override
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position, @NonNull List<Object> payloads) {
+        if (!payloads.isEmpty()) {
+            int mask = 0;
+            for (Object p : payloads) {
+                if (p instanceof Integer) mask |= (Integer) p;
+            }
+            bindPartial(holder, getItem(position), mask);
+            return;
+        }
+        super.onBindViewHolder(holder, position, payloads);
+    }
+
+    private void bindPartial(RecyclerView.ViewHolder holder, MessageItem item, int mask) {
+        if (holder instanceof SystemVH) {
+            // TODO: optimize this plz =|
+            return;
+        }
+
+        VH h = (VH) holder;
+
+        if ((mask & PAYLOAD_TEXT) != 0) {
+            String text = "";
+            if (item.ui instanceof UiContent.Text t) text = t.text;
+            else if (item.ui instanceof UiContent.Media md) text = md.caption;
+
+            if (TextUtils.isEmpty(text)) {
+                h.text.setVisibility(View.GONE);
+            } else {
+                h.text.setVisibility(View.VISIBLE);
+                h.text.setText(text);
+            }
+            h.time.setText(item.time);
+        }
+
+        if ((mask & PAYLOAD_MEDIA) != 0) {
+            bindImages(h.imageBoardTop, item.photos);
+        }
+
+        if ((mask & PAYLOAD_STATUS) != 0) {
+            // TODO: check marks, statuses
+        }
+    }
+
 
     public void setChatAvatar(int fileId) {
         if (chatAvatarFileId == fileId) return;
@@ -217,6 +274,10 @@ public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewH
             Glide.with(iv).clear(iv);
 
             String path = photo.localPath;
+            if(TextUtils.isEmpty(path) && fid != 0){
+                String cached2 = TdMediaRepository.get().getCachedPath(fid);
+                if(!TextUtils.isEmpty(cached2)) path = cached2;
+            }
             if (TextUtils.isEmpty(path)) {
                 iv.setImageResource(R.drawable.bg_msg_bubble);
 

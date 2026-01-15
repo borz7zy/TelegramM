@@ -23,6 +23,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.recyclerview.widget.ConcatAdapter;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -30,6 +31,7 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.github.borz7zy.telegramm.R;
 import com.github.borz7zy.telegramm.actor.AbstractActor;
+import com.github.borz7zy.telegramm.actor.ActorRef;
 import com.github.borz7zy.telegramm.core.TdMessages;
 import com.github.borz7zy.telegramm.ui.base.BaseTdCustomSheetDialogFragment;
 import com.github.borz7zy.telegramm.ui.model.MessageItem;
@@ -38,6 +40,7 @@ import com.github.borz7zy.telegramm.ui.widget.EdgeSwipeDismissLayout;
 import com.github.borz7zy.telegramm.ui.widget.SpringRecyclerView;
 import com.github.borz7zy.telegramm.ui.widget.TypingDrawable;
 import com.github.borz7zy.telegramm.utils.TdMediaRepository;
+import com.github.borz7zy.telegramm.utils.TgUtils;
 
 import org.drinkless.tdlib.TdApi;
 
@@ -56,6 +59,7 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
     private static final String ARG_CHAT_ID = "chat_id";
     private static final String ARG_TITLE = "title";
     private final float BLUR_RADIUS = 20.f;
+    private static final long REQ_OPEN_CHAT = 9000L;
     private View content;
     private ImageView ivChatAvatar;
 
@@ -70,13 +74,15 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
 
     private long chatId;
     private String title;
-
+    private static final class UiReady {}
     private View typingBar;
     private ImageView typingIcon;
     private TypingDrawable typingDrawable;
 
     private RecyclerView rv;
     private LinearLayoutManager lm;
+    private TopLoadingAdapter topLoading;
+    private int topLoaderHeightPx;
     private MessagesAdapter adapter;
     private EditText et;
     private ImageView btnSend;
@@ -87,6 +93,16 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
 
     private boolean closing = false;
     private OnBackPressedCallback backCallback;
+    private long anchorMsgId = 0;
+    private int anchorTop = 0;
+    private boolean olderQueued = false;
+    private enum HistoryReqKind { INITIAL, OLDER, AUTO }
+    private HistoryReqKind pendingKind = HistoryReqKind.INITIAL;
+    private boolean autoFill = false;
+    private int autoFillRequests = 0;
+    private static final int AUTO_FILL_TARGET = 50;
+    private static final int AUTO_FILL_BATCH = 50;
+    private static final int AUTO_FILL_MAX_REQUESTS = 40;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -234,25 +250,56 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
         et = content.findViewById(R.id.et_message);
         btnSend = content.findViewById(R.id.btn_send);
 
+        topLoading = new TopLoadingAdapter();
+        topLoaderHeightPx = TgUtils.dp(48f);
         adapter = new MessagesAdapter();
         lm = new LinearLayoutManager(requireContext());
         lm.setStackFromEnd(true);
 
+        ConcatAdapter concat = new ConcatAdapter(
+                new ConcatAdapter.Config.Builder()
+                        .setStableIdMode(ConcatAdapter.Config.StableIdMode.ISOLATED_STABLE_IDS)
+                        .setIsolateViewTypes(true)
+                        .build(),
+                topLoading,
+                adapter
+        );
+
         rv.setLayoutManager(lm);
-        rv.setAdapter(adapter);
+        rv.setAdapter(concat);
 
         btnSend.setOnClickListener(v -> sendMessage());
 
         rv.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
-                if (lm.findFirstVisibleItemPosition() == 0) {
-                    if (uiActorRef != null) uiActorRef.tell(new RequestOlder());
+                if (dy >= 0) return;
+
+                int first = lm.findFirstVisibleItemPosition();
+                int offset = topLoading.isVisible() ? 1 : 0;
+
+                if (first <= offset && !olderQueued) {
+                    olderQueued = true;
+                    recyclerView.post(() -> {
+                        olderQueued = false;
+                        if (uiActorRef != null) uiActorRef.tell(new RequestOlder());
+                    });
                 }
             }
         });
 
         applyInsets(view, content);
+
+        rv.post(()->{
+            if(uiActorRef != null){
+                uiActorRef.tell(new UiReady());
+            }
+        });
+    }
+
+    private void setTopLoading(boolean v) {
+        if (!isAdded() || rv == null) return;
+        rv.post(() -> topLoading.setVisible(v));
     }
 
     private void sendMessage() {
@@ -303,21 +350,31 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
         private boolean hasMore = true;
         private long oldestId = 0;
 
+        private boolean uiReady = false;
+        private boolean clientReady = false;
+        private boolean started = false;
+
         @Override
         public void onReceive(Object message) {
             super.onReceive(message);
 
-            if (message instanceof com.github.borz7zy.telegramm.actor.ActorRef) {
-                if (clientActorRef != null) {
-                    clientActorRef.tell(new TdMessages.Send(new TdApi.OpenChat(chatId)));
-                    requestChatInfo();
-                    requestInitial();
-                }
+            if (message instanceof ActorRef) {
+                clientReady = (clientActorRef != null);
+                tryStart();
             }
         }
 
         @Override
         protected void onReceiveMessage(Object message) {
+            if(message instanceof UiReady){
+                uiReady = true;
+                if(!byId.isEmpty()){
+                    publishSorted(false, topLoading.isVisible());
+                }
+                tryStart();
+                return;
+            }
+
             if (message instanceof RequestOlder) {
                 requestOlder();
                 return;
@@ -333,21 +390,35 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
             }
 
             if (message instanceof TdMessages.ResultWithId r) {
+                if (r.requestId == REQ_OPEN_CHAT) {
+                    requestInitial();
+                    return;
+                }
                 if (r.requestId == REQ_CHAT_INFO && r.result instanceof TdApi.Chat chat) {
                     applyChatHeader(chat);
+                    return;
                 }
-                return;
             }
         }
 
         private void requestInitial() {
             if (loading) return;
+
             loading = true;
             hasMore = true;
             oldestId = 0;
+
+            autoFill = false;
+            autoFillRequests = 0;
+
             byId.clear();
+            rawMessages.clear();
+            albumGroups.clear();
+
+            pendingKind = HistoryReqKind.INITIAL;
+
             if (clientActorRef != null) {
-                clientActorRef.tell(new TdMessages.GetChatHistory(chatId, 0L, 0, 50, self()));
+                clientActorRef.tell(new TdMessages.GetChatHistory(chatId, 0L, 0, 70, self()));
             }
         }
 
@@ -357,21 +428,84 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
             }
         }
 
+        private void tryStart() {
+            if (started) return;
+            if (!uiReady || !clientReady) return;
+
+            started = true;
+            if (clientActorRef != null) {
+                clientActorRef.tell(new TdMessages.SendWithId(
+                        REQ_OPEN_CHAT,
+                        new TdApi.OpenChat(chatId),
+                        self()
+                ));
+            }
+
+            requestChatInfo();
+        }
+
         private void requestOlder() {
             if (loading || !hasMore) return;
             if (oldestId == 0) return;
 
             loading = true;
+            pendingKind = HistoryReqKind.OLDER;
+
+            if(isAdded()){
+                captureAnchor();
+                setTopLoading(true);
+            }
+
             if (clientActorRef != null) {
-                clientActorRef.tell(new TdMessages.GetChatHistory(chatId, oldestId, -1, 50, self()));
+                clientActorRef.tell(new TdMessages.GetChatHistory(chatId, oldestId, -1, 70, self()));
             }
         }
+
+        private void requestAutoFillMore() {
+            if (!autoFill) return;
+            if (loading) return;
+            if (!hasMore) { autoFill = false; return; }
+            if (clientActorRef == null) { autoFill = false; return; }
+            if (oldestId == 0) { autoFill = false; return; }
+
+            if (byId.size() >= AUTO_FILL_TARGET) {
+                autoFill = false;
+                return;
+            }
+
+            if (autoFillRequests >= AUTO_FILL_MAX_REQUESTS) {
+                autoFill = false;
+                return;
+            }
+
+            autoFillRequests++;
+            loading = true;
+            pendingKind = HistoryReqKind.AUTO;
+
+            clientActorRef.tell(new TdMessages.GetChatHistory(chatId, oldestId, -1, AUTO_FILL_BATCH, self()));
+        }
+
 
         private void onHistory(TdApi.Messages messages) {
             loading = false;
 
-            if (messages == null || messages.messages == null || messages.messages.length == 0) {
-                hasMore = false;
+            HistoryReqKind kind = pendingKind;
+            pendingKind = HistoryReqKind.INITIAL;
+
+            int count = (messages == null || messages.messages == null) ? 0 : messages.messages.length;
+
+            if (count == 0) {
+                if (kind == HistoryReqKind.OLDER) {
+                    hasMore = false;
+                    setTopLoading(false);
+                }
+                if (kind == HistoryReqKind.AUTO) {
+                    hasMore = false;
+                    autoFill = false;
+                }
+                if (kind == HistoryReqKind.INITIAL) {
+                    hasMore = false;
+                }
                 return;
             }
 
@@ -379,19 +513,34 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
                 if (m == null || m.chatId != chatId) continue;
 
                 processMessageAndPut(m);
-
                 if (oldestId == 0 || m.id < oldestId) oldestId = m.id;
             }
 
-            publishSorted(false);
+            publishSorted(false, topLoading.isVisible());
+
+            if (kind == HistoryReqKind.OLDER) {
+                setTopLoading(false);
+            }
+
+            if (kind == HistoryReqKind.INITIAL && count == 1) {
+                autoFill = true;
+                autoFillRequests = 0;
+                requestAutoFillMore();
+                return;
+            }
+
+            if (autoFill) {
+                requestAutoFillMore();
+            }
         }
+
 
         private void handleUpdate(TdApi.Object update) {
             if (update instanceof TdApi.UpdateNewMessage u) {
                 TdApi.Message m = u.message;
                 if (m != null && m.chatId == chatId) {
                     processMessageAndPut(m);
-                    publishSorted(true);
+                    publishSorted(true, topLoading.isVisible());
                 }
             }
             else if (update instanceof TdApi.UpdateMessageSendSucceeded u) {
@@ -400,7 +549,7 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
 
                     byId.remove(u.oldMessageId);
                     byId.put(u.message.id, toItem(u.message));
-                    publishSorted(true);
+                    publishSorted(true, topLoading.isVisible());
                 }
             }
             else if (update instanceof TdApi.UpdateDeleteMessages u) {
@@ -409,7 +558,7 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
                     byId.remove(id);
                     rawMessages.remove(id);
                 }
-                publishSorted(false);
+                publishSorted(false, topLoading.isVisible());
             }else if (update instanceof TdApi.UpdateChatPhoto u) {
                 if (u.chatId == chatId) applyChatHeaderPhoto(u.photo);
             }
@@ -426,7 +575,18 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
                     if(uca.action != null){
                         TdApi.ChatAction ca = uca.action;
                         switch (ca.getConstructor()) {
-                            case TdApi.ChatActionTyping.CONSTRUCTOR -> { showTyping("печатает…"); }
+                            case TdApi.ChatActionTyping.CONSTRUCTOR -> {
+                                if(uca.senderId instanceof TdApi.MessageSenderUser u){
+                                    long uid = u.userId; // TODO: extract username?
+                                    // TODO: add in list writen messages this username
+                                    showTyping("печатает…");
+                                }else if(uca.senderId instanceof TdApi.MessageSenderChat c){
+                                    if(c.chatId == chatId && !title.isEmpty()) {
+                                        // TODO: add in list writen messages this chatname
+                                        showTyping("печатает...");
+                                    }
+                                }
+                            }
                             case TdApi.ChatActionRecordingVideo.CONSTRUCTOR -> { }
                             case TdApi.ChatActionUploadingVideo.CONSTRUCTOR -> { }
                             case TdApi.ChatActionRecordingVoiceNote.CONSTRUCTOR -> { }
@@ -525,7 +685,6 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
             });
         }
 
-
         private void processMessageAndPut(TdApi.Message m) {
             rawMessages.put(m.id, m);
 
@@ -535,7 +694,7 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
             String caption = "";
 
             if (m.content instanceof TdApi.MessagePhoto photoContent) {
-                photoData = extractPhoto(photoContent.photo);
+                photoData = extractPhoto(m.id, photoContent.photo);
                 if (photoContent.caption != null && !TextUtils.isEmpty(photoContent.caption.text)) {
                     caption = photoContent.caption.text;
                 }
@@ -574,7 +733,7 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
             }
         }
 
-        private void publishSorted(boolean maybeScrollToBottom) {
+        private void publishSorted(boolean maybeScrollToBottom, boolean hideTopLoaderAfterCommit) {
             ArrayList<MessageItem> list = new ArrayList<>(byId.values());
             list.sort((a, b) -> Long.compare(a.id, b.id));
 
@@ -582,21 +741,49 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
 
             requireActivity().runOnUiThread(() -> {
                 boolean nearBottom = isNearBottom();
+
+                long savedId = anchorMsgId;
+                int savedTop = anchorTop;
+
+                final boolean loaderVisibleNow = topLoading.isVisible();
+                final int offset = loaderVisibleNow ? 1 : 0;
+
                 adapter.submitList(list, () -> {
+                    if (savedId != 0) {
+                        int pos = adapter.findPositionById(savedId);
+                        if (pos >= 0) {
+                            int globalPos = pos + offset;
+
+                            int top = savedTop + (loaderVisibleNow && hideTopLoaderAfterCommit ? topLoaderHeightPx : 0);
+
+                            lm.scrollToPositionWithOffset(globalPos, top);
+                        }
+                        anchorMsgId = 0;
+                    }
+
                     if (maybeScrollToBottom && nearBottom) {
                         rv.scrollToPosition(Math.max(0, adapter.getItemCount() - 1));
                     }
+
                     if (adapter.getItemCount() > 0 && lm.findLastVisibleItemPosition() < 0) {
                         rv.scrollToPosition(adapter.getItemCount() - 1);
+                    }
+
+                    if(hideTopLoaderAfterCommit){
+                        rv.post(()->setTopLoading(false));
                     }
                 });
             });
         }
 
         private boolean isNearBottom() {
-            int last = lm.findLastVisibleItemPosition();
-            int total = adapter.getItemCount();
-            return total == 0 || last >= total - 3;
+            int lastGlobal = lm.findLastVisibleItemPosition();
+            int offset = topLoading.isVisible() ? 1 : 0;
+
+            int totalMessages = adapter.getItemCount();
+            int totalGlobal = offset + totalMessages;
+
+            return totalMessages == 0 || lastGlobal >= totalGlobal - 3;
         }
 
         private MessageItem toItem(TdApi.Message m) {
@@ -610,7 +797,7 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
 
             List<PhotoData> photos = new ArrayList<>();
             if (m.content instanceof TdApi.MessagePhoto photoContent) {
-                PhotoData pd = extractPhoto(photoContent.photo);
+                PhotoData pd = extractPhoto(m.id, photoContent.photo);
                 if (pd != null) photos.add(pd);
             }
 
@@ -621,7 +808,7 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
             );
         }
 
-        private PhotoData extractPhoto(TdApi.Photo photo) {
+        private PhotoData extractPhoto(long rowMessageId, TdApi.Photo photo) {
             if (photo == null || photo.sizes.length == 0) return null;
 
             TdApi.PhotoSize best = findBestPhotoSize(photo.sizes);
@@ -629,9 +816,16 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
             int fileId = best.photo.id;
             String localPath = best.photo.local != null ? best.photo.local.path : null;
 
-            if (TextUtils.isEmpty(localPath) || (best.photo.local != null && !best.photo.local.isDownloadingCompleted)) {
-                TdMediaRepository.get().getPathOrRequest(fileId, p -> {  });
-                localPath = TdMediaRepository.get().getCachedPath(fileId);
+            boolean completed = best.photo.local != null && best.photo.local.isDownloadingCompleted;
+
+            if (TextUtils.isEmpty(localPath) || !completed) {
+                TdMediaRepository.get().getPathOrRequest(fileId, p -> {
+                    if (!TextUtils.isEmpty(p)) {
+                        notifyMessageChanged(rowMessageId, MessagesAdapter.PAYLOAD_MEDIA);
+                    }
+                });
+                String cached = TdMediaRepository.get().getCachedPath(fileId);
+                if (!TextUtils.isEmpty(cached)) localPath = cached;
             }
 
             return new PhotoData(fileId, localPath, best.width, best.height);
@@ -682,7 +876,7 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
             }
 
             if (needUpdate) {
-                publishSorted(false);
+                publishSorted(false, topLoading.isVisible());
             }
         }
 
@@ -791,4 +985,33 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
         }
         return null;
     }
+
+    private void captureAnchor() {
+        int firstGlobal = lm.findFirstVisibleItemPosition();
+        if (firstGlobal == RecyclerView.NO_POSITION) return;
+
+        int offset = topLoading.isVisible() ? 1 : 0;
+
+        int anchorGlobal = Math.max(firstGlobal, offset);
+        int msgPos = anchorGlobal - offset;
+        if (msgPos < 0 || msgPos >= adapter.getItemCount()) return;
+
+        View v = lm.findViewByPosition(anchorGlobal);
+        if (v == null) return;
+
+        anchorMsgId = adapter.getItemId(msgPos);
+        anchorTop = v.getTop();
+    }
+
+    private void notifyMessageChanged(long msgId, int payload) {
+        if (!isAdded()) return;
+        requireActivity().runOnUiThread(() -> {
+            int pos = adapter.findPositionById(msgId);
+            if (pos >= 0) {
+                adapter.notifyItemChanged(pos, payload);
+            }
+        });
+    }
+
+
 }
