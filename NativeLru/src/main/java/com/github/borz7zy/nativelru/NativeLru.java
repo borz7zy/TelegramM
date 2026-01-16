@@ -1,6 +1,6 @@
 package com.github.borz7zy.nativelru;
 
-import java.lang.ref.Cleaner;
+import com.github.borz7zy.sharedutils.CleanerCompat;
 
 public class NativeLru implements AutoCloseable {
 
@@ -34,10 +34,8 @@ public class NativeLru implements AutoCloseable {
         }
     }
 
-    private static final Cleaner CLEANER = Cleaner.create();
-
     private long handle;
-    private final Cleaner.Cleanable cleanable;
+    private final CleanerCompat.Cleanable cleanable;
 
     private static final class State implements Runnable {
         private long h;
@@ -52,7 +50,7 @@ public class NativeLru implements AutoCloseable {
 
     public NativeLru(long capacity) {
         this.handle = nativeCreate(capacity);
-        this.cleanable = CLEANER.register(this, new State(this.handle));
+        this.cleanable = CleanerCompat.register(this, new State(this.handle));
     }
 
     public long size() { return nativeSize(handle); }

@@ -7,6 +7,8 @@ import static androidx.recyclerview.widget.RecyclerView.EdgeEffectFactory.DIRECT
 import android.content.Context;
 import android.graphics.Canvas;
 import android.util.AttributeSet;
+import android.view.MotionEvent;
+import android.view.ViewConfiguration;
 import android.widget.EdgeEffect;
 
 import androidx.annotation.NonNull;
@@ -16,6 +18,8 @@ import androidx.dynamicanimation.animation.SpringForce;
 import androidx.recyclerview.widget.RecyclerView;
 
 public class SpringRecyclerView extends RecyclerView {
+
+    private final Sonic sonic = new Sonic();
 
     private static final float PULL_FACTOR = 0.35f;
     private static final float ABSORB_VELOCITY_FACTOR = 0.20f;
@@ -40,7 +44,25 @@ public class SpringRecyclerView extends RecyclerView {
         init();
     }
 
+    @Override
+    public boolean fling(int velocityX, int velocityY) {
+        velocityY = sonic.applyBoost(this, velocityY);
+        return super.fling(velocityX, velocityY);
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent e) {
+        if (e.getActionMasked() == MotionEvent.ACTION_DOWN) {
+            boolean isFlying = getScrollState() == SCROLL_STATE_SETTLING;
+            sonic.setWasSettling(isFlying);
+        }
+        return super.onTouchEvent(e);
+    }
+
     private void init() {
+        int maxVelocity = ViewConfiguration.get(getContext()).getScaledMaximumFlingVelocity();
+        sonic.setMaxFlingVelocity(maxVelocity);
+
         springAnimY = new SpringAnimation(this, SpringAnimation.TRANSLATION_Y, 0f);
         springAnimY.setSpring(new SpringForce(0f)
                 .setStiffness(SpringForce.STIFFNESS_LOW)

@@ -24,3 +24,4 @@ rootProject.name = "Telegram M"
 include ':app'
 include ':tdlib'
 include ':NativeLru'
+include ':SharedUtils'

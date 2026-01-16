@@ -69,6 +69,7 @@ dependencies {
     implementation 'com.github.Dimezis:BlurView:version-3.2.0'
     implementation 'com.github.bumptech.glide:glide:4.16.0'
     implementation project(':NativeLru')
+    implementation project(':SharedUtils')
     annotationProcessor 'com.github.bumptech.glide:compiler:4.16.0'
     implementation project(':tdlib')
     implementation libs.fragment
