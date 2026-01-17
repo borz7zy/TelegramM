@@ -50,4 +50,13 @@ public final class MessageItem {
                 newUi
         );
     }
+
+    public MessageItem withUi(UiContent newUi) {
+        return new MessageItem(
+                id, chatId, outgoing,
+                time, photos,
+                mediaAlbumId,
+                newUi
+        );
+    }
 }

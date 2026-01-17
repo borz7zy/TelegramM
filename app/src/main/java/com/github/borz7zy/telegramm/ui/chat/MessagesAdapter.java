@@ -1,10 +1,13 @@
 package com.github.borz7zy.telegramm.ui.chat;
 
+import android.content.Context;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -23,6 +26,7 @@ import com.github.borz7zy.telegramm.ui.model.SystemMessages;
 import com.github.borz7zy.telegramm.ui.widget.JustifiedLayout;
 import com.github.borz7zy.telegramm.utils.TdMediaRepository;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewHolder> {
@@ -36,6 +40,17 @@ public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewH
     public static final int PAYLOAD_TEXT = 1;
     public static final int PAYLOAD_MEDIA = 2;
     public static final int PAYLOAD_STATUS = 4;
+    public static final int PAYLOAD_BUTTONS = 8;
+
+    public interface OnBtnClickListener {
+        void onBtnClick(MessageItem item, UiContent.UiButton btn);
+    }
+
+    private OnBtnClickListener btnListener;
+
+    public void setBtnListener(OnBtnClickListener listener) {
+        this.btnListener = listener;
+    }
 
     public MessagesAdapter() {
         super(DIFF);
@@ -93,7 +108,8 @@ public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewH
             sh.comment.setVisibility(View.GONE);
 
             if (sysUi.messageType instanceof SystemMessages.PremiumGift pg) {
-                String title = (m.ui instanceof UiContent.System s) ? s.text : "";
+                UiContent.System s = (UiContent.System) m.ui;
+                String title = s.text;
                 sh.giftName.setText(title);
                 sh.giftName.setVisibility(View.VISIBLE);
 
@@ -110,7 +126,8 @@ public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewH
             }
 
             if (sysUi.messageType instanceof SystemMessages.Default) {
-                String text = (m.ui instanceof UiContent.System s) ? s.text : "";
+                UiContent.System s = (UiContent.System) m.ui;
+                String text = s.text;
                 sh.system.setText(text);
                 sh.system.setVisibility(View.VISIBLE);
                 return;
@@ -136,6 +153,7 @@ public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewH
 
         bindImages(h.imageBoardTop, m.photos);
         bindIncomingAvatar(h, m);
+        bindButtons(h, m);
     }
 
     @Override
@@ -149,6 +167,46 @@ public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewH
             return;
         }
         super.onBindViewHolder(holder, position, payloads);
+    }
+
+    private void bindButtons(VH h, MessageItem item) {
+        if (h.buttonsContainer == null) return;
+
+        h.buttonsContainer.removeAllViews();
+
+        if (item.ui == null || item.ui.buttons.isEmpty()) {
+            h.buttonsContainer.setVisibility(View.GONE);
+            return;
+        }
+
+        h.buttonsContainer.setVisibility(View.VISIBLE);
+        Context ctx = h.buttonsContainer.getContext();
+
+        for (List<UiContent.UiButton> row : item.ui.buttons) {
+            LinearLayout rowLayout = new LinearLayout(ctx);
+            rowLayout.setOrientation(LinearLayout.HORIZONTAL);
+            rowLayout.setLayoutParams(new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+            for (UiContent.UiButton btnData : row) {
+                Button btnView = new Button(ctx);
+                btnView.setText(btnData.text);
+                btnView.setAllCaps(false);
+                btnView.setTextSize(14f);
+
+                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                        0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
+                lp.setMargins(4, 4, 4, 4);
+                btnView.setLayoutParams(lp);
+
+                btnView.setOnClickListener(v -> {
+                    if (btnListener != null) btnListener.onBtnClick(item, btnData);
+                });
+
+                rowLayout.addView(btnView);
+            }
+            h.buttonsContainer.addView(rowLayout);
+        }
     }
 
     private void bindPartial(RecyclerView.ViewHolder holder, MessageItem item, int mask) {
@@ -179,6 +237,10 @@ public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewH
 
         if ((mask & PAYLOAD_STATUS) != 0) {
             // TODO: check marks, statuses
+        }
+
+        if ((mask & PAYLOAD_BUTTONS) != 0) {
+            bindButtons(h, item);
         }
     }
 
@@ -320,6 +382,7 @@ public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewH
         final JustifiedLayout imageBoardTop;
         final JustifiedLayout imageBoardBottom;
         final ImageView avatar;
+        final ViewGroup buttonsContainer;
 
         VH(@NonNull View itemView) {
             super(itemView);
@@ -329,6 +392,8 @@ public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewH
             imageBoardBottom = itemView.findViewById(R.id.image_board_bottom);
 
             avatar = findImageView(itemView, "msg_avatar", "message_avatar", "avatar", "iv_avatar");
+
+            buttonsContainer = itemView.findViewById(R.id.buttons_container);
         }
     }
 
@@ -362,12 +427,78 @@ public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewH
             if (oldItem.ui == null && newItem.ui != null) return false;
             if (oldItem.ui != null && !oldItem.ui.equals(newItem.ui)) return false;
 
+            if (!buttonsEqual(oldItem.ui, newItem.ui)) return false;
+
             if (oldItem.photos.size() != newItem.photos.size()) return false;
-            for (int i = 0; i < oldItem.photos.size(); i++) {
+            for (int i = 0; i < oldItem.photos.size(); ++i) {
                 PhotoData a = oldItem.photos.get(i);
                 PhotoData b = newItem.photos.get(i);
                 if (!TextUtils.equals(a.localPath, b.localPath)) return false;
                 if (a.width != b.width || a.height != b.height) return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public Object getChangePayload(@NonNull MessageItem oldItem, @NonNull MessageItem newItem) {
+            UiContent.Kind ok = (oldItem.ui != null) ? oldItem.ui.kind() : null;
+            UiContent.Kind nk = (newItem.ui != null) ? newItem.ui.kind() : null;
+            if (ok != nk) return null;
+            if (ok == UiContent.Kind.SYSTEM) return null;
+
+            int mask = 0;
+
+            if (!TextUtils.equals(oldItem.time, newItem.time)) mask |= PAYLOAD_TEXT;
+
+            boolean uiSame = (oldItem.ui == null && newItem.ui == null)
+                    || (oldItem.ui != null && oldItem.ui.equals(newItem.ui));
+            if (!uiSame) mask |= PAYLOAD_TEXT;
+
+            if (!buttonsEqual(oldItem.ui, newItem.ui)) mask |= PAYLOAD_BUTTONS;
+
+            if (!photosEqual(oldItem.photos, newItem.photos)) mask |= PAYLOAD_MEDIA;
+
+            return mask == 0 ? null : mask;
+        }
+
+        private static boolean photosEqual(List<PhotoData> a, List<PhotoData> b) {
+            if (a == b) return true;
+            if (a == null || b == null) return false;
+            if (a.size() != b.size()) return false;
+            for (int i = 0; i < a.size(); ++i) {
+                PhotoData pa = a.get(i);
+                PhotoData pb = b.get(i);
+                if (pa.fileId != pb.fileId) return false;
+                if (pa.width != pb.width || pa.height != pb.height) return false;
+                if (!TextUtils.equals(pa.localPath, pb.localPath)) return false;
+            }
+            return true;
+        }
+
+        private static boolean buttonsEqual(UiContent a, UiContent b) {
+            if (a == b) return true;
+            if (a == null || b == null) return false;
+
+            List<List<UiContent.UiButton>> aa = a.buttons;
+            List<List<UiContent.UiButton>> bb = b.buttons;
+
+            if (aa == bb) return true;
+            if (aa.size() != bb.size()) return false;
+
+            for (int i = 0; i < aa.size(); ++i) {
+                List<UiContent.UiButton> ra = aa.get(i);
+                List<UiContent.UiButton> rb = bb.get(i);
+                if (ra.size() != rb.size()) return false;
+
+                for (int j = 0; j < ra.size(); j++) {
+                    UiContent.UiButton ba = ra.get(j);
+                    UiContent.UiButton bb2 = rb.get(j);
+
+                    if (!TextUtils.equals(ba.text, bb2.text)) return false;
+                    if (!TextUtils.equals(ba.url, bb2.url)) return false;
+                    if (!Arrays.equals(ba.data, bb2.data)) return false;
+                }
             }
 
             return true;

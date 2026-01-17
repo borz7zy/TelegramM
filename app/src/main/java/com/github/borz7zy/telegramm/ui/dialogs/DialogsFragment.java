@@ -13,7 +13,6 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.github.borz7zy.nativeui.NativeLinearLayoutManager;
 import com.github.borz7zy.telegramm.R;
 import com.github.borz7zy.telegramm.actor.AbstractActor;
 import com.github.borz7zy.telegramm.actor.ActorRef;
@@ -54,7 +53,7 @@ public class DialogsFragment extends BaseTdFragment {
 
         final Map<Long, Integer> pinnedIndex = new HashMap<>();
         if (pinnedOrderOverride != null) {
-            for (int i = 0; i < pinnedOrderOverride.size(); i++) {
+            for (int i = 0; i < pinnedOrderOverride.size(); ++i) {
                 pinnedIndex.put(pinnedOrderOverride.get(i), i);
             }
         }
@@ -100,7 +99,7 @@ public class DialogsFragment extends BaseTdFragment {
             updateRecyclerPadding(rv);
         });
 
-        rv.setLayoutManager(new NativeLinearLayoutManager(requireContext()));
+        rv.setLayoutManager(new LinearLayoutManager(requireContext()));
         adapter = new DialogsAdapter();
         rv.setAdapter(adapter);
 
@@ -140,10 +139,8 @@ public class DialogsFragment extends BaseTdFragment {
             public void clearView(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
                 super.clearView(recyclerView, viewHolder);
 
-                // фиксируем UI-порядок pinned, чтобы не прыгало
                 pinnedOrderOverride = adapter.getPinnedIdsInUiOrder();
 
-                // отправляем TDLib SetPinnedChats
                 if (uiActor != null && !pinnedOrderOverride.isEmpty()) {
                     uiActor.setPinnedOrder(pinnedOrderOverride);
                 }
@@ -290,7 +287,7 @@ public class DialogsFragment extends BaseTdFragment {
             if (clientActorRef == null) return;
 
             long[] ids = new long[pinnedIds.size()];
-            for (int i = 0; i < pinnedIds.size(); i++) ids[i] = pinnedIds.get(i);
+            for (int i = 0; i < pinnedIds.size(); ++i) ids[i] = pinnedIds.get(i);
 
             long rand = new Random().nextLong();
             clientActorRef.tell(new TdMessages.SendWithId(

@@ -2,11 +2,29 @@ package com.github.borz7zy.telegramm.ui.chat;
 
 import androidx.annotation.NonNull;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public abstract class UiContent {
 
     public enum Kind { TEXT, MEDIA, SYSTEM }
+
+    public final List<List<UiButton>> buttons = new ArrayList<>();
+
+    public static class UiButton {
+        public final String text;
+        public final String url;
+        public final byte[] data;
+
+        public UiButton(String text, String url, byte[] data) {
+            this.text = text;
+            this.url = url;
+            this.data = data;
+        }
+
+        public boolean isUrl() { return url != null && !url.isEmpty(); }
+    }
 
     @NonNull
     public abstract Kind kind();
@@ -24,8 +42,7 @@ public abstract class UiContent {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (!(o instanceof Text)) return false;
-            Text that = (Text) o;
+            if (!(o instanceof Text that)) return false;
             return Objects.equals(text, that.text);
         }
 
@@ -45,8 +62,7 @@ public abstract class UiContent {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (!(o instanceof Media)) return false;
-            Media that = (Media) o;
+            if (!(o instanceof Media that)) return false;
             return Objects.equals(caption, that.caption);
         }
 
@@ -68,8 +84,7 @@ public abstract class UiContent {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (!(o instanceof System)) return false;
-            System that = (System) o;
+            if (!(o instanceof System that)) return false;
             return Objects.equals(text, that.text) &&
                     Objects.equals(messageType, that.messageType);
         }

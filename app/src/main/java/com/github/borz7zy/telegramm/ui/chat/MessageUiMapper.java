@@ -81,6 +81,25 @@ public final class MessageUiMapper {
         return fallback.map(content, senderId);
     }
 
+    public UiContent map(TdApi.Message message) {
+        if (message == null) return new UiContent.Text("");
+
+        long senderId = 0;
+        if (message.senderId instanceof TdApi.MessageSenderUser) {
+            senderId = ((TdApi.MessageSenderUser) message.senderId).userId;
+        } else if (message.senderId instanceof TdApi.MessageSenderChat) {
+            senderId = ((TdApi.MessageSenderChat) message.senderId).chatId;
+        }
+
+        UiContent uiContent = map(message.content, senderId);
+
+        if (message.replyMarkup != null) {
+            injectButtons(uiContent, message.replyMarkup);
+        }
+
+        return uiContent;
+    }
+
     public void destroy() {
         if (uiActorRef != null) uiActorRef.tell(new StopActor());
     }
@@ -90,7 +109,9 @@ public final class MessageUiMapper {
     // --------------------
 
     private void registerDefaults() {
-        register(TdApi.MessageText.class, (t, sid) -> new UiContent.Text(safeText(t.text)));
+        register(TdApi.MessageText.class, (t, sid) -> {
+            return new UiContent.Text(safeText(t.text));
+        });
         register(TdApi.MessagePhoto.class, (p, sid) -> new UiContent.Media(safeText(p.caption)));
         register(TdApi.MessageVideo.class, (v, sid) -> new UiContent.Media(safeText(v.caption)));
 
@@ -216,6 +237,41 @@ public final class MessageUiMapper {
 
     private static String safeText(TdApi.FormattedText ft) {
         return (ft == null || ft.text == null) ? "" : ft.text;
+    }
+
+    private void injectButtons(UiContent content, TdApi.ReplyMarkup replyMarkup) {
+        if (replyMarkup instanceof TdApi.ReplyMarkupInlineKeyboard keyboard) {
+
+            for (TdApi.InlineKeyboardButton[] row : keyboard.rows) {
+                List<UiContent.UiButton> uiRow = new ArrayList<>();
+
+                for (TdApi.InlineKeyboardButton btn : row) {
+                    String url = null;
+                    byte[] data = null;
+
+                    if (btn.type instanceof TdApi.InlineKeyboardButtonTypeCallback) {
+                        data = ((TdApi.InlineKeyboardButtonTypeCallback) btn.type).data;
+                    } else if (btn.type instanceof TdApi.InlineKeyboardButtonTypeUrl) {
+                        url = ((TdApi.InlineKeyboardButtonTypeUrl) btn.type).url;
+                    }
+
+                    uiRow.add(new UiContent.UiButton(btn.text, url, data));
+                }
+
+                if (!uiRow.isEmpty()) {
+                    content.buttons.add(uiRow);
+                }
+            }
+
+        } else if (replyMarkup instanceof TdApi.ReplyMarkupShowKeyboard keyboard) {
+            for (TdApi.KeyboardButton[] row : keyboard.rows) {
+                List<UiContent.UiButton> uiRow = new ArrayList<>();
+                for (TdApi.KeyboardButton btn : row) {
+                    uiRow.add(new UiContent.UiButton(btn.text, null, null));
+                }
+                if (!uiRow.isEmpty()) content.buttons.add(uiRow);
+            }
+        }
     }
 
     // --------------------

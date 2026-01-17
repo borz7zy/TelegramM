@@ -29,7 +29,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
-import com.github.borz7zy.nativeui.NativeLinearLayoutManager;
 import com.github.borz7zy.telegramm.R;
 import com.github.borz7zy.telegramm.actor.AbstractActor;
 import com.github.borz7zy.telegramm.actor.ActorRef;
@@ -81,7 +80,7 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
     private TypingDrawable typingDrawable;
 
     private RecyclerView rv;
-    private NativeLinearLayoutManager lm;
+    private LinearLayoutManager lm;
     private TopLoadingAdapter topLoading;
     private int topLoaderHeightPx;
     private MessagesAdapter adapter;
@@ -254,8 +253,14 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
         topLoading = new TopLoadingAdapter();
         topLoaderHeightPx = TgUtils.dp(48f);
         adapter = new MessagesAdapter();
-        lm = new NativeLinearLayoutManager(requireContext());
+        lm = new LinearLayoutManager(requireContext());
         lm.setStackFromEnd(true);
+
+        adapter.setBtnListener((item, btn) -> {
+            if (uiActorRef != null) {
+                uiActorRef.tell(new ClickButton(item.chatId, item.id, btn));
+            }
+        });
 
         ConcatAdapter concat = new ConcatAdapter(
                 new ConcatAdapter.Config.Builder()
@@ -333,6 +338,18 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
 
     private static class RequestOlder {}
 
+    private static class ClickButton {
+        final long chatId;
+        final long msgId;
+        final UiContent.UiButton btn;
+
+        ClickButton(long chatId, long msgId, UiContent.UiButton btn) {
+            this.chatId = chatId;
+            this.msgId = msgId;
+            this.btn = btn;
+        }
+    }
+
     private final class ChatActor extends BaseUiActor {
 
         private static final long REQ_CHAT_INFO = 9001L;
@@ -379,6 +396,10 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
             if (message instanceof RequestOlder) {
                 requestOlder();
                 return;
+            }
+
+            if (message instanceof ClickButton){
+                handleClick((ClickButton) message);
             }
 
             if (message instanceof TdMessages.ChatHistoryLoaded) {
@@ -549,7 +570,11 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
                     if (u.message.chatId != chatId) return;
 
                     byId.remove(u.oldMessageId);
+                    rawMessages.remove(u.oldMessageId);
+
+                    rawMessages.put(u.message.id, u.message);
                     byId.put(u.message.id, toItem(u.message));
+
                     publishSorted(true, topLoading.isVisible());
                 }
             }
@@ -560,10 +585,32 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
                     rawMessages.remove(id);
                 }
                 publishSorted(false, topLoading.isVisible());
+            }else if (update instanceof TdApi.UpdateMessageEdited u) {
+                if (u.chatId != chatId) return;
+
+                TdApi.Message raw = rawMessages.get(u.messageId);
+                if (raw != null) raw.replyMarkup = u.replyMarkup;
+
+                MessageItem cur = byId.get(u.messageId);
+                if (cur == null) return;
+
+                UiContent newUi;
+                if (raw != null) {
+                    newUi = uiMapper.map(raw);
+                } else {
+                    newUi = cur.ui;
+                    if (u.replyMarkup == null
+                            || u.replyMarkup.getConstructor() == TdApi.ReplyMarkupRemoveKeyboard.CONSTRUCTOR) {
+                        newUi.buttons.clear();
+                    }
+                }
+                MessageItem updated = cur.withUi(newUi);
+                byId.put(u.messageId, updated);
+
+                publishSorted(false, topLoading.isVisible());
             }else if (update instanceof TdApi.UpdateChatPhoto u) {
                 if (u.chatId == chatId) applyChatHeaderPhoto(u.photo);
-            }
-            else if (update instanceof TdApi.UpdateChatTitle u) {
+            }else if (update instanceof TdApi.UpdateChatTitle u) {
                 if (u.chatId == chatId) {
                     title = u.title;
                     if (isAdded()) requireActivity().runOnUiThread(() -> {
@@ -788,12 +835,7 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
         }
 
         private MessageItem toItem(TdApi.Message m) {
-            long senderId = 0;
-            if(m.senderId instanceof TdApi.MessageSenderUser msu) {
-                senderId = msu.userId;
-            }
-
-            UiContent ui = uiMapper.map(m.content, senderId);
+            UiContent ui = uiMapper.map(m);
             String time = formatTime(m.date);
 
             List<PhotoData> photos = new ArrayList<>();
@@ -886,6 +928,42 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
                 return ((TdApi.MessageSenderUser) msg.senderId).userId;
             }
             return 0;
+        }
+
+        private void handleClick(ClickButton cb) {
+            if (cb.btn.isUrl()) {
+                if (isAdded()) {
+                    requireActivity().runOnUiThread(() -> {
+                        android.content.Intent i = new android.content.Intent(
+                                android.content.Intent.ACTION_VIEW,
+                                android.net.Uri.parse(cb.btn.url)
+                        );
+                        startActivity(i);
+                    });
+                }
+                return;
+            }
+
+            if (cb.btn.data != null) {
+                if (clientActorRef != null) {
+                    TdApi.GetCallbackQueryAnswer req = new TdApi.GetCallbackQueryAnswer(
+                            cb.chatId,
+                            cb.msgId,
+                            new TdApi.CallbackQueryPayloadData(cb.btn.data)
+                    );
+                    clientActorRef.tell(new TdMessages.Send(req));
+                }
+            } else {
+                if (clientActorRef != null) {
+                    TdApi.InputMessageContent content =
+                            new TdApi.InputMessageText(new TdApi.FormattedText(cb.btn.text, null), null, true);
+
+                    TdApi.SendMessage req = new TdApi.SendMessage(
+                            cb.chatId, null, null, null, null, content
+                    );
+                    clientActorRef.tell(new TdMessages.Send(req));
+                }
+            }
         }
     }
 
@@ -1013,6 +1091,4 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
             }
         });
     }
-
-
 }
