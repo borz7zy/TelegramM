@@ -20,7 +20,8 @@
         android:src="@drawable/ic_typing_list"
         android:scaleType="centerInside"
         android:contentDescription="Play and pause button"
-        app:tint="@android:color/white" />
+        app:tint="@android:color/white"
+        app:tintMode="src_in"/>
 
     <TextView
         android:id="@+id/typing_text"
@@ -32,6 +33,7 @@
         android:insetLeft="0dp"
         android:insetRight="0dp"
         android:minWidth="0dp"
+        android:textColor="@android:color/darker_gray"
         android:minHeight="0dp"
         android:text=""
         tools:text="Юрий печатает"/>

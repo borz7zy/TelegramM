@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.github.borz7zy.nativeui.NativeLinearLayoutManager;
 import com.github.borz7zy.telegramm.R;
 import com.github.borz7zy.telegramm.actor.AbstractActor;
 import com.github.borz7zy.telegramm.actor.ActorRef;
@@ -99,7 +100,7 @@ public class DialogsFragment extends BaseTdFragment {
             updateRecyclerPadding(rv);
         });
 
-        rv.setLayoutManager(new LinearLayoutManager(requireContext()));
+        rv.setLayoutManager(new NativeLinearLayoutManager(requireContext()));
         adapter = new DialogsAdapter();
         rv.setAdapter(adapter);
 

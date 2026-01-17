@@ -55,6 +55,10 @@ public class SpringRecyclerView extends RecyclerView {
         if (e.getActionMasked() == MotionEvent.ACTION_DOWN) {
             boolean isFlying = getScrollState() == SCROLL_STATE_SETTLING;
             sonic.setWasSettling(isFlying);
+
+            stopScroll();
+            if (springAnimY != null && springAnimY.isRunning()) springAnimY.cancel();
+            if (springAnimX != null && springAnimX.isRunning()) springAnimX.cancel();
         }
         return super.onTouchEvent(e);
     }

@@ -25,6 +25,20 @@ public class ContactsFragment extends BaseTdFragment {
 
     @Override
     protected AbstractActor createActor() {
-        return null;
+        return new ContactsActor();
+    }
+
+    private class ContactsActor extends BaseUiActor{
+
+        @Override
+        protected void onReceiveMessage(Object message) {
+
+        }
+
+        @Override
+        public void onReceive(Object message){
+
+        }
+
     }
 }

@@ -29,6 +29,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
+import com.github.borz7zy.nativeui.NativeLinearLayoutManager;
 import com.github.borz7zy.telegramm.R;
 import com.github.borz7zy.telegramm.actor.AbstractActor;
 import com.github.borz7zy.telegramm.actor.ActorRef;
@@ -80,7 +81,7 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
     private TypingDrawable typingDrawable;
 
     private RecyclerView rv;
-    private LinearLayoutManager lm;
+    private NativeLinearLayoutManager lm;
     private TopLoadingAdapter topLoading;
     private int topLoaderHeightPx;
     private MessagesAdapter adapter;
@@ -253,7 +254,7 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
         topLoading = new TopLoadingAdapter();
         topLoaderHeightPx = TgUtils.dp(48f);
         adapter = new MessagesAdapter();
-        lm = new LinearLayoutManager(requireContext());
+        lm = new NativeLinearLayoutManager(requireContext());
         lm.setStackFromEnd(true);
 
         ConcatAdapter concat = new ConcatAdapter(
@@ -587,7 +588,7 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
                                     }
                                 }
                             }
-                            case TdApi.ChatActionRecordingVideo.CONSTRUCTOR -> { }
+                            case TdApi.ChatActionRecordingVideo.CONSTRUCTOR -> { } // TODO: implement other
                             case TdApi.ChatActionUploadingVideo.CONSTRUCTOR -> { }
                             case TdApi.ChatActionRecordingVoiceNote.CONSTRUCTOR -> { }
                             case TdApi.ChatActionUploadingVoiceNote.CONSTRUCTOR -> { }
