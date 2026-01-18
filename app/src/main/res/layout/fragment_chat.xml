@@ -168,7 +168,25 @@
                             android:textColorHint="#9E9E9E"
                             android:textSize="16sp"
                             android:singleLine="true"
-                            android:inputType="text"/>
+                            android:inputType="text"
+                            android:visibility="visible"/>
+
+                        <com.masoudss.lib.WaveformSeekBar
+                            android:id="@+id/wave_record"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_toStartOf="@id/btnClear"
+                            android:layout_marginStart="8dp"
+                            android:visibility="visible"
+                            android:background="@null"
+                            app:wave_gravity="center"
+                            app:wave_width="3dp"
+                            app:wave_gap="2dp"
+                            app:wave_min_height="2dp"
+                            app:wave_visible_progress="50"
+                            app:wave_progress_color="@color/red_call"
+                            app:wave_background_color="@color/white"
+                            app:marker_width="1dp" />
 
                         <ImageView
                             android:id="@+id/btnClear"

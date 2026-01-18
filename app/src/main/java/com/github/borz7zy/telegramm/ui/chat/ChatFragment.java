@@ -1,14 +1,22 @@
 package com.github.borz7zy.telegramm.ui.chat;
 
+import android.Manifest;
 import android.app.Dialog;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.media.MediaCodec;
+import android.media.MediaCodecInfo;
+import android.media.MediaFormat;
+import android.media.MediaMuxer;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -19,6 +27,7 @@ import androidx.activity.ComponentDialog;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
@@ -41,9 +50,14 @@ import com.github.borz7zy.telegramm.ui.widget.SpringRecyclerView;
 import com.github.borz7zy.telegramm.ui.widget.TypingDrawable;
 import com.github.borz7zy.telegramm.utils.TdMediaRepository;
 import com.github.borz7zy.telegramm.utils.TgUtils;
+import com.masoudss.lib.WaveformSeekBar;
 
 import org.drinkless.tdlib.TdApi;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -86,6 +100,21 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
     private MessagesAdapter adapter;
     private EditText et;
     private ImageView btnSend;
+
+    private ImageView btnAttach;
+    private ImageView btnAction;
+    private WaveformSeekBar waveRecord;
+
+    private enum InputMode { TEXT, VOICE }
+    private InputMode inputMode = InputMode.TEXT;
+
+    private VoiceWavRecorder voiceRecorder;
+    private File voiceTempFile;
+    private boolean voicePaused = false;
+
+    private final ArrayList<Integer> voiceLevels = new ArrayList<>();
+    private static final int MAX_VOICE_POINTS = 240;
+    private static final int REQ_RECORD_AUDIO = 501;
 
     private EdgeSwipeDismissLayout edge;
     private FrameLayout sheet;
@@ -248,7 +277,42 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
 
         rv = content.findViewById(R.id.rv_messages);
         et = content.findViewById(R.id.et_message);
+
+        btnAttach = content.findViewById(R.id.btn_attach);
+        btnAction = content.findViewById(R.id.btnClear);
         btnSend = content.findViewById(R.id.btn_send);
+
+        waveRecord = content.findViewById(R.id.wave_record);
+        if (waveRecord != null) {
+            waveRecord.setOnTouchListener((v, e) -> true);
+        }
+
+        btnSend.setOnClickListener(v -> onSendClicked());
+
+        btnSend.setOnLongClickListener(v -> {
+            String t = et.getText() == null ? "" : et.getText().toString().trim();
+            if (!TextUtils.isEmpty(t)) return true;
+
+            v.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+            startVoiceFlow();
+            return true;
+        });
+
+        btnAttach.setOnClickListener(v -> {
+            if (inputMode == InputMode.VOICE) {
+                cancelVoiceRecording();
+            } else {
+                // TODO: твоя логика “прикрепить”
+            }
+        });
+
+        btnAction.setOnClickListener(v -> {
+            if (inputMode == InputMode.VOICE) {
+                toggleVoicePause();
+            } else {
+                // TODO: твоя логика “спикер/эмодзи/что там было”
+            }
+        });
 
         topLoading = new TopLoadingAdapter();
         topLoaderHeightPx = TgUtils.dp(48f);
@@ -273,8 +337,6 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
 
         rv.setLayoutManager(lm);
         rv.setAdapter(concat);
-
-        btnSend.setOnClickListener(v -> sendMessage());
 
         rv.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
@@ -970,6 +1032,9 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
     @Override
     public void onDestroyView() {
         closing = false;
+        if (inputMode == InputMode.VOICE) {
+            cancelVoiceRecording();
+        }
         if (clientActorRef != null) {
             clientActorRef.tell(new TdMessages.Send(new TdApi.CloseChat(chatId)));
         }
@@ -1090,5 +1155,395 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
                 adapter.notifyItemChanged(pos, payload);
             }
         });
+    }
+
+    private void onSendClicked() {
+        if (inputMode == InputMode.VOICE) {
+            finishAndSendVoice();
+            return;
+        }
+        sendMessage();
+    }
+
+    private void startVoiceFlow() {
+        if (!hasRecordAudioPermission()) {
+            requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, REQ_RECORD_AUDIO);
+            return;
+        }
+        startVoiceRecording();
+    }
+
+    private boolean hasRecordAudioPermission() {
+        return ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO)
+                == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void startVoiceRecording() {
+        if (inputMode == InputMode.VOICE) return;
+
+        hideKeyboard();
+        et.clearFocus();
+
+        inputMode = InputMode.VOICE;
+        voicePaused = false;
+        voiceLevels.clear();
+        updateVoiceUi(true);
+
+        voiceTempFile = new File(requireContext().getCacheDir(),
+                "voice_" + System.currentTimeMillis() + ".wav");
+
+        voiceRecorder = new VoiceWavRecorder(44100, voiceTempFile, level0to100 -> {
+            if (!isAdded() || waveRecord == null) return;
+
+            requireActivity().runOnUiThread(() -> {
+                if (inputMode != InputMode.VOICE || voicePaused) return;
+
+                voiceLevels.add(level0to100);
+                if (voiceLevels.size() > MAX_VOICE_POINTS) voiceLevels.remove(0);
+
+                int[] arr = new int[voiceLevels.size()];
+                for (int i = 0; i < voiceLevels.size(); ++i) arr[i] = voiceLevels.get(i);
+
+                waveRecord.setSampleFrom(arr);
+                waveRecord.setMaxProgress((float) arr.length);
+                waveRecord.setProgress((float) arr.length);
+            });
+        });
+
+        voiceRecorder.start();
+    }
+
+    private void toggleVoicePause() {
+        if (inputMode != InputMode.VOICE || voiceRecorder == null) return;
+
+        voicePaused = !voicePaused;
+        if (voicePaused) {
+            voiceRecorder.pause();
+            btnAction.setImageResource(android.R.drawable.ic_media_play);
+        } else {
+            voiceRecorder.resume();
+            btnAction.setImageResource(android.R.drawable.ic_media_pause);
+        }
+    }
+
+    private void cancelVoiceRecording() {
+        if (inputMode != InputMode.VOICE) return;
+
+        if (voiceRecorder != null) {
+            voiceRecorder.stopAndFinalize();
+            voiceRecorder = null;
+        }
+        if (voiceTempFile != null) {
+            //noinspection ResultOfMethodCallIgnored
+            voiceTempFile.delete();
+            voiceTempFile = null;
+        }
+
+        inputMode = InputMode.TEXT;
+        voicePaused = false;
+        updateVoiceUi(false);
+    }
+
+    private void finishAndSendVoice() {
+        if (inputMode != InputMode.VOICE) return;
+
+        if (voiceRecorder != null) {
+            voiceRecorder.stopAndFinalize();
+            voiceRecorder = null;
+        }
+
+        File wav = voiceTempFile;
+        voiceTempFile = null;
+
+        inputMode = InputMode.TEXT;
+        voicePaused = false;
+        updateVoiceUi(false);
+
+        if (wav == null || !wav.exists() || wav.length() == 0) return;
+
+        final ArrayList<Integer> levels = new ArrayList<>(voiceLevels);
+        voiceLevels.clear();
+
+        File m4a = new File(requireContext().getCacheDir(),
+                "voice_" + System.currentTimeMillis() + ".m4a");
+
+        new Thread(() -> {
+            try {
+                int durationSec = durationSecFromWav(wav, 44100, 1);
+                byte[] waveform = buildTelegramWaveform5bit(levels, 100);
+
+                convertWavToM4a(wav, m4a, 44100, 1, 64000);
+
+                wav.delete();
+
+                sendVoiceNote(m4a, durationSec, waveform);
+
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+        }, "VoiceConvertSend").start();
+    }
+
+    private void sendVoiceNote(File audioFile, int durationSec, byte[] waveform) {
+        if (clientActorRef == null || audioFile == null || !audioFile.exists()) return;
+
+        TdApi.InputFile input = new TdApi.InputFileLocal(audioFile.getAbsolutePath());
+
+        TdApi.InputMessageContent content;
+        content = new TdApi.InputMessageVoiceNote(
+                input,
+                durationSec,
+                waveform != null ? waveform : new byte[0],
+                null,
+                null
+        );
+        TdApi.SendMessage req = null;
+        req = new TdApi.SendMessage(
+                chatId,
+                null,
+                null,
+                null,
+                null,
+                content
+        );
+
+        clientActorRef.tell(new TdMessages.Send(req));
+    }
+
+
+    private void updateVoiceUi(boolean voiceMode) {
+        if (waveRecord != null) {
+            if (voiceMode) {
+                waveRecord.setAlpha(0f);
+                waveRecord.setVisibility(View.VISIBLE);
+                waveRecord.animate().alpha(1f).setDuration(180).start();
+            } else {
+                waveRecord.animate().alpha(0f).setDuration(120).withEndAction(() -> {
+                    waveRecord.setVisibility(View.GONE);
+                    waveRecord.setAlpha(1f);
+                }).start();
+            }
+        }
+
+        if (et != null) {
+            if (voiceMode) {
+                et.animate().alpha(0f).setDuration(120).withEndAction(() -> {
+                    et.setVisibility(View.GONE);
+                    et.setAlpha(1f);
+                }).start();
+            } else {
+                et.setAlpha(0f);
+                et.setVisibility(View.VISIBLE);
+                et.animate().alpha(1f).setDuration(180).start();
+            }
+        }
+
+        if (btnAttach != null) {
+            btnAttach.setImageResource(
+                    voiceMode ? android.R.drawable.ic_menu_close_clear_cancel : R.drawable.ic_attach_outline
+            );
+        }
+
+        if (btnAction != null) {
+            btnAction.setImageResource(
+                    voiceMode ? android.R.drawable.ic_media_pause : R.drawable.ic_sticker_smile_outline
+            );
+        }
+    }
+
+    private void hideKeyboard() {
+        if (!isAdded()) return;
+        View v = requireActivity().getCurrentFocus();
+        if (v == null) v = getView();
+        if (v == null) return;
+
+        InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
+        if (imm != null) imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
+    }
+
+    private static int durationSecFromWav(File wav, int sampleRate, int channels) {
+        long bytes = Math.max(0, wav.length() - 44);
+        double seconds = bytes / (double) (sampleRate * channels * 2);
+        int sec = (int) Math.ceil(seconds);
+        return Math.max(1, sec);
+    }
+
+    private static void convertWavToM4a(File wav, File m4a,
+                                        int sampleRate, int channels, int bitRate) throws IOException {
+
+        MediaCodec codec = null;
+        MediaMuxer muxer = null;
+        FileInputStream fis = null;
+
+        try {
+            fis = new FileInputStream(wav);
+            skipFully(fis, 44);
+
+            MediaFormat format = MediaFormat.createAudioFormat(
+                    MediaFormat.MIMETYPE_AUDIO_AAC, sampleRate, channels);
+            format.setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC);
+            format.setInteger(MediaFormat.KEY_BIT_RATE, bitRate);
+            format.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 16 * 1024);
+
+            codec = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_AUDIO_AAC);
+            codec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+            codec.start();
+
+            muxer = new MediaMuxer(m4a.getAbsolutePath(), MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+
+            MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
+            boolean inputDone = false;
+            boolean outputDone = false;
+
+            int trackIndex = -1;
+            boolean muxerStarted = false;
+
+            byte[] temp = new byte[16 * 1024];
+            long totalSamples = 0;
+
+            while (!outputDone) {
+                if (!inputDone) {
+                    int inIndex = codec.dequeueInputBuffer(10_000);
+                    if (inIndex >= 0) {
+                        ByteBuffer inBuf = codec.getInputBuffer(inIndex);
+                        if (inBuf != null) {
+                            inBuf.clear();
+                            int toRead = Math.min(inBuf.remaining(), temp.length);
+                            int read = fis.read(temp, 0, toRead);
+
+                            if (read == -1) {
+                                codec.queueInputBuffer(inIndex, 0, 0, 0,
+                                        MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+                                inputDone = true;
+                            } else {
+                                inBuf.put(temp, 0, read);
+
+                                int samplesRead = read / (2 * channels);
+                                long ptsUs = totalSamples * 1_000_000L / sampleRate;
+                                totalSamples += samplesRead;
+
+                                codec.queueInputBuffer(inIndex, 0, read, ptsUs, 0);
+                            }
+                        }
+                    }
+                }
+
+                int outIndex = codec.dequeueOutputBuffer(info, 10_000);
+                if (outIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+                    if (muxerStarted) throw new IllegalStateException("Format changed twice");
+                    MediaFormat outFormat = codec.getOutputFormat();
+                    trackIndex = muxer.addTrack(outFormat);
+                    muxer.start();
+                    muxerStarted = true;
+
+                } else if (outIndex == MediaCodec.INFO_TRY_AGAIN_LATER) {
+
+                } else if (outIndex >= 0) {
+                    ByteBuffer outBuf = codec.getOutputBuffer(outIndex);
+                    if (outBuf == null) throw new IllegalStateException("Output buffer is null");
+
+                    if ((info.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
+                        info.size = 0;
+                    }
+
+                    if (info.size > 0) {
+                        if (!muxerStarted) throw new IllegalStateException("Muxer not started");
+                        outBuf.position(info.offset);
+                        outBuf.limit(info.offset + info.size);
+                        muxer.writeSampleData(trackIndex, outBuf, info);
+                    }
+
+                    codec.releaseOutputBuffer(outIndex, false);
+
+                    if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                        outputDone = true;
+                    }
+                }
+            }
+
+        } finally {
+            if (codec != null) {
+                try { codec.stop(); } catch (Throwable ignored) {}
+                try { codec.release(); } catch (Throwable ignored) {}
+            }
+            if (muxer != null) {
+                try { muxer.stop(); } catch (Throwable ignored) {}
+                try { muxer.release(); } catch (Throwable ignored) {}
+            }
+            if (fis != null) {
+                try { fis.close(); } catch (Throwable ignored) {}
+            }
+        }
+    }
+
+    private static void skipFully(FileInputStream fis, long bytes) throws IOException {
+        long left = bytes;
+        while (left > 0) {
+            long skipped = fis.skip(left);
+            if (skipped <= 0) {
+                if (fis.read() == -1) break;
+                skipped = 1;
+            }
+            left -= skipped;
+        }
+    }
+
+
+    private static byte[] buildTelegramWaveform5bit(List<Integer> levels0to100, int targetPoints) {
+        if (levels0to100 == null || levels0to100.isEmpty() || targetPoints <= 0) return new byte[0];
+
+        int n = levels0to100.size();
+        int[] p = new int[targetPoints];
+        for (int i = 0; i < targetPoints; ++i) {
+            int start = (int) ((long) i * n / targetPoints);
+            int end = (int) ((long) (i + 1) * n / targetPoints);
+            if (end <= start) end = Math.min(start + 1, n);
+
+            long sum = 0;
+            int cnt = 0;
+            for (int j = start; j < end; j++) {
+                int v = levels0to100.get(j);
+                if (v < 0) v = 0;
+                if (v > 100) v = 100;
+                sum += v;
+                cnt++;
+            }
+            int avg = (cnt == 0) ? 0 : (int) (sum / cnt);
+
+            int v5 = Math.round(avg * 31f / 100f);
+            if (v5 < 0) v5 = 0;
+            if (v5 > 31) v5 = 31;
+            p[i] = v5;
+        }
+
+        int bits = targetPoints * 5;
+        int bytes = (bits + 7) / 8;
+        byte[] out = new byte[bytes];
+
+        int bitPos = 0;
+        for (int i = 0; i < targetPoints; ++i) {
+            int v = p[i] & 0x1F;
+            for (int b = 0; b < 5; b++) {
+                if (((v >> b) & 1) != 0) {
+                    int byteIndex = (bitPos + b) / 8;
+                    int bitIndex = (bitPos + b) % 8;
+                    out[byteIndex] |= (byte) (1 << bitIndex);
+                }
+            }
+            bitPos += 5;
+        }
+        return out;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQ_RECORD_AUDIO) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                startVoiceRecording();
+            } else {
+                // TODO: snackbar
+            }
+        }
     }
 }

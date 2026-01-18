@@ -114,10 +114,12 @@ public final class MessageUiMapper {
         });
         register(TdApi.MessagePhoto.class, (p, sid) -> new UiContent.Media(safeText(p.caption)));
         register(TdApi.MessageVideo.class, (v, sid) -> new UiContent.Media(safeText(v.caption)));
+        register(TdApi.MessageVoiceNote.class, (vn, sid) ->{
+            return new UiContent.Text("[x] MessageVoiceNote"); // TODO: implement this
+        });
 
         registerStubMedia(TdApi.MessageDocument.class);
         registerStubMedia(TdApi.MessageAudio.class);
-        registerStubMedia(TdApi.MessageVoiceNote.class);
         registerStubMedia(TdApi.MessageAnimation.class);
         registerStubMedia(TdApi.MessageAnimatedEmoji.class);
         register(TdApi.MessageChecklist.class, (a, sid) -> new UiContent.Media("[x] Checklist premium"));
