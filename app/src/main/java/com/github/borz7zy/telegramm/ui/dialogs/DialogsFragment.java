@@ -21,6 +21,7 @@ import com.github.borz7zy.telegramm.ui.LayoutViewModel;
 import com.github.borz7zy.telegramm.ui.chat.ChatFragment;
 import com.github.borz7zy.telegramm.ui.model.DialogItem;
 import com.github.borz7zy.telegramm.ui.base.BaseTdFragment;
+import com.github.borz7zy.telegramm.ui.widget.SpringRecyclerView;
 
 import org.drinkless.tdlib.TdApi;
 
@@ -85,7 +86,7 @@ public class DialogsFragment extends BaseTdFragment {
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        RecyclerView rv = view.findViewById(R.id.recycler_dialogs);
+        SpringRecyclerView rv = view.findViewById(R.id.recycler_dialogs);
 
         LayoutViewModel viewModel = new ViewModelProvider(requireActivity()).get(LayoutViewModel.class);
 
