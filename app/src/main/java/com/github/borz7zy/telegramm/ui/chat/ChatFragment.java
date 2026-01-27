@@ -93,7 +93,7 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
     private ImageView typingIcon;
     private TypingDrawable typingDrawable;
 
-    private RecyclerView rv;
+    private SpringRecyclerView rv;
     private LinearLayoutManager lm;
     private TopLoadingAdapter topLoading;
     private int topLoaderHeightPx;
