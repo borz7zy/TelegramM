@@ -40,7 +40,7 @@
         tools:text="Юрий Г." />
 
     <TextView
-        android:id="@+id/dialog_message"
+        android:id="@+id/contact_last_online_time"
         style="@style/TgSubtitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
