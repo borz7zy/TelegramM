@@ -31,6 +31,7 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsAnimationCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.ConcatAdapter;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -1042,6 +1043,11 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
     }
 
     private void applyInsets(View root, View content) {
+        final int[] lastImeBottom = {0};
+        final int[] statusTop = {0};
+        final int[] navBottom = {0};
+        final boolean[] isImeAnimating = {false};
+
         BlurView header = content.findViewById(R.id.header_blur);
         BlurView inputBar = content.findViewById(R.id.input_blur);
         SpringRecyclerView rv = content.findViewById(R.id.rv_messages);
@@ -1067,7 +1073,10 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
             Insets status = insets.getInsets(WindowInsetsCompat.Type.statusBars());
             Insets nav = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
             Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
-            int bottom = Math.max(nav.bottom, ime.bottom);
+
+            statusTop[0] = status.top;
+            navBottom[0] = nav.bottom;
+            boolean imeVisible = ime.bottom > 0;
 
             header.setPadding(
                     headerBaseLeft,
@@ -1080,18 +1089,74 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
                     inputBaseLeft,
                     inputBaseTop,
                     inputBaseRight,
-                    inputBaseBottom + bottom
+                    inputBaseBottom + nav.bottom
             );
 
-            rv.setPadding(
-                    rvBaseLeft,
-                    rvBaseTop + status.top,
-                    rvBaseRight,
-                    rvBaseBottom + bottom
-            );
+            if (!isImeAnimating[0] && imeVisible) {
+                rv.setPadding(
+                        rvBaseLeft,
+                        rvBaseTop + statusTop[0],
+                        rvBaseRight,
+                        rvBaseBottom + navBottom[0] + ime.bottom
+                );
+            } else {
+                rv.setPadding(
+                        rvBaseLeft,
+                        rvBaseTop + status.top,
+                        rvBaseRight,
+                        rvBaseBottom + nav.bottom
+                );
+            }
+
+            lastImeBottom[0] = ime.bottom;
 
             return insets;
         });
+
+        ViewCompat.setWindowInsetsAnimationCallback(
+                root,
+                new WindowInsetsAnimationCompat.Callback(
+                        WindowInsetsAnimationCompat.Callback.DISPATCH_MODE_CONTINUE_ON_SUBTREE) {
+
+                    final boolean[] isImeAnimating = {false};
+
+                    @NonNull
+                    @Override
+                    public WindowInsetsCompat onProgress(
+                            @NonNull WindowInsetsCompat insets,
+                            @NonNull List<WindowInsetsAnimationCompat> runningAnimations
+                    ) {
+                        Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+                        int imeBottom = ime.bottom;
+
+                        inputBar.setTranslationY(-imeBottom);
+
+                        rv.setPadding(
+                                rvBaseLeft,
+                                rvBaseTop + statusTop[0],
+                                rvBaseRight,
+                                rvBaseBottom + navBottom[0] + imeBottom
+                        );
+
+                        return insets;
+                    }
+
+                    @Override
+                    public void onPrepare(@NonNull WindowInsetsAnimationCompat animation) {
+                        if ((animation.getTypeMask() & WindowInsetsCompat.Type.ime()) != 0) {
+                            isImeAnimating[0] = true;
+                        }
+                    }
+
+                    @Override
+                    public void onEnd(@NonNull WindowInsetsAnimationCompat animation) {
+                        if ((animation.getTypeMask() & WindowInsetsCompat.Type.ime()) != 0) {
+                            isImeAnimating[0] = false;
+                            ViewCompat.requestApplyInsets(root);
+                        }
+                    }
+                }
+        );
 
         ViewCompat.requestApplyInsets(root);
     }
@@ -1501,7 +1566,7 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
 
             long sum = 0;
             int cnt = 0;
-            for (int j = start; j < end; j++) {
+            for (int j = start; j < end; ++j) {
                 int v = levels0to100.get(j);
                 if (v < 0) v = 0;
                 if (v > 100) v = 100;
@@ -1523,7 +1588,7 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
         int bitPos = 0;
         for (int i = 0; i < targetPoints; ++i) {
             int v = p[i] & 0x1F;
-            for (int b = 0; b < 5; b++) {
+            for (int b = 0; b < 5; ++b) {
                 if (((v >> b) & 1) != 0) {
                     int byteIndex = (bitPos + b) / 8;
                     int bitIndex = (bitPos + b) % 8;
