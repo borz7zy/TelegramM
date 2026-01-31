@@ -1,6 +1,7 @@
 [versions]
 agp = "8.13.2"
 appcompat = "1.7.1"
+kotlinBom = "1.8.22"
 material = "1.10.0"
 navigationFragment = "2.6.0"
 navigationUi = "2.6.0"
@@ -16,6 +17,7 @@ espressoCore = "3.7.0"
 
 [libraries]
 appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom", version.ref = "kotlinBom" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 navigation-fragment = { group = "androidx.navigation", name = "navigation-fragment", version.ref = "navigationFragment" }
 navigation-ui = { group = "androidx.navigation", name = "navigation-ui", version.ref = "navigationUi" }

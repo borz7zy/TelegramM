@@ -35,4 +35,5 @@ android {
 
 dependencies {
     implementation libs.appcompat
+    implementation platform('org.jetbrains.kotlin:kotlin-bom:1.8.22')
 }
