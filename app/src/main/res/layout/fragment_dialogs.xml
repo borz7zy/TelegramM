@@ -8,4 +8,5 @@
     android:layout_height="match_parent"
     android:clipToPadding="false"
     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-    tools:listitem="@layout/item_dialog" />
+    tools:listitem="@layout/item_dialog"
+    android:background="@color/tg_background"/>
