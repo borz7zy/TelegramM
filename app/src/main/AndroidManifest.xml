@@ -21,7 +21,8 @@
             android:exported="true"
             android:windowSoftInputMode="adjustNothing"
             android:theme="@style/Theme.TelegramM"
-            android:enableOnBackInvokedCallback="true">
+            android:enableOnBackInvokedCallback="true"
+            tools:targetApi="33">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

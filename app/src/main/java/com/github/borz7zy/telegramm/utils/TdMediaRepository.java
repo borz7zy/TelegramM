@@ -1,10 +1,10 @@
 package com.github.borz7zy.telegramm.utils;
 
 import android.text.TextUtils;
+import android.util.LruCache;
 
 import androidx.annotation.Nullable;
 
-import com.github.borz7zy.nativelru.NativeLru;
 import com.github.borz7zy.telegramm.App;
 import com.github.borz7zy.telegramm.actor.AbstractActor;
 import com.github.borz7zy.telegramm.actor.ActorRef;
@@ -30,8 +30,8 @@ public final class TdMediaRepository {
     private static final TdMediaRepository INSTANCE = new TdMediaRepository();
     public static TdMediaRepository get() { return INSTANCE; }
 
-    private final Object nativeCacheLock = new Object();
-    private volatile NativeLru fallbackCache;
+    private final LruCache<Integer, String> pathCache;
+
     private final ConcurrentHashMap<Integer, CopyOnWriteArrayList<Consumer<String>>> callbacks = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Integer, Boolean> inFlight = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Integer, Boolean> waitingForClient = new ConcurrentHashMap<>();
@@ -40,7 +40,9 @@ public final class TdMediaRepository {
 
     private volatile ActorRef clientActorRef;
 
-    private TdMediaRepository() {}
+    private TdMediaRepository() {
+        this.pathCache = new LruCache<>(2048);
+    }
 
     public void bindClient(ActorRef clientActorRef) {
         this.clientActorRef = clientActorRef;
@@ -51,29 +53,14 @@ public final class TdMediaRepository {
         }
     }
 
-    private NativeLru pathCache() {
-        App app = App.getApplication();
-        if (app != null) return app.getMediaPathCache();
-
-        NativeLru c = fallbackCache;
-        if (c != null) return c;
-        synchronized (nativeCacheLock) {
-            if (fallbackCache == null) fallbackCache = new NativeLru(2048);
-            return fallbackCache;
-        }
-    }
-
     @Nullable
     public String getCachedPath(int fileId) {
         if (fileId == 0) return null;
 
-        Object v;
-        synchronized (nativeCacheLock) {
-            v = pathCache().get((long) fileId);
-        }
+        String cached = pathCache.get(fileId);
 
-        if (v instanceof String s && !TextUtils.isEmpty(s)) {
-            return s;
+        if(!TextUtils.isEmpty(cached)){
+            return cached;
         }
         return null;
     }
@@ -115,9 +102,7 @@ public final class TdMediaRepository {
 
     private void finish(int fileId, @Nullable String path) {
         if (!TextUtils.isEmpty(path)) {
-            synchronized (nativeCacheLock) {
-                pathCache().put((long) fileId, path);
-            }
+            pathCache.put(fileId, path);
         }
 
         inFlight.remove(fileId);
