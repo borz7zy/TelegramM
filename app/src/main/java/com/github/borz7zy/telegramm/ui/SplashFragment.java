@@ -1,7 +1,5 @@
 package com.github.borz7zy.telegramm.ui;
 
-import static androidx.navigation.Navigation.findNavController;
-
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -9,39 +7,37 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.LiveData;
 import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
 
-import com.github.borz7zy.telegramm.App;
+import com.github.borz7zy.telegramm.AppManager;
 import com.github.borz7zy.telegramm.R;
-import com.github.borz7zy.telegramm.actor.AbstractActor;
-import com.github.borz7zy.telegramm.actor.ActorRef;
-import com.github.borz7zy.telegramm.actor.Props;
-import com.github.borz7zy.telegramm.core.StopActor;
-import com.github.borz7zy.telegramm.core.TdMessages;
+import com.github.borz7zy.telegramm.core.accounts.AccountEntity;
+import com.github.borz7zy.telegramm.core.accounts.AccountManager;
+import com.github.borz7zy.telegramm.core.accounts.AccountSession;
+import com.github.borz7zy.telegramm.core.accounts.AccountStorage;
+import com.github.borz7zy.telegramm.core.settings.SettingsEntity;
 
 import org.drinkless.tdlib.TdApi;
 
-import java.util.UUID;
+import java.util.List;
 
 public class SplashFragment extends Fragment {
 
     private TextView splashText;
-    private ActorRef uiActorRef;
-    private ActorRef clientActorRef;
-
-    private static final int TIMEOUT_SECONDS = 5;
-    private static final int MAX_ATTEMPTS = 5;
-    private int attemptCount = 0;
 
     private boolean isAnimationDone = false;
     private TdApi.AuthorizationState pendingState = null;
 
+    private LiveData<TdApi.AuthorizationState> currentAuthLiveData;
+
+    private boolean navigated = false;
+
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
-    private Runnable timeoutRunnable;
     private Runnable blinkingRunnable;
 
     @Override
@@ -57,12 +53,9 @@ public class SplashFragment extends Fragment {
 
         startTypewriterEffect();
 
-        uiActorRef = App.getApplication().getActorSystem().actorOf(
-                "splash-" + UUID.randomUUID(),
-                Props.of(UiActor::new).dispatcher("ui")
-        );
+        checkAndCreateFirstAccountIfNeeded();
 
-        tryConnectToTdLib();
+        observeActiveAccount();
     }
 
     private void startTypewriterEffect() {
@@ -73,19 +66,19 @@ public class SplashFragment extends Fragment {
         long charDelay = totalDuration / fullText.length();
 
         new Runnable() {
-            int index = 0;
+            int c = 0;
             StringBuilder currentText = new StringBuilder();
 
             @Override
             public void run() {
                 if (getContext() == null) return;
 
-                if (index < fullText.length()) {
-                    currentText.append(fullText.charAt(index));
+                if (c < fullText.length()) {
+                    currentText.append(fullText.charAt(c));
 
                     splashText.setText(currentText.toString() + "|");
 
-                    index++;
+                    ++c;
                     mainHandler.postDelayed(this, charDelay);
                 } else {
                     isAnimationDone = true;
@@ -95,6 +88,80 @@ public class SplashFragment extends Fragment {
                 }
             }
         }.run();
+    }
+
+    private void checkAndCreateFirstAccountIfNeeded() {
+        AppManager.getInstance().getExecutorDb().execute(() -> {
+            SettingsEntity settings = AppManager.getInstance()
+                    .getAppDatabase()
+                    .settingsDao()
+                    .getSettings();
+
+            if (settings != null && settings.currentActiveId != null) {
+                // Уже есть активный аккаунт → ничего не делаем
+                return;
+            }
+
+            // Проверяем, есть ли хоть какие-то аккаунты
+            List<AccountEntity> accounts = AppManager.getInstance()
+                    .getAppDatabase()
+                    .accountDao()
+                    .getAllAccounts();
+
+            Integer activeId = null;
+
+            if (!accounts.isEmpty()) {
+                // Есть аккаунты, но не выбран активный → берём первый
+                activeId = accounts.get(0).getAccountId();
+            } else {
+                // Совсем нет аккаунтов → создаём новый
+                AccountEntity newAccount = new AccountEntity(null, 0L, "New User", "");
+                AppManager.getInstance().getAppDatabase().accountDao().insert(newAccount);
+                // После вставки accountId уже сгенерирован
+                activeId = newAccount.getAccountId();
+            }
+
+            if (activeId != null) {
+                AccountStorage.getInstance().setCurrentActive(activeId);
+            }
+
+            // После этого LiveData в AuthPhoneFragment и SplashFragment увидит аккаунт
+        });
+    }
+
+    private void observeActiveAccount(){
+
+        AccountStorage.getInstance()
+                .observeActiveAccount()
+                .observe(getViewLifecycleOwner(), account -> {
+
+                    if(account == null){
+                        pendingState = new TdApi.AuthorizationStateWaitPhoneNumber();
+                        checkAndNavigate();
+                        return;
+                    }
+
+                    AccountSession session =
+                            AccountManager.getInstance()
+                                    .getOrCreateSession(account);
+
+                    observeSession(session);
+                });
+    }
+
+    private void observeSession(AccountSession session){
+
+        if(currentAuthLiveData != null){
+            currentAuthLiveData.removeObservers(getViewLifecycleOwner());
+        }
+
+        currentAuthLiveData = session.observeAuthState();
+
+        currentAuthLiveData.observe(getViewLifecycleOwner(), state -> {
+
+            pendingState = state;
+            checkAndNavigate();
+        });
     }
 
     private void startBlinkingCursor(String text) {
@@ -118,40 +185,15 @@ public class SplashFragment extends Fragment {
         mainHandler.postDelayed(blinkingRunnable, 500);
     }
 
-    private void tryConnectToTdLib() {
-        if (pendingState != null) return;
-
-        attemptCount++;
-        if (attemptCount > MAX_ATTEMPTS) {
-            Toast.makeText(getContext(), "Ошибка инициализации ядра Telegram", Toast.LENGTH_LONG).show();
-            mainHandler.postDelayed(() -> {
-                if (getActivity() != null) getActivity().finish();
-            }, 2000);
-            return;
-        }
-
-        App.getApplication().getAccountManager()
-                .tell(new TdMessages.GetAccount(0), uiActorRef);
-
-        timeoutRunnable = () -> {
-            if (pendingState == null) {
-                tryConnectToTdLib();
-            }
-        };
-        mainHandler.postDelayed(timeoutRunnable, TIMEOUT_SECONDS * 1000);
-    }
-
-    private void checkAndNavigate() {
-        if (isAnimationDone && pendingState != null) {
-
-            if (blinkingRunnable != null) mainHandler.removeCallbacks(blinkingRunnable);
-            if (timeoutRunnable != null) mainHandler.removeCallbacks(timeoutRunnable);
-
-            NavController nav = findNavController(requireView());
-
-            if (pendingState instanceof TdApi.AuthorizationStateReady) {
+    private void checkAndNavigate(){
+        if(navigated) return;
+        if(isAnimationDone && pendingState != null){
+            navigated = true;
+            NavController nav =
+                    Navigation.findNavController(requireView());
+            if (pendingState instanceof TdApi.AuthorizationStateReady){
                 nav.navigate(R.id.action_splashFragment_to_mainFragment);
-            } else {
+            }else{
                 nav.navigate(R.id.action_splashFragment_to_authPhoneFragment);
             }
         }
@@ -161,31 +203,5 @@ public class SplashFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         mainHandler.removeCallbacksAndMessages(null);
-
-        if (clientActorRef != null && uiActorRef != null) {
-            clientActorRef.tell(new TdMessages.Unsubscribe(uiActorRef));
-        }
-        if (uiActorRef != null) {
-            uiActorRef.tell(new StopActor());
-        }
-    }
-
-    private class UiActor extends AbstractActor {
-        @Override
-        public void onReceive(Object message) {
-            if (message instanceof StopActor) {
-                context().stop(self());
-                return;
-            }
-            else if (message instanceof ActorRef) {
-                clientActorRef = (ActorRef) message;
-                clientActorRef.tell(new TdMessages.Subscribe(self()));
-            }
-            else if (message instanceof TdMessages.AuthStateChanged) {
-                pendingState = ((TdMessages.AuthStateChanged) message).state;
-
-                checkAndNavigate();
-            }
-        }
     }
 }

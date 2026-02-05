@@ -14,7 +14,6 @@ public class AccountManager {
     private static AccountManager INSTANCE;
 
     private final ConcurrentHashMap<Integer, AccountSession> sessions = new ConcurrentHashMap<>();
-    private volatile AccountSession activeSession;
 
     public static synchronized AccountManager getInstance(){
         if(INSTANCE == null)
@@ -25,41 +24,7 @@ public class AccountManager {
 
     private AccountManager(){}
 
-    public void initialize(){
-        AccountStorage.getInstance().getAllAccounts(new AccountCallback() {
-            @Override
-            public void onAccountsLoaded(List<AccountEntity> accounts) {
-                initAccountsInTdLib(accounts);
-            }
-        });
-    }
-
-    private void initAccountsInTdLib(List<AccountEntity> accounts){
-        if(accounts.isEmpty() || accounts == null){
-            return;
-        }
-
-        for(AccountEntity account : accounts){
-            if (sessions.containsKey(account.getAccountId())) {
-                continue;
-            }
-
-            AccountSession session =
-                    new AccountSession(AppManager.getInstance()
-                            .getContext().getApplicationContext(), account);
-            sessions.put(account.getAccountId(), session);
-
-        }
-    }
-
     public void switchAccount(int accountId){
-
-        AccountSession session = sessions.get(accountId);
-
-        if(session == null) return;
-
-        activeSession = session;
-
         AccountStorage.getInstance().setCurrentActive(accountId);
     }
 
@@ -71,7 +36,13 @@ public class AccountManager {
         return sessions.get(accountId);
     }
 
-    public AccountSession getActiveSession() {
-        return activeSession;
+    public AccountSession getOrCreateSession(AccountEntity account){
+        return sessions.computeIfAbsent(
+                account.getAccountId(),
+                id -> new AccountSession(
+                        AppManager.getInstance().getContext(),
+                        account
+                )
+        );
     }
 }

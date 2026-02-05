@@ -14,7 +14,7 @@ import java.util.List;
 @Dao
 public interface AccountDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    void insert(AccountEntity account);
+    long insert(AccountEntity account);
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertAll(List<AccountEntity> accounts);

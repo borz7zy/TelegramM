@@ -19,12 +19,16 @@ public class App extends Application {
     private ActorSystem system;
     private ActorRef accountManager;
 
-    private static App INSTANCE;
+    private static App INSTANCE = null;
 
     @Override
     public void onCreate() {
         super.onCreate();
-        INSTANCE = this;
+
+        if(INSTANCE == null)
+            INSTANCE = this;
+
+        AppManager.init(this);
 
         try {
             Client.execute(new TdApi.SetLogVerbosityLevel(1));

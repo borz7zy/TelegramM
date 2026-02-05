@@ -43,9 +43,9 @@ public class AppManager {
         this.db = AppDatabase.getDatabase(App.getApplication().getApplicationContext());
     }
 
-    private void startAppLogic(){
-        AccountManager.getInstance().initialize();
-    }
+//    private void startAppLogic(){
+//        AccountManager.getInstance().initialize();
+//    }
 
     // --------------------
     // Getters/Setters
