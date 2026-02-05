@@ -1,6 +1,7 @@
 package com.github.borz7zy.telegramm.core.accounts;
 
 
+import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
@@ -36,4 +37,11 @@ public interface AccountDao {
     @Query("DELETE FROM accounts WHERE account_id = :id")
     void deleteById(int id);
 
+    @Query("""
+    SELECT a.*
+    FROM accounts a
+    JOIN app_settings s ON s.current_active_id = a.account_id
+    WHERE s.id = 1
+    """)
+    LiveData<AccountEntity> observeActiveAccount();
 }

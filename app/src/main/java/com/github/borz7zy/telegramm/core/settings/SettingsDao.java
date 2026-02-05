@@ -1,5 +1,6 @@
 package com.github.borz7zy.telegramm.core.settings;
 
+import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
@@ -16,4 +17,7 @@ public interface SettingsDao {
 
     @Query("UPDATE app_settings SET current_active_id = :accountId WHERE id = 1")
     void setCurrentActiveId(int accountId);
+
+    @Query("SELECT * FROM app_settings WHERE id = 1 LIMIT 1")
+    LiveData<SettingsEntity> observeSettings();
 }

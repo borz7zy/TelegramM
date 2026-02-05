@@ -1,5 +1,7 @@
 package com.github.borz7zy.telegramm.core.accounts;
 
+import androidx.lifecycle.LiveData;
+
 import com.github.borz7zy.telegramm.AppManager;
 import com.github.borz7zy.telegramm.core.settings.SettingsDao;
 import com.github.borz7zy.telegramm.core.settings.SettingsEntity;
@@ -23,6 +25,13 @@ public class AccountStorage{
     }
 
     private AccountStorage(){}
+
+    public LiveData<AccountEntity> observeActiveAccount(){
+        return AppManager.getInstance()
+                .getAppDatabase()
+                .accountDao()
+                .observeActiveAccount();
+    }
 
     // --------------------
     // Getters/Setters
