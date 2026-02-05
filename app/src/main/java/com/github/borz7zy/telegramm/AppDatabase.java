@@ -8,10 +8,13 @@ import androidx.room.RoomDatabase;
 
 import com.github.borz7zy.telegramm.core.accounts.AccountDao;
 import com.github.borz7zy.telegramm.core.accounts.AccountEntity;
+import com.github.borz7zy.telegramm.core.settings.SettingsDao;
+import com.github.borz7zy.telegramm.core.settings.SettingsEntity;
 
-@Database(entities = {AccountEntity.class}, version = 1)
+@Database(entities = {AccountEntity.class, SettingsEntity.class}, version = 1)
 public abstract class AppDatabase extends RoomDatabase {
     public abstract AccountDao accountDao();
+    public abstract SettingsDao settingsDao();
 
     private static volatile AppDatabase INSTANCE;
 
@@ -20,7 +23,7 @@ public abstract class AppDatabase extends RoomDatabase {
             synchronized (AppDatabase.class){
                 if(INSTANCE == null){
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
-                            AppDatabase.class, "telegram_accounts_db")
+                            AppDatabase.class, "tgm_db")
                             .build();
                 }
             }
