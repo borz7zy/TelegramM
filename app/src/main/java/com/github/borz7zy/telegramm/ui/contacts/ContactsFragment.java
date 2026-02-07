@@ -2,7 +2,8 @@ package com.github.borz7zy.telegramm.ui.contacts;
 
 import android.os.Bundle;
 
-import android.util.Log;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,27 +12,33 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.github.borz7zy.telegramm.R;
-import com.github.borz7zy.telegramm.actor.AbstractActor;
-import com.github.borz7zy.telegramm.actor.ActorRef;
-import com.github.borz7zy.telegramm.core.TdMessages;
-import com.github.borz7zy.telegramm.ui.base.BaseTdFragment;
+import com.github.borz7zy.telegramm.core.accounts.AccountManager;
+import com.github.borz7zy.telegramm.core.accounts.AccountSession;
+import com.github.borz7zy.telegramm.core.accounts.AccountStorage;
+import com.github.borz7zy.telegramm.ui.base.BaseTelegramFragment;
 import com.github.borz7zy.telegramm.ui.model.ContactItem;
 import com.github.borz7zy.telegramm.ui.widget.SpringRecyclerView;
+import com.github.borz7zy.telegramm.utils.TdMediaRepository;
 
+import org.drinkless.tdlib.Client;
 import org.drinkless.tdlib.TdApi;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Random;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-public class ContactsFragment extends BaseTdFragment {
+public class ContactsFragment extends BaseTelegramFragment implements Client.ResultHandler {
     
     private ContactsAdapter adapter;
+    private SpringRecyclerView recyclerView;
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-    }
+    private final Map<Long, ContactItem> contactsMap = new ConcurrentHashMap<>();
+
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private AccountSession currentSession;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -43,102 +50,134 @@ public class ContactsFragment extends BaseTdFragment {
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        SpringRecyclerView rv = view.findViewById(R.id.recycler_contacts);
+        recyclerView = view.findViewById(R.id.recycler_contacts);
+        setupRecyclerView();
+    }
 
-        rv.setLayoutManager(new LinearLayoutManager(requireContext()));
+    private void setupRecyclerView() {
+        recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         adapter = new ContactsAdapter();
-        rv.setAdapter(adapter);
+        recyclerView.setAdapter(adapter);
 
-        adapter.setOnConctactClickListener(item->{
+        adapter.setOnConctactClickListener(item -> {
             // TODO: open profile fragment
         });
     }
 
     @Override
-    protected AbstractActor createActor() {
-        return new ContactsActor();
+    protected void onAuthStateChanged(TdApi.AuthorizationState state) {
+        if (state instanceof TdApi.AuthorizationStateReady) {
+            initializeSession();
+        }
     }
 
-    // --------------------
-    // UI ACTOR LOGIC
-    // --------------------
-    private class ContactsActor extends BaseUiActor {
+    private void initializeSession() {
+        if (currentSession != null) return;
 
-        @Override
-        protected void onReceiveMessage(Object message) {
-            if(message instanceof TdMessages.TdUpdate){
-                TdApi.Object update = ((TdMessages.TdUpdate) message).object;
-                handleUpdate(update);
+        AccountStorage.getInstance().getCurrentActive(account -> {
+            if (account == null) return;
+
+            currentSession = AccountManager.getInstance().getSession(account.getAccountId());
+
+            TdMediaRepository.get().setCurrentAccountId(account.getAccountId());
+
+            if (currentSession != null) {
+                currentSession.addUpdateHandler(this);
+
+                loadContacts();
+            }
+        });
+    }
+
+    private void loadContacts() {
+        currentSession.send(new TdApi.GetContacts(), this);
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (currentSession != null) {
+            currentSession.removeUpdateHandler(this);
+        }
+        mainHandler.removeCallbacksAndMessages(null);
+    }
+
+    @Override
+    public void onResult(TdApi.Object object) {
+        if (object instanceof TdApi.Users) {
+            TdApi.Users users = (TdApi.Users) object;
+            for (long userId : users.userIds) {
+                currentSession.send(new TdApi.GetUser(userId), this);
             }
         }
 
-        private void handleUpdate(TdApi.Object update){
-            if(update instanceof TdApi.UpdateUser){
-                TdApi.User u = ((TdApi.UpdateUser) update).user;
-                updateOrAddContact(u);
+        else if (object instanceof TdApi.User) {
+            updateUser((TdApi.User) object);
+        }
+
+        else if (object instanceof TdApi.UpdateUser) {
+            updateUser(((TdApi.UpdateUser) object).user);
+        }
+
+        else if (object instanceof TdApi.UpdateUserStatus) {
+            TdApi.UpdateUserStatus update = (TdApi.UpdateUserStatus) object;
+            if (contactsMap.containsKey(update.userId)) {
+                currentSession.send(new TdApi.GetUser(update.userId), this);
+            }
+        }
+    }
+
+    private void updateUser(TdApi.User user) {
+//        if (user.type instanceof TdApi.UserTypeDeleted) return; // SKIP 'Deleted Account'
+
+        long id = user.id;
+        String firstName = user.firstName != null ? user.firstName : "";
+        String lastName = user.lastName != null ? user.lastName : "";
+        String name = (firstName + " " + lastName).trim();
+
+        String lastOnline = getUserStatusString(user.status);
+
+        int avatarId = 0;
+        String avatarPath = null;
+
+        if (user.profilePhoto != null && user.profilePhoto.small != null) {
+            avatarId = user.profilePhoto.small.id;
+            if (user.profilePhoto.small.local != null) {
+                avatarPath = user.profilePhoto.small.local.path;
             }
         }
 
-        private void updateOrAddContact(TdApi.User user){
-            long id = user.id;
-            String name = user.firstName + (user.lastName != null ? " " + user.lastName : "");
-            String lastOnline = user.status instanceof TdApi.UserStatusOnline ? "Online" : "";
-            int avatarId = user.profilePhoto != null ? user.profilePhoto.small.id : 0;
-            String avatarPath = user.profilePhoto != null ? user.profilePhoto.small.local.path : null;
+        ContactItem item = new ContactItem(id, name, lastOnline, avatarId, avatarPath);
 
-            ContactItem item = new ContactItem(id, name, lastOnline, avatarId, avatarPath);
+        contactsMap.put(id, item);
+        refreshList();
+    }
 
-            List<ContactItem> current = new ArrayList<>(adapter.items);
-            boolean found = false;
-            for(int i = 0; i < current.size(); ++i){
-                if(current.get(i).userId == id){
-                    current.set(i, item);
-                    found = true;
-                    break;
-                }
-            }
-            if(!found) current.add(item);
-
-            adapter.submitList(current);
+    private String getUserStatusString(TdApi.UserStatus status) {
+        if (status instanceof TdApi.UserStatusOnline) {
+            return "Online";
+        } else if (status instanceof TdApi.UserStatusOffline) {
+            return "Offline";
+        } else if (status instanceof TdApi.UserStatusRecently) {
+            return "Was recently";
+        } else if(status instanceof TdApi.UserStatusEmpty) {
+            return "Was too long time";
         }
+        return "";
+    }
 
-        @Override
-        public void onReceive(Object message) {
-            super.onReceive(message);
+    private void refreshList() {
+        mainHandler.post(() -> {
+            List<ContactItem> list = new ArrayList<>(contactsMap.values());
 
-            Log.d("ContactsFragment", message.toString());
-
-            if (message instanceof ActorRef) {
-                if (clientActorRef != null) {
-                    long rand = new Random().nextLong();
-                    clientActorRef.tell(new TdMessages.SendWithId(
-                            rand,
-                            new TdApi.GetContacts(),
-                            self()
-                    ));
-                    Log.d("ContactsFragment", "Loading contacts");
+            Collections.sort(list, new Comparator<ContactItem>() {
+                @Override
+                public int compare(ContactItem o1, ContactItem o2) {
+                    return o1.name.compareToIgnoreCase(o2.name);
                 }
-            }
-            else if (message instanceof TdMessages.ResultWithId) {
-                TdApi.Object res = ((TdMessages.ResultWithId) message).result;
+            });
 
-                Log.d("ContactsFragment 3", res.toString());
-
-                if (res instanceof TdApi.Users) {
-                    TdApi.Users users = (TdApi.Users) res;
-
-                    List<ContactItem> contactList = new ArrayList<>();
-                    for (long id : users.userIds) {
-                        long rand = new Random().nextLong();
-                        clientActorRef.tell(new TdMessages.SendWithId(rand, new TdApi.GetUser(id), self()));
-                    }
-                }
-                else if (res instanceof TdApi.User) {
-                    TdApi.User user = (TdApi.User) res;
-                    updateOrAddContact(user);
-                }
-            }
-        }
-
+            adapter.submitList(list);
+        });
     }
 }
