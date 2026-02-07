@@ -25,6 +25,9 @@ public class AccountSession {
     private final MutableLiveData<TdApi.AuthorizationState> authStateLiveData =
             new MutableLiveData<>();
 
+    private final java.util.concurrent.CopyOnWriteArrayList<Client.ResultHandler> updateHandlers =
+            new java.util.concurrent.CopyOnWriteArrayList<>();
+
     public AccountSession(Context context, AccountEntity account){
         this.context = context;
         this.account = account;
@@ -62,6 +65,9 @@ public class AccountSession {
                     sendTdlibParameters();
                     break;
             }
+        }
+        for (Client.ResultHandler handler : updateHandlers) {
+            handler.onResult((TdApi.Object) update);
         }
     }
 
@@ -139,6 +145,13 @@ public class AccountSession {
         client.send(function, handler);
     }
 
+    public void addUpdateHandler(Client.ResultHandler handler) {
+        updateHandlers.add(handler);
+    }
+
+    public void removeUpdateHandler(Client.ResultHandler handler) {
+        updateHandlers.remove(handler);
+    }
 
     // --------------------
     // Getters/Setters
