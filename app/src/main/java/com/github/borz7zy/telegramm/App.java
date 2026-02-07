@@ -8,6 +8,7 @@ import com.github.borz7zy.telegramm.actor.ActorSystem;
 import com.github.borz7zy.telegramm.actor.AndroidMainExecutor;
 import com.github.borz7zy.telegramm.actor.Props;
 import com.github.borz7zy.telegramm.actors.AccountManagerActor;
+import com.github.borz7zy.telegramm.utils.Logger;
 
 import org.drinkless.tdlib.Client;
 import org.drinkless.tdlib.TdApi;
@@ -25,6 +26,8 @@ public class App extends Application {
     public void onCreate() {
         super.onCreate();
 
+        Logger.init(this);
+
         if(INSTANCE == null)
             INSTANCE = this;
 
@@ -33,7 +36,7 @@ public class App extends Application {
         try {
             Client.execute(new TdApi.SetLogVerbosityLevel(1));
         } catch (Exception e) {
-            Log.e("TdLib", "Failed to set verbosity", e);
+            Logger.LOGE("TdLib", "Failed to set verbosity", e);
         }
 
         system = ActorSystem.builder("telegram-client")

@@ -4,6 +4,7 @@ import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
+import androidx.room.Update;
 
 @Dao
 public interface SettingsDao {
@@ -14,6 +15,6 @@ public interface SettingsDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insert(SettingsEntity settings);
 
-    @Query("UPDATE app_settings SET current_active_id = :accountId WHERE id = 1")
-    void setCurrentActiveId(int accountId);
+    @Update()
+    void update(SettingsEntity settings);
 }

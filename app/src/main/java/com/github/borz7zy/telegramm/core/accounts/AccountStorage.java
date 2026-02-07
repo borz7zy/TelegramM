@@ -5,6 +5,7 @@ import androidx.lifecycle.LiveData;
 import com.github.borz7zy.telegramm.AppManager;
 import com.github.borz7zy.telegramm.core.settings.SettingsDao;
 import com.github.borz7zy.telegramm.core.settings.SettingsEntity;
+import com.github.borz7zy.telegramm.utils.Logger;
 
 import java.util.List;
 
@@ -17,7 +18,6 @@ import java.util.List;
  */
 public class AccountStorage{
     private static AccountStorage INSTANCE = null;
-
     public static synchronized AccountStorage getInstance(){
         if(INSTANCE == null)
             INSTANCE = new AccountStorage();
@@ -31,6 +31,33 @@ public class AccountStorage{
                 .getAppDatabase()
                 .accountDao()
                 .observeActiveAccount();
+    }
+
+
+    public void ensureFirstAccountExists() {
+
+        AppManager.getInstance().getExecutorDb().execute(() -> {
+
+            AccountDao dao =
+                    AppManager.getInstance()
+                            .getAppDatabase()
+                            .accountDao();
+
+            int count = dao.getAccountsCount();
+
+            if (count > 0) return;
+
+            AccountEntity newAccount = new AccountEntity(
+                    null,
+                    0L,
+                    "New Account",
+                    ""
+            );
+
+            long newId = dao.insert(newAccount);
+
+            setCurrentActive((int) newId);
+        });
     }
 
     // --------------------
@@ -80,25 +107,26 @@ public class AccountStorage{
                 });
     }
 
-    public void setCurrentActive(int accountId){
-        AppManager.getInstance()
-                .getExecutorDb()
-                .execute(() -> {
+    public void setCurrentActive(Integer id) {
+        AppManager.getInstance().getExecutorDb().execute(() -> {
 
-                    SettingsDao dao =
-                            AppManager.getInstance()
-                                    .getAppDatabase()
-                                    .settingsDao();
+            SettingsDao settingsDao = AppManager.getInstance()
+                    .getAppDatabase()
+                    .settingsDao();
 
-                    SettingsEntity settings = dao.getSettings();
+            SettingsEntity settings = settingsDao.getSettings();
 
-                    if(settings == null){
-                        settings = new SettingsEntity();
-                        settings.currentActiveId = accountId;
-                        dao.insert(settings);
-                    } else {
-                        dao.setCurrentActiveId(accountId);
-                    }
-                });
+            if (settings == null) {
+                settings = new SettingsEntity();
+                settings.id = 1;
+                settings.currentActiveId = id;
+                settingsDao.insert(settings);
+            } else {
+                settings.currentActiveId = id;
+                settingsDao.update(settings);
+            }
+
+            Logger.LOGD("AccountStorage", "Active account saved: " + id);
+        });
     }
 }

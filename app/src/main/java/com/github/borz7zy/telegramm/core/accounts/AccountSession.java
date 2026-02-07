@@ -48,15 +48,20 @@ public class AccountSession {
         return authStateLiveData;
     }
 
-    private void onUpdate(TdApi.Object object){
-        if (object instanceof TdApi.UpdateAuthorizationState) {
-            processAuthState(((TdApi.UpdateAuthorizationState) object).authorizationState);
-        } else if (object instanceof TdApi.AuthorizationState) {
-            processAuthState((TdApi.AuthorizationState) object);
-        } else if (object instanceof TdApi.Error) {
-            Log.e("AccountSession",
-                    "TDLib Error [" + account.getAccountName() + "]: "
-                            + ((TdApi.Error) object).message);
+    private void onUpdate(Object update){
+        if(update instanceof TdApi.UpdateAuthorizationState){
+
+            TdApi.AuthorizationState state =
+                    ((TdApi.UpdateAuthorizationState)update).authorizationState;
+
+            authStateLiveData.postValue(state);
+
+            switch(state.getConstructor()){
+
+                case TdApi.AuthorizationStateWaitTdlibParameters.CONSTRUCTOR:
+                    sendTdlibParameters();
+                    break;
+            }
         }
     }
 
@@ -64,7 +69,7 @@ public class AccountSession {
         lastAuthState = state;
         authStateLiveData.postValue(state);
 
-        if (state.getConstructor() == TdApi.AuthorizationStateWaitTdlibParameters.CONSTRUCTOR) {
+        if (state instanceof TdApi.AuthorizationStateWaitTdlibParameters) {
             if (!tdlibParametersSent) {
                 sendTdlibParameters();
             }
@@ -108,7 +113,7 @@ public class AccountSession {
             if (result instanceof TdApi.Ok) {
                 tdlibParametersSent = true;
             } else if (result instanceof TdApi.Error) {
-                Log.e("AccountSession", "Error installing parameters: " + ((TdApi.Error) result).message);
+                Log.e("AccountSession", "Error installing parameters: " + ((TdApi.Error) result).message + " : " + ((TdApi.Error) result).toString());
             }
         });
     }
@@ -124,6 +129,14 @@ public class AccountSession {
             }
 
         });
+    }
+
+    public void send(TdApi.Function<?> function,
+                     Client.ResultHandler handler) {
+
+        ensureClient();
+
+        client.send(function, handler);
     }
 
 

@@ -1,14 +1,11 @@
 package com.github.borz7zy.telegramm.ui.auth;
 
-import static androidx.navigation.Navigation.findNavController;
-
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
-import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
 
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,22 +13,16 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import com.github.borz7zy.telegramm.AppManager;
 import com.github.borz7zy.telegramm.R;
-import com.github.borz7zy.telegramm.core.accounts.AccountEntity;
-import com.github.borz7zy.telegramm.core.accounts.AccountManager;
-import com.github.borz7zy.telegramm.core.accounts.AccountSession;
-import com.github.borz7zy.telegramm.core.accounts.AccountStorage;
+import com.github.borz7zy.telegramm.ui.base.BaseTelegramFragment;
 
 import org.drinkless.tdlib.TdApi;
 
-public class AuthPhoneFragment extends Fragment {
+public class AuthPhoneFragment extends BaseTelegramFragment {
     private static final String TAG = "AuthPhoneFragment";
 
     private EditText phoneEdit;
     private Button nextBtn;
-    private AccountSession session;
-    private boolean creatingAccount = false;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -46,9 +37,6 @@ public class AuthPhoneFragment extends Fragment {
 
         phoneEdit = view.findViewById(R.id.phoneEdit);
         nextBtn = view.findViewById(R.id.nextBtn);
-        NavController navController = findNavController(view);
-
-        observeActiveAccount(navController);
 
         nextBtn.setOnClickListener(v -> {
             String phone = phoneEdit.getText().toString();
@@ -66,72 +54,25 @@ public class AuthPhoneFragment extends Fragment {
         });
     }
 
-    // --------------------
-    // Observe account
-    // --------------------
-
-    private void observeActiveAccount(NavController navController){
-
-        AccountStorage.getInstance()
-                .observeActiveAccount()
-                .observe(getViewLifecycleOwner(), account -> {
-
-                    if(account == null && !creatingAccount) {
-                        creatingAccount = true;
-                        createNewAccount(navController);
-                        return;
-                    }
-
-                    session =
-                            AccountManager.getInstance()
-                                    .getOrCreateSession(account);
-                    observeAuthState(session, navController);
-                });
+    @Override
+    protected void onAuthStateChanged(TdApi.AuthorizationState state){
+        final NavController nav = Navigation.findNavController(requireView());
+        if(state instanceof TdApi.AuthorizationStateWaitCode){
+            nav.navigate(R.id.frag_phone_to_code);
+        }else if(state instanceof TdApi.AuthorizationStateWaitPassword) {
+            nav.navigate(R.id.frag_phone_to_password);
+        }else if(state instanceof TdApi.AuthorizationStateReady){
+            // TODO
+            nav.navigate(R.id.frag_phone_to_main);
+        }else{
+            // TODO
+        }
     }
 
-    private void createNewAccount(NavController navController) {
-        AppManager.getInstance().getExecutorDb().execute(() -> {
-            AccountEntity newAccount = new AccountEntity(
-                    null,
-                    0L,
-                    "New Account",
-                    ""
-            );
-
-            long newId = AppManager.getInstance().getAppDatabase().accountDao().insert(newAccount);
-            newAccount.setAccountId((int)newId);
-
-            AccountStorage.getInstance().setCurrentActive(newAccount.getAccountId());
-
-            requireActivity().runOnUiThread(() -> {
-                session = AccountManager.getInstance().getOrCreateSession(newAccount);
-                observeAuthState(session, navController);
-                Log.d(TAG, "New account created with ID: " + newAccount.getAccountId());
-            });
-        });
-    }
-
-    private void observeAuthState(AccountSession session,
-                                  NavController navController){
-        session.observeAuthState()
-                .observe(getViewLifecycleOwner(), state -> {
-                    if(state instanceof TdApi.AuthorizationStateWaitCode){
-                        if(navController.getCurrentDestination()!=null &&
-                                navController.getCurrentDestination().getId()
-                                        == R.id.authPhoneFragment){
-                            navController.navigate(R.id.frag_phone_to_code);
-                        }
-                    } else if(state instanceof TdApi.AuthorizationStateWaitPassword){
-                        // TODO
-                    } else if(state instanceof TdApi.AuthorizationStateReady){
-                        updateAccountWithMe(session);
-//                         navController.navigate(R.id.action_authPhoneFragment_to_mainFragment);
-                    }
-                });
-    }
-
-    private void updateAccountWithMe(AccountSession session) {
-        TdApi.GetMe getMe = new TdApi.GetMe();
-        session.send(getMe);
+    @Override
+    protected void onAuthorized(){
+        final NavController nav = Navigation.findNavController(requireView());
+        // TODO
+        nav.navigate(R.id.frag_phone_to_main);
     }
 }

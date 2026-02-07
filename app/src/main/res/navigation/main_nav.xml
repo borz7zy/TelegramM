@@ -23,8 +23,17 @@
             app:popUpToInclusive="true" />
 
         <action
-            android:id="@+id/action_authPhoneFragment_to_authPasswordFragment2"
+            android:id="@+id/frag_phone_to_password"
             app:destination="@id/authPasswordFragment"
+            app:popUpTo="@id/authPhoneFragment"
+            app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/frag_phone_to_main"
+            app:destination="@id/mainFragment"
+            app:enterAnim="@anim/nav_enter"
+            app:exitAnim="@anim/nav_exit"
+            app:popEnterAnim="@android:anim/fade_in"
+            app:popExitAnim="@android:anim/fade_out"
             app:popUpTo="@id/authPhoneFragment"
             app:popUpToInclusive="true" />
 
@@ -36,7 +45,7 @@
         android:label="fragment_auth_code"
         tools:layout="@layout/fragment_auth_code" >
         <action
-            android:id="@+id/action_authCodeFragment_to_authPasswordFragment"
+            android:id="@+id/frag_code_to_password"
             app:destination="@id/authPasswordFragment"
             app:enterAnim="@anim/nav_enter"
             app:exitAnim="@anim/nav_exit"
@@ -45,7 +54,7 @@
             app:popUpTo="@id/authCodeFragment"
             app:popUpToInclusive="true" />
         <action
-            android:id="@+id/action_authCodeFragment_to_mainFragment"
+            android:id="@+id/frag_code_to_main"
             app:destination="@id/mainFragment"
             app:enterAnim="@anim/nav_enter"
             app:exitAnim="@anim/nav_exit"
@@ -61,7 +70,7 @@
         android:label="fragment_auth_password"
         tools:layout="@layout/fragment_auth_password" >
         <action
-            android:id="@+id/action_authPasswordFragment_to_mainFragment"
+            android:id="@+id/frag_pass_to_main"
             app:destination="@id/mainFragment"
             app:enterAnim="@anim/nav_enter"
             app:exitAnim="@anim/nav_exit"
@@ -110,7 +119,7 @@
             app:popUpTo="@id/splashFragment"
             app:popUpToInclusive="true" />
         <action
-            android:id="@+id/action_splashFragment_to_mainFragment"
+            android:id="@+id/frag_splash_to_main"
             app:destination="@id/mainFragment"
             app:enterAnim="@anim/nav_enter"
             app:exitAnim="@anim/nav_exit"
