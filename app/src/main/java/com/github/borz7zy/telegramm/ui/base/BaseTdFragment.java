@@ -59,7 +59,7 @@ public abstract class BaseTdFragment extends Fragment {
 
             if (message instanceof ActorRef) {
                 clientActorRef = (ActorRef) message;
-                TdMediaRepository.get().bindClient(clientActorRef);
+//                TdMediaRepository.get().bindClient(clientActorRef);
                 clientActorRef.tell(new TdMessages.Subscribe(self()));
             }
             else if (message instanceof TdMessages.TdError) {

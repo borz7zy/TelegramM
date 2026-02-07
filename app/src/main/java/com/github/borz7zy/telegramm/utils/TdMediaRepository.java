@@ -1,28 +1,21 @@
 package com.github.borz7zy.telegramm.utils;
 
+import android.os.Handler;
+import android.os.Looper;
 import android.text.TextUtils;
 import android.util.LruCache;
 
 import androidx.annotation.Nullable;
 
-import com.github.borz7zy.telegramm.App;
-import com.github.borz7zy.telegramm.actor.AbstractActor;
-import com.github.borz7zy.telegramm.actor.ActorRef;
-import com.github.borz7zy.telegramm.actor.Props;
-import com.github.borz7zy.telegramm.background.AsyncTask;
-import com.github.borz7zy.telegramm.core.StopActor;
-import com.github.borz7zy.telegramm.core.TdMessages;
+import com.github.borz7zy.telegramm.core.accounts.AccountManager;
+import com.github.borz7zy.telegramm.core.accounts.AccountSession;
 
+import org.drinkless.tdlib.Client;
 import org.drinkless.tdlib.TdApi;
 
 import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 public final class TdMediaRepository {
@@ -34,23 +27,17 @@ public final class TdMediaRepository {
 
     private final ConcurrentHashMap<Integer, CopyOnWriteArrayList<Consumer<String>>> callbacks = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Integer, Boolean> inFlight = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<Integer, Boolean> waitingForClient = new ConcurrentHashMap<>();
 
-    private final AtomicLong seq = new AtomicLong(1);
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
-    private volatile ActorRef clientActorRef;
+    private volatile int currentAccountId = -1;
 
     private TdMediaRepository() {
         this.pathCache = new LruCache<>(2048);
     }
 
-    public void bindClient(ActorRef clientActorRef) {
-        this.clientActorRef = clientActorRef;
-
-        for (Integer fileId : waitingForClient.keySet()) {
-            waitingForClient.remove(fileId);
-            startDownloadIfNeeded(fileId, 1);
-        }
+    public void setCurrentAccountId(int accountId) {
+        this.currentAccountId = accountId;
     }
 
     @Nullable
@@ -77,13 +64,13 @@ public final class TdMediaRepository {
             return;
         }
 
-        callbacks.computeIfAbsent(fileId, k -> new CopyOnWriteArrayList<>()).add(onReady);
-
-        ActorRef client = clientActorRef;
-        if (client == null) {
-            waitingForClient.put(fileId, true);
-            return;
-        }
+        callbacks.compute(fileId, (id, list)->{
+            if(list == null){
+                list = new CopyOnWriteArrayList<>();
+            }
+            list.add(onReady);
+            return list;
+        });
 
         startDownloadIfNeeded(fileId, 1);
     }
@@ -91,13 +78,34 @@ public final class TdMediaRepository {
     private void startDownloadIfNeeded(int fileId, int priority) {
         if (inFlight.putIfAbsent(fileId, true) != null) return;
 
-        ActorRef client = clientActorRef;
-        if (client == null) {
-            waitingForClient.put(fileId, true);
+        AccountSession session = AccountManager.getInstance().getSession(currentAccountId);
+
+        if (session == null) {
+            Logger.LOGD("TdMediaRepository", "No active session for accountId: " + currentAccountId);
+            finish(fileId, null);
             return;
         }
 
-        new DownloadFileTask(client, fileId, priority).execPool();
+        TdApi.DownloadFile request = new TdApi.DownloadFile(fileId, priority, 0, 0, true);
+
+        session.send(request, new Client.ResultHandler() {
+            @Override
+            public void onResult(TdApi.Object object) {
+                String path = null;
+
+                if (object instanceof TdApi.File) {
+                    TdApi.File file = (TdApi.File) object;
+                    if (file.local != null && file.local.isDownloadingCompleted) {
+                        path = file.local.path;
+                    }
+                } else if (object instanceof TdApi.Error) {
+                    Logger.LOGD("TdMediaRepository", "Download error: " + ((TdApi.Error) object).message);
+                }
+
+                final String finalPath = path;
+                mainHandler.post(() -> finish(fileId, finalPath));
+            }
+        });
     }
 
     private void finish(int fileId, @Nullable String path) {
@@ -107,85 +115,10 @@ public final class TdMediaRepository {
 
         inFlight.remove(fileId);
 
-        List<Consumer<String>> list = callbacks.remove(fileId);
-        if (list != null) {
-            for (Consumer<String> cb : list) cb.accept(path);
-        }
-    }
-
-    // --------------------
-    // AsyncTask: download via tdlib (DownloadFile synchronous=true)
-    // --------------------
-    private final class DownloadFileTask extends AsyncTask<Void, Void, String> {
-        private final ActorRef client;
-        private final int fileId;
-        private final int priority;
-
-        DownloadFileTask(ActorRef client, int fileId, int priority) {
-            this.client = client;
-            this.fileId = fileId;
-            this.priority = priority;
-        }
-
-        @Override
-        protected String doInBackground(Void... params) throws Throwable {
-            BlockingQueue<TdApi.Object> q = new ArrayBlockingQueue<>(1);
-
-            ActorRef replyActor = App.getApplication().getActorSystem().actorOf(
-                    "td-reply-" + fileId + "-" + UUID.randomUUID(),
-                    Props.of(() -> new OneShotReplyActor(q)).dispatcher("ui")
-            );
-
-            long requestId = seq.getAndIncrement();
-
-            TdApi.DownloadFile fn = new TdApi.DownloadFile(fileId, priority, 0, 0, true);
-            client.tell(new TdMessages.SendWithId(requestId, fn, replyActor));
-
-            TdApi.Object res = q.poll(60, TimeUnit.SECONDS);
-            replyActor.tell(new StopActor());
-
-            if (res instanceof TdApi.File f) {
-                if (f.local != null && f.local.isDownloadingCompleted && !TextUtils.isEmpty(f.local.path)) {
-                    return f.local.path;
-                }
-                return (f.local != null) ? f.local.path : null;
-            }
-
-            return null; // Error/timeout
-        }
-
-        @Override
-        protected void onPostExecute(String path) {
-            finish(fileId, path);
-        }
-
-        @Override
-        protected void onError(Throwable t) {
-            finish(fileId, null);
-        }
-
-        @Override
-        protected void onCanceled(String result) {
-            finish(fileId, null);
-        }
-    }
-
-    private static final class OneShotReplyActor extends AbstractActor {
-        private final BlockingQueue<TdApi.Object> queue;
-
-        OneShotReplyActor(BlockingQueue<TdApi.Object> queue) {
-            this.queue = queue;
-        }
-
-        @Override
-        public void onReceive(Object message) {
-            if (message instanceof StopActor) {
-                context().stop(self());
-                return;
-            }
-            if (message instanceof TdMessages.ResultWithId r) {
-                queue.offer(r.result);
-                context().stop(self());
+        List<Consumer<String>> waitingCallbacks = callbacks.remove(fileId);
+        if (waitingCallbacks != null) {
+            for (Consumer<String> callback : waitingCallbacks) {
+                callback.accept(path);
             }
         }
     }
