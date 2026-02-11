@@ -1,61 +1,55 @@
-package com.github.borz7zy.telegramm.ui.auth;
+package com.github.borz7zy.telegramm.ui.auth
 
-import android.os.Bundle;
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Button
+import android.widget.EditText
+import androidx.navigation.Navigation.findNavController
+import com.github.borz7zy.telegramm.R
+import com.github.borz7zy.telegramm.ui.base.BaseTelegramFragment
+import org.drinkless.tdlib.TdApi.AuthorizationState
+import org.drinkless.tdlib.TdApi.AuthorizationStateReady
+import org.drinkless.tdlib.TdApi.AuthorizationStateWaitPassword
+import org.drinkless.tdlib.TdApi.CheckAuthenticationCode
 
-import androidx.annotation.NonNull;
-import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
-
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.EditText;
-
-import com.github.borz7zy.telegramm.R;
-import com.github.borz7zy.telegramm.ui.base.BaseTelegramFragment;
-
-import org.drinkless.tdlib.TdApi;
-
-public class AuthCodeFragment extends BaseTelegramFragment {
-
-    private EditText codeEdit;
-    private Button nextBtn;
+class AuthCodeFragment : BaseTelegramFragment() {
+    private var codeEdit: EditText? = null
+    private var nextBtn: Button? = null
 
 
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_auth_code, container, false);
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        return inflater.inflate(R.layout.fragment_auth_code, container, false)
     }
 
-    @Override
-    public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
-        codeEdit = view.findViewById(R.id.codeEdit);
-        nextBtn = view.findViewById(R.id.nextBtn);
+        codeEdit = view.findViewById<EditText>(R.id.codeEdit)
+        nextBtn = view.findViewById<Button>(R.id.nextBtn)
 
-        nextBtn.setOnClickListener(v -> {
-            final String phone = codeEdit.getText().toString();
-            session.send(new TdApi.CheckAuthenticationCode(phone));
-        });
+        nextBtn!!.setOnClickListener(View.OnClickListener { v: View? ->
+            val phone = codeEdit!!.getText().toString()
+            session.send(CheckAuthenticationCode(phone))
+        })
     }
 
-    @Override
-    protected void onAuthStateChanged(TdApi.AuthorizationState state){
-        final NavController nav = Navigation.findNavController(requireView());
-        if(state instanceof TdApi.AuthorizationStateWaitPassword){
-            nav.navigate(R.id.frag_code_to_password);
-        }else if(state instanceof TdApi.AuthorizationStateReady){
-            nav.navigate(R.id.frag_code_to_password);
-        }else{
+    override fun onAuthStateChanged(state: AuthorizationState?) {
+        val nav = findNavController(requireView())
+        if (state is AuthorizationStateWaitPassword) {
+            nav.navigate(R.id.frag_code_to_password)
+        } else if (state is AuthorizationStateReady) {
+            nav.navigate(R.id.frag_code_to_password)
+        } else {
             // TODO
         }
     }
 
-    @Override
-    public void onDestroyView(){
-        super.onDestroyView();
+    override fun onDestroyView() {
+        super.onDestroyView()
     }
 }
