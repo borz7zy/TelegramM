@@ -16,14 +16,13 @@ import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.resource.bitmap.CenterCrop;
-import com.bumptech.glide.load.resource.bitmap.RoundedCorners;
 import com.bumptech.glide.request.RequestOptions;
 import com.github.borz7zy.telegramm.R;
 import com.github.borz7zy.telegramm.ui.model.MessageItem;
 import com.github.borz7zy.telegramm.ui.model.PhotoData;
 import com.github.borz7zy.telegramm.ui.model.SystemMessages;
 import com.github.borz7zy.telegramm.ui.widget.JustifiedLayout;
+import com.github.borz7zy.telegramm.utils.RoundedOutlineProvider;
 import com.github.borz7zy.telegramm.utils.TdMediaRepository;
 
 import java.util.Arrays;
@@ -41,6 +40,8 @@ public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewH
     public static final int PAYLOAD_MEDIA = 2;
     public static final int PAYLOAD_STATUS = 4;
     public static final int PAYLOAD_BUTTONS = 8;
+
+    private static final int MAX_PHOTO_POOL = 10;
 
     public interface OnBtnClickListener {
         void onBtnClick(MessageItem item, UiContent.UiButton btn);
@@ -283,8 +284,6 @@ public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewH
     }
 
     private void bindImages(JustifiedLayout layout, List<PhotoData> photos) {
-        layout.removeAllViews();
-
         if (photos == null || photos.isEmpty()) {
             layout.setVisibility(View.GONE);
             return;
@@ -292,84 +291,126 @@ public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewH
 
         layout.setVisibility(View.VISIBLE);
 
-        int screenWidth = layout.getResources().getDisplayMetrics().widthPixels;
-        int bubbleWidth = (int) (screenWidth * 0.80f);
+        final int screenWidth = layout.getResources().getDisplayMetrics().widthPixels;
+        final int bubbleWidth = (int) (screenWidth * 0.80f);
 
         ViewGroup.LayoutParams params = layout.getLayoutParams();
-        params.width = bubbleWidth;
-        layout.setLayoutParams(params);
-
-        int photoCount = photos.size();
-
-        if (photoCount == 1) {
-            layout.setTargetRowHeightPx(bubbleWidth);
-            layout.setRowHeightBoundsPx(dp(layout, 100), dp(layout, 450));
-            layout.setJustifyLastRow(false);
-        } else {
-            layout.setTargetRowHeightPx(dp(layout, 120));
-            layout.setRowHeightBoundsPx(dp(layout, 80), dp(layout, 200));
-            layout.setJustifyLastRow(true);
+        if (params.width != bubbleWidth) {
+            params.width = bubbleWidth;
+            layout.setLayoutParams(params);
         }
 
-        layout.setSpacingPx(dp(layout, 2));
+        final int photoCount = photos.size();
 
-        final int radius = dp(layout, 10);
+        int targetHeight = (photoCount == 1)
+                ? bubbleWidth
+                : dp(layout, 120);
 
-        for (PhotoData photo : photos) {
+        if (layout.getTag(R.id.tag_layout_mode) == null ||
+                (int)layout.getTag(R.id.tag_layout_mode) != targetHeight) {
+
+            layout.setTag(R.id.tag_layout_mode, targetHeight);
+
+            if (photoCount == 1) {
+                layout.setTargetRowHeightPx(bubbleWidth);
+                layout.setRowHeightBoundsPx(dp(layout, 100), dp(layout, 450));
+                layout.setJustifyLastRow(false);
+            } else {
+                layout.setTargetRowHeightPx(dp(layout, 120));
+                layout.setRowHeightBoundsPx(dp(layout, 80), dp(layout, 200));
+                layout.setJustifyLastRow(true);
+            }
+
+            layout.setSpacingPx(dp(layout,2));
+        }
+
+        while (layout.getChildCount() < MAX_PHOTO_POOL) {
             ImageView iv = new ImageView(layout.getContext());
             iv.setScaleType(ImageView.ScaleType.CENTER_CROP);
 
-            JustifiedLayout.LayoutParams lp = new JustifiedLayout.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-            );
-            lp.aspectRatio = photo.aspectRatio;
-            iv.setLayoutParams(lp);
+            iv.setClipToOutline(true);
+            iv.setOutlineProvider(new RoundedOutlineProvider(dp(layout,10)));
+
             layout.addView(iv);
+        }
+
+        for (int i = 0; i < MAX_PHOTO_POOL; ++i) {
+
+            ImageView iv = (ImageView) layout.getChildAt(i);
+
+            if (i >= photoCount) {
+                iv.setVisibility(View.GONE);
+                continue;
+            }
+
+            iv.setVisibility(View.VISIBLE);
+
+            PhotoData photo = photos.get(i);
 
             final int fid = photo.fileId;
             final int w = photo.width;
             final int h = photo.height;
+
+            JustifiedLayout.LayoutParams lp =
+                    (JustifiedLayout.LayoutParams) iv.getLayoutParams();
+
+            if (lp == null) {
+                lp = new JustifiedLayout.LayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT);
+            }
+
+            if (Math.abs(lp.aspectRatio - photo.aspectRatio) > 0.01f) {
+                lp.aspectRatio = photo.aspectRatio;
+                iv.setLayoutParams(lp);
+            }
+
+            int oldFid = getTagId(iv);
+
+            if (oldFid == fid) {
+                continue;
+            }
 
             iv.setTag(fid);
 
             Glide.with(iv).clear(iv);
 
             String path = photo.localPath;
-            if(TextUtils.isEmpty(path) && fid != 0){
-                String cached2 = TdMediaRepository.get().getCachedPath(fid);
-                if(!TextUtils.isEmpty(cached2)) path = cached2;
+            if (TextUtils.isEmpty(path) && fid != 0) {
+                path = TdMediaRepository.get().getCachedPath(fid);
             }
-            if (TextUtils.isEmpty(path)) {
+
+            if (!TextUtils.isEmpty(path)) {
+                loadGlideImage(iv, path);
+            } else if (fid != 0) {
+
                 iv.setImageResource(R.drawable.bg_msg_bubble);
 
-                if (fid != 0) {
-                    TdMediaRepository.get().getPathOrRequest(fid, p -> {
-                        Object tag = iv.getTag();
-                        if (!(tag instanceof Integer) || ((Integer) tag) != fid) return;
-                        if (TextUtils.isEmpty(p)) return;
+                TdMediaRepository.get().getPathOrRequest(fid, p -> {
 
-                        Glide.with(iv)
-                                .load(p)
-                                .apply(new RequestOptions()
-                                        .transform(new CenterCrop(), new RoundedCorners(radius)))
-                                .placeholder(R.drawable.bg_msg_bubble)
-                                .override(w, h)
-                                .into(iv);
-                    });
-                }
+                    if (getTagId(iv) != fid) return;
+                    if (TextUtils.isEmpty(p)) return;
 
-                continue;
+                    loadGlideImage(iv, p);
+                });
             }
-
-            Glide.with(iv)
-                    .load(path)
-                    .apply(new RequestOptions()
-                            .transform(new CenterCrop(), new RoundedCorners(radius)))
-                    .placeholder(R.drawable.bg_msg_bubble)
-                    .override(w, h)
-                    .into(iv);
         }
+    }
+
+    private int getTagId(View v) {
+        Object tag = v.getTag();
+        return (tag instanceof Integer) ? (Integer) tag : 0;
+    }
+
+    private void loadGlideImage(ImageView iv, String path) {
+
+        Glide.with(iv)
+                .load(path)
+                .centerCrop()
+                .dontAnimate()
+                .placeholder(R.drawable.bg_msg_bubble)
+                .error(R.drawable.bg_msg_bubble)
+                .into(iv);
     }
 
     private int dp(View v, int dp) {
@@ -474,7 +515,7 @@ public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewH
                 List<UiContent.UiButton> rb = bb.get(i);
                 if (ra.size() != rb.size()) return false;
 
-                for (int j = 0; j < ra.size(); j++) {
+                for (int j = 0; j < ra.size(); ++j) {
                     UiContent.UiButton ba = ra.get(j);
                     UiContent.UiButton bb2 = rb.get(j);
 
@@ -510,14 +551,20 @@ public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewH
 
         h.avatar.setVisibility(View.VISIBLE);
 
+        int fid = chatAvatarFileId;
+        if (fid == 0){
+            h.avatar.setImageResource(R.drawable.bg_badge);
+            return;
+        }
+
+        final String tag = "msg:" + m.chatId + ":" + fid;
+
+        if (tag.equals(h.avatar.getTag()))
+            return;
+
+        h.avatar.setTag(tag);
         Glide.with(h.avatar).clear(h.avatar);
         h.avatar.setImageResource(R.drawable.bg_badge);
-
-        int fid = chatAvatarFileId;
-        if (fid == 0) return;
-
-        final String tag = "msg:" + m.chatId + ":" + fid + ":" + m.id;
-        h.avatar.setTag(tag);
 
         String cached = TdMediaRepository.get().getCachedPath(fid);
         if (!TextUtils.isEmpty(cached)) {
