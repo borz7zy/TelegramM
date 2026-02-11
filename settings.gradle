@@ -23,7 +23,6 @@ dependencyResolutionManagement {
 rootProject.name = "Telegram M"
 include ':app'
 include ':tdlib'
-include ':NativeLru'
 include ':SharedUtils'
 include ':NativeUi'
 include ':SlidingMenu'
