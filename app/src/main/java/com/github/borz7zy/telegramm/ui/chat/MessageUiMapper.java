@@ -6,35 +6,32 @@ import android.text.TextUtils;
 import androidx.annotation.Nullable;
 
 import com.github.borz7zy.telegramm.App;
+import com.github.borz7zy.telegramm.AppManager;
 import com.github.borz7zy.telegramm.R;
-import com.github.borz7zy.telegramm.actor.AbstractActor;
-import com.github.borz7zy.telegramm.actor.ActorRef;
-import com.github.borz7zy.telegramm.actor.Props;
-import com.github.borz7zy.telegramm.core.StopActor;
-import com.github.borz7zy.telegramm.core.TdMessages;
+import com.github.borz7zy.telegramm.core.accounts.AccountManager;
+import com.github.borz7zy.telegramm.core.accounts.AccountSession;
 import com.github.borz7zy.telegramm.ui.model.SystemMessages;
 import com.github.borz7zy.telegramm.utils.TdMediaRepository;
 
 import org.drinkless.tdlib.TdApi;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Deque;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.function.Consumer;
 
 public final class MessageUiMapper {
 
-    private final Context context = App.getApplication().getApplicationContext();
-    private final App app = App.getApplication();
+    private final Context context = AppManager.getInstance().getContext().getApplicationContext();
 
-    private final ActorRef uiActorRef;
+    private final long accountId;
     private final Consumer<TdApi.User> onUserLoaded;
+
+    private final Set<Long> pendingUserRequests = Collections.synchronizedSet(new HashSet<>());
 
     public interface Handler<T extends TdApi.MessageContent> {
         UiContent map(T content, long senderId);
@@ -55,13 +52,9 @@ public final class MessageUiMapper {
     }
 
     public MessageUiMapper(long accountId, UserNameProvider provider, Consumer<TdApi.User> onUserLoaded) {
+        this.accountId = accountId;
         this.userNames = (provider != null) ? provider : (id -> null);
         this.onUserLoaded = onUserLoaded;
-
-        this.uiActorRef = app.getActorSystem().actorOf(
-                "message-mapper-" + UUID.randomUUID(),
-                Props.of(() -> new UiActor(accountId)).dispatcher("ui")
-        );
 
         registerDefaults();
     }
@@ -101,7 +94,41 @@ public final class MessageUiMapper {
     }
 
     public void destroy() {
-        if (uiActorRef != null) uiActorRef.tell(new StopActor());
+        pendingUserRequests.clear();
+    }
+
+    private void requestUser(long userId) {
+        if (userId == 0) return;
+
+        if (pendingUserRequests.contains(userId)) return;
+
+        AccountSession session = null;
+        if (accountId != 0) {
+            session = AccountManager.getInstance().getSession((int)accountId);
+        } else {
+
+        }
+
+        if (session != null) {
+            pendingUserRequests.add(userId);
+            session.send(new TdApi.GetUser(userId), object -> {
+                pendingUserRequests.remove(userId);
+                if (object instanceof TdApi.User) {
+                    if (onUserLoaded != null) {
+                        onUserLoaded.accept((TdApi.User) object);
+                    }
+                }
+            });
+        }
+    }
+
+    private String getUserNameOrRequest(long userId) {
+        String name = userNames.name(userId);
+        if (TextUtils.isEmpty(name)) {
+            name = App.getApplication().getString(R.string.user);
+            requestUser(userId);
+        }
+        return name;
     }
 
     // --------------------
@@ -185,10 +212,9 @@ public final class MessageUiMapper {
             gift.stickerFileId = stickerFileId;
             gift.stickerPath = TdMediaRepository.get().getCachedPath(stickerFileId);
 
-            String senderName = userNames.name(senderId);
+            String senderName = getUserNameOrRequest(senderId);
             if (TextUtils.isEmpty(senderName)) {
                 senderName = App.getApplication().getString(R.string.user);
-                uiActorRef.tell(new TdMessages.RequestUserName(senderId));
             }
 
             int months = x.dayCount/30;
@@ -215,17 +241,14 @@ public final class MessageUiMapper {
     private String buildAddedMembersText(long[] memberUserIds) {
         if (memberUserIds == null || memberUserIds.length == 0) return "added members";
 
-        LinkedHashSet<Long> uniq = new LinkedHashSet<>();
-        for (long id : memberUserIds) uniq.add(id);
+        List<Long> uniq = new ArrayList<>();
+        for (long id : memberUserIds) {
+            if (!uniq.contains(id)) uniq.add(id);
+        }
 
         List<String> names = new ArrayList<>();
         for (long id : uniq) {
-            String n = userNames.name(id);
-            if (TextUtils.isEmpty(n)) {
-                uiActorRef.tell(new TdMessages.RequestUserName(id));
-            } else {
-                names.add(n);
-            }
+            names.add(getUserNameOrRequest(id));
         }
 
         if (names.isEmpty()) return "added " + uniq.size() + " member" + (uniq.size() == 1 ? "" : "s");
@@ -272,122 +295,6 @@ public final class MessageUiMapper {
                     uiRow.add(new UiContent.UiButton(btn.text, null, null));
                 }
                 if (!uiRow.isEmpty()) content.buttons.add(uiRow);
-            }
-        }
-    }
-
-    // --------------------
-    // INTERNAL ACTOR
-    // --------------------
-
-    private final class UiActor extends AbstractActor {
-
-        private final long accountId;
-        private ActorRef clientActorRef;
-
-        private final Set<Long> pendingUserIds = new LinkedHashSet<>();
-
-        private final Deque<TdMessages.Send> pendingClientCommands = new ArrayDeque<>();
-
-        UiActor(long accountId) {
-            this.accountId = accountId;
-        }
-
-        @Override
-        public void preStart() throws Exception {
-            super.preStart();
-            App.getApplication().getAccountManager()
-                    .tell(new TdMessages.GetAccount((int) accountId), self());
-        }
-
-        @Override
-        public void postStop() throws Exception {
-            if (clientActorRef != null) clientActorRef.tell(new TdMessages.Unsubscribe(self()));
-            super.postStop();
-        }
-
-        @Override
-        public void onReceive(Object message) throws Exception {
-            if (message instanceof StopActor) {
-                context().stop(self());
-                return;
-            }
-
-            if (message instanceof ActorRef) {
-                onClientReady((ActorRef) message);
-                return;
-            }
-
-            if (message instanceof TdMessages.RequestUserName req) {
-                requestUser(req.userId);
-                return;
-            }
-
-            if (message instanceof TdMessages.ResultWithId r) {
-                handleResult(r);
-                return;
-            }
-
-            if (message instanceof TdMessages.TdUpdate tu) {
-                handleUpdate(tu.object);
-                return;
-            }
-
-            if (message instanceof TdMessages.Send s) {
-                sendToClient(s);
-            }
-        }
-
-        private void onClientReady(ActorRef ref) {
-            clientActorRef = ref;
-            clientActorRef.tell(new TdMessages.Subscribe(self()));
-
-            while (!pendingClientCommands.isEmpty()) {
-                clientActorRef.tell(pendingClientCommands.pollFirst());
-            }
-
-            for (Long uid : pendingUserIds) {
-                clientActorRef.tell(new TdMessages.SendWithId(uid, new TdApi.GetUser(uid), self()));
-            }
-        }
-
-        private void requestUser(long uid) {
-            if (uid == 0) return;
-
-            if (!pendingUserIds.add(uid)) return;
-
-            if (clientActorRef != null) {
-                clientActorRef.tell(new TdMessages.SendWithId(uid, new TdApi.GetUser(uid), self()));
-            }
-        }
-
-        private void handleResult(TdMessages.ResultWithId r) {
-            if (r.result instanceof TdApi.User user) {
-                onUser(user);
-                return;
-            }
-            if (r.result instanceof TdApi.Error) {
-                // requestId == uid
-                pendingUserIds.remove(r.requestId);
-            }
-        }
-
-        private void handleUpdate(TdApi.Object obj) {
-            if (obj instanceof TdApi.UpdateUser uu) {
-                onUser(uu.user);
-            }
-        }
-
-        private void onUser(TdApi.User user) {
-            pendingUserIds.remove(user.id);
-            if (onUserLoaded != null) onUserLoaded.accept(user);
-        }
-
-        private void sendToClient(TdMessages.Send msg) {
-            if (clientActorRef != null) {
-                clientActorRef.tell(msg);
-            } else {
-                pendingClientCommands.addLast(msg);
             }
         }
     }

@@ -2,6 +2,8 @@ package com.github.borz7zy.telegramm.ui.chat;
 
 import android.Manifest;
 import android.app.Dialog;
+import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
@@ -10,6 +12,8 @@ import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
 import android.media.MediaMuxer;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.TextUtils;
 import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
@@ -40,19 +44,18 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.github.borz7zy.telegramm.R;
-import com.github.borz7zy.telegramm.actor.AbstractActor;
-import com.github.borz7zy.telegramm.actor.ActorRef;
-import com.github.borz7zy.telegramm.core.TdMessages;
-import com.github.borz7zy.telegramm.ui.base.BaseTdCustomSheetDialogFragment;
+import com.github.borz7zy.telegramm.core.accounts.AccountStorage;
+import com.github.borz7zy.telegramm.ui.base.BaseTelegramDialogFragment;
 import com.github.borz7zy.telegramm.ui.model.MessageItem;
 import com.github.borz7zy.telegramm.ui.model.PhotoData;
 import com.github.borz7zy.telegramm.ui.widget.EdgeSwipeDismissLayout;
 import com.github.borz7zy.telegramm.ui.widget.SpringRecyclerView;
 import com.github.borz7zy.telegramm.ui.widget.TypingDrawable;
+import com.github.borz7zy.telegramm.utils.Logger;
 import com.github.borz7zy.telegramm.utils.TdMediaRepository;
-import com.github.borz7zy.telegramm.utils.TgUtils;
 import com.masoudss.lib.WaveformSeekBar;
 
+import org.drinkless.tdlib.Client;
 import org.drinkless.tdlib.TdApi;
 
 import java.io.File;
@@ -62,34 +65,34 @@ import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import eightbitlab.com.blurview.BlurTarget;
 import eightbitlab.com.blurview.BlurView;
 
-public class ChatFragment extends BaseTdCustomSheetDialogFragment {
+public class ChatFragment extends BaseTelegramDialogFragment implements Client.ResultHandler {
 
     private static final String ARG_CHAT_ID = "chat_id";
     private static final String ARG_TITLE = "title";
     private final float BLUR_RADIUS = 20.f;
-    private static final long REQ_OPEN_CHAT = 9000L;
-    private View content;
-    private ImageView ivChatAvatar;
-
-    public static ChatFragment newInstance(long chatId, String title) {
-        ChatFragment f = new ChatFragment();
-        Bundle b = new Bundle();
-        b.putLong(ARG_CHAT_ID, chatId);
-        b.putString(ARG_TITLE, title);
-        f.setArguments(b);
-        return f;
-    }
 
     private long chatId;
     private String title;
-    private static final class UiReady {}
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private final Map<Long, MessageItem> byId = new ConcurrentHashMap<>();
+    private final Map<Long, TdApi.Message> rawMessages = new ConcurrentHashMap<>();
+    private final Map<Long, Long> albumGroups = new ConcurrentHashMap<>();
+    private final Map<Long, String> userNameCache = new ConcurrentHashMap<>();
+    private MessageUiMapper uiMapper;
+    private boolean loading = false;
+    private boolean hasMore = true;
+    private long oldestId = 0;
+    private boolean isInitialLoad = true;
+    private View content;
+    private ImageView ivChatAvatar;
     private View typingBar;
     private ImageView typingIcon;
     private TypingDrawable typingDrawable;
@@ -97,7 +100,6 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
     private SpringRecyclerView rv;
     private LinearLayoutManager lm;
     private TopLoadingAdapter topLoading;
-    private int topLoaderHeightPx;
     private MessagesAdapter adapter;
     private EditText et;
     private ImageView btnSend;
@@ -123,20 +125,25 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
 
     private boolean closing = false;
     private OnBackPressedCallback backCallback;
-    private long anchorMsgId = 0;
-    private int anchorTop = 0;
-    private boolean olderQueued = false;
-    private enum HistoryReqKind { INITIAL, OLDER, AUTO }
-    private HistoryReqKind pendingKind = HistoryReqKind.INITIAL;
-    private boolean autoFill = false;
-    private int autoFillRequests = 0;
-    private static final int AUTO_FILL_TARGET = 50;
-    private static final int AUTO_FILL_BATCH = 50;
-    private static final int AUTO_FILL_MAX_REQUESTS = 40;
+
+    public static ChatFragment newInstance(long chatId, String title) {
+        ChatFragment f = new ChatFragment();
+        Bundle b = new Bundle();
+        b.putLong(ARG_CHAT_ID, chatId);
+        b.putString(ARG_TITLE, title);
+        f.setArguments(b);
+        return f;
+    }
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         return inflater.inflate(R.layout.dialog_chat_swipe, container, false);
+    }
+
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        Logger.LOGD("ChatFragment", "onAttach");
     }
 
     @Override
@@ -155,13 +162,13 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
 
     @Override
     public void dismiss() {
-        if (closing) ChatFragment.super.dismiss();
+        if (closing) super.dismiss();
         else closeAnimated();
     }
 
     @Override
     public void dismissAllowingStateLoss() {
-        if (closing) ChatFragment.super.dismissAllowingStateLoss();
+        if (closing) super.dismissAllowingStateLoss();
         else closeAnimated();
     }
 
@@ -189,36 +196,27 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
         d.setCanceledOnTouchOutside(false);
 
         d.getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
-
-            @Override
-            public void handleOnBackStarted(@NonNull BackEventCompat e) {
+            @Override public void handleOnBackStarted(@NonNull BackEventCompat e) {
                 if (edge == null) return;
                 boolean fromLeft = (e.getSwipeEdge() == BackEventCompat.EDGE_LEFT);
                 edge.onPredictiveBackStarted();
                 edge.setPredictiveBackProgress(0f, fromLeft);
             }
-
-            @Override
-            public void handleOnBackProgressed(@NonNull BackEventCompat e) {
+            @Override public void handleOnBackProgressed(@NonNull BackEventCompat e) {
                 if (edge == null) return;
                 boolean fromLeft = (e.getSwipeEdge() == BackEventCompat.EDGE_LEFT);
                 edge.setPredictiveBackProgress(e.getProgress(), fromLeft);
             }
-
-            @Override
-            public void handleOnBackCancelled() {
+            @Override public void handleOnBackCancelled() {
                 if (edge != null) edge.onPredictiveBackCancelled();
             }
-
-            @Override
-            public void handleOnBackPressed() {
+            @Override public void handleOnBackPressed() {
                 closeAnimated();
             }
         });
 
         d.setOnKeyListener((dialog, keyCode, event) -> {
-            if (keyCode == android.view.KeyEvent.KEYCODE_BACK
-                    && event.getAction() == android.view.KeyEvent.ACTION_UP) {
+            if (keyCode == android.view.KeyEvent.KEYCODE_BACK && event.getAction() == android.view.KeyEvent.ACTION_UP) {
                 closeAnimated();
                 return true;
             }
@@ -241,12 +239,7 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
 
         typingBar = content.findViewById(R.id.typing_bottom);
         typingIcon = content.findViewById(R.id.ic_typing);
-
-        typingDrawable = new TypingDrawable(
-                requireContext(),
-                R.drawable.ic_typing_list
-        );
-
+        typingDrawable = new TypingDrawable(requireContext(), R.drawable.ic_typing_list);
         typingIcon.setImageDrawable(typingDrawable);
         typingBar.setVisibility(View.GONE);
 
@@ -272,9 +265,7 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
         btnClose.setOnClickListener(v -> closeAnimated());
 
         ivChatAvatar = findImageView(content, "chat_avatar", "iv_avatar", "avatar", "image_avatar");
-        if (ivChatAvatar != null) {
-            ivChatAvatar.setImageResource(R.drawable.bg_badge);
-        }
+        if (ivChatAvatar != null) ivChatAvatar.setImageResource(R.drawable.bg_badge);
 
         rv = content.findViewById(R.id.rv_messages);
         et = content.findViewById(R.id.et_message);
@@ -284,9 +275,7 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
         btnSend = content.findViewById(R.id.btn_send);
 
         waveRecord = content.findViewById(R.id.wave_record);
-        if (waveRecord != null) {
-            waveRecord.setOnTouchListener((v, e) -> true);
-        }
+        if (waveRecord != null) waveRecord.setOnTouchListener((v1, e) -> true);
 
         btnSend.setOnClickListener(v -> onSendClicked());
 
@@ -300,38 +289,26 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
         });
 
         btnAttach.setOnClickListener(v -> {
-            if (inputMode == InputMode.VOICE) {
-                cancelVoiceRecording();
-            } else {
-                // TODO: твоя логика “прикрепить”
-            }
+            if (inputMode == InputMode.VOICE) cancelVoiceRecording();
+            // else TODO: attach
         });
 
         btnAction.setOnClickListener(v -> {
-            if (inputMode == InputMode.VOICE) {
-                toggleVoicePause();
-            } else {
-                // TODO: твоя логика “спикер/эмодзи/что там было”
-            }
+            if (inputMode == InputMode.VOICE) toggleVoicePause();
+            // else TODO: stickers
         });
 
         topLoading = new TopLoadingAdapter();
-        topLoaderHeightPx = TgUtils.dp(48f);
         adapter = new MessagesAdapter();
         lm = new LinearLayoutManager(requireContext());
         lm.setStackFromEnd(true);
 
-        adapter.setBtnListener((item, btn) -> {
-            if (uiActorRef != null) {
-                uiActorRef.tell(new ClickButton(item.chatId, item.id, btn));
-            }
-        });
+        adapter.setBtnListener((item, btn) -> handleClick(item.chatId, item.id, btn));
 
         ConcatAdapter concat = new ConcatAdapter(
                 new ConcatAdapter.Config.Builder()
                         .setStableIdMode(ConcatAdapter.Config.StableIdMode.ISOLATED_STABLE_IDS)
-                        .setIsolateViewTypes(true)
-                        .build(),
+                        .setIsolateViewTypes(true).build(),
                 topLoading,
                 adapter
         );
@@ -345,35 +322,335 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
                 if (dy >= 0) return;
 
                 int first = lm.findFirstVisibleItemPosition();
-                int offset = topLoading.isVisible() ? 1 : 0;
+                if (first == RecyclerView.NO_POSITION) return;
 
-                if (first <= offset && !olderQueued) {
-                    olderQueued = true;
-                    recyclerView.post(() -> {
-                        olderQueued = false;
-                        if (uiActorRef != null) uiActorRef.tell(new RequestOlder());
-                    });
+                int threshold = 3 + (topLoading.isVisible() ? 1 : 0);
+
+                if (first <= threshold && !loading && hasMore) {
+                    requestOlder();
                 }
             }
         });
 
         applyInsets(view, content);
+    }
 
-        rv.post(()->{
-            if(uiActorRef != null){
-                uiActorRef.tell(new UiReady());
+    @Override
+    protected void onAuthorized() {
+        session.addUpdateHandler(this);
+
+        AccountStorage.getInstance().getCurrentActive(account -> {
+            if (account == null) return;
+
+            uiMapper = new MessageUiMapper(
+                    account.getAccountId(),
+                    userNameCache::get,
+                    this::onUserLoaded
+            );
+
+            TdMediaRepository.get().setCurrentAccountId(account.getAccountId());
+            requestInitialHistory();
+        });
+    }
+
+    private void requestInitialHistory() {
+        if (loading || session == null) return;
+        loading = true;
+        hasMore = true;
+        oldestId = 0;
+        isInitialLoad = true;
+        byId.clear();
+        rawMessages.clear();
+        albumGroups.clear();
+
+        session.send(new TdApi.GetChatHistory(chatId, 0L, 0, 70, false), this);
+    }
+
+    private void requestOlder() {
+        if (loading || !hasMore || session == null || oldestId == 0) return;
+        loading = true;
+        setTopLoading(true);
+        session.send(new TdApi.GetChatHistory(chatId, oldestId, -1, 50, false), this);
+    }
+
+    @Override
+    public void onResult(TdApi.Object object) {
+        if (object instanceof TdApi.Messages) {
+            handleHistory((TdApi.Messages) object);
+        }
+        else if (object instanceof TdApi.UpdateNewMessage) {
+            TdApi.Message m = ((TdApi.UpdateNewMessage) object).message;
+            if (m != null && m.chatId == chatId) {
+                processMessageAndPut(m);
+                publishSorted(false, true);
+            }
+        }
+        else if (object instanceof TdApi.UpdateMessageSendSucceeded) {
+            TdApi.UpdateMessageSendSucceeded u = (TdApi.UpdateMessageSendSucceeded) object;
+            if (u.message != null && u.message.chatId == chatId) {
+                byId.remove(u.oldMessageId);
+                rawMessages.remove(u.oldMessageId);
+
+                rawMessages.put(u.message.id, u.message);
+                byId.put(u.message.id, toItem(u.message));
+
+                publishSorted(false, true);
+            }
+        }
+        else if (object instanceof TdApi.UpdateDeleteMessages) {
+            TdApi.UpdateDeleteMessages u = (TdApi.UpdateDeleteMessages) object;
+            if (u.chatId == chatId) {
+                for (long id : u.messageIds) {
+                    byId.remove(id);
+                    rawMessages.remove(id);
+                }
+                publishSorted(false, false);
+            }
+        }
+        else if (object instanceof TdApi.UpdateMessageEdited) {
+            TdApi.UpdateMessageEdited u = (TdApi.UpdateMessageEdited) object;
+            if (u.chatId == chatId) {
+                TdApi.Message raw = rawMessages.get(u.messageId);
+                if (raw != null) raw.replyMarkup = u.replyMarkup;
+
+                MessageItem cur = byId.get(u.messageId);
+                if (cur != null) {
+                    UiContent newUi;
+                    if (raw != null) {
+                        newUi = uiMapper.map(raw);
+                    } else {
+                        newUi = cur.ui;
+                        if (u.replyMarkup == null
+                                || u.replyMarkup.getConstructor() == TdApi.ReplyMarkupRemoveKeyboard.CONSTRUCTOR) {
+                        }
+                    }
+                    MessageItem updated = cur.withUi(newUi);
+                    byId.put(u.messageId, updated);
+                    publishSorted(false, false);
+                }
+            }
+        }
+        else if (object instanceof TdApi.Chat chat) {
+            if (chat.id == chatId) applyChatHeader(chat);
+        }
+        else if (object instanceof TdApi.UpdateChatTitle u) {
+            if (u.chatId == chatId) {
+                title = u.title;
+                mainHandler.post(() -> {
+                    TextView tv = content.findViewById(R.id.tv_title);
+                    if (tv != null) tv.setText(u.title);
+                });
+            }
+        }
+        else if (object instanceof TdApi.UpdateChatPhoto u) {
+            if (u.chatId == chatId) applyChatHeaderPhoto(u.photo);
+        }
+        else if (object instanceof TdApi.UpdateChatAction u) {
+            if (u.chatId == chatId) {
+                handleTyping(u);
+            }
+        }
+        else if (object instanceof TdApi.UpdateUser) {
+            onUserLoaded(((TdApi.UpdateUser) object).user);
+        }
+        else if (object instanceof TdApi.User) {
+            onUserLoaded((TdApi.User) object);
+        }
+    }
+
+    private void handleHistory(TdApi.Messages messages) {
+        int count = (messages == null || messages.messages == null) ? 0 : messages.messages.length;
+
+        if (count == 0) {
+            hasMore = false;
+            loading = false;
+            setTopLoading(false);
+            return;
+        }
+
+        for (TdApi.Message m : messages.messages) {
+            if (m == null || m.chatId != chatId) continue;
+            processMessageAndPut(m);
+            if (oldestId == 0 || m.id < oldestId) oldestId = m.id;
+        }
+
+        if (isInitialLoad) {
+            publishSorted(false, true);
+            isInitialLoad = false;
+        } else {
+            publishSorted(true, false);
+        }
+    }
+
+    private void handleTyping(TdApi.UpdateChatAction uca) {
+        if (uca.action == null) return;
+        mainHandler.post(() -> {
+            switch (uca.action.getConstructor()) {
+                case TdApi.ChatActionTyping.CONSTRUCTOR:
+                    showTyping("печатает…");
+                    break;
+                case TdApi.ChatActionCancel.CONSTRUCTOR:
+                    hideTyping();
+                    break;
+                default:
+                    break;
             }
         });
     }
 
-    private void setTopLoading(boolean v) {
-        if (!isAdded() || rv == null) return;
-        rv.post(() -> topLoading.setVisible(v));
+    private void processMessageAndPut(TdApi.Message m) {
+        rawMessages.put(m.id, m);
+        long albumId = m.mediaAlbumId;
+        PhotoData photoData = null;
+        String caption = "";
+
+        if (m.content instanceof TdApi.MessagePhoto photoContent) {
+            photoData = extractPhoto(m.id, photoContent.photo);
+            if (photoContent.caption != null && !TextUtils.isEmpty(photoContent.caption.text)) {
+                caption = photoContent.caption.text;
+            }
+        }
+
+        if (albumId != 0 && albumGroups.containsKey(albumId)) {
+            long mainMessageId = albumGroups.get(albumId);
+            MessageItem existingItem = byId.get(mainMessageId);
+
+            if (existingItem != null && photoData != null && existingItem.ui instanceof UiContent.Media) {
+                boolean alreadyExists = false;
+                if (existingItem.photos != null) {
+                    for (PhotoData p : existingItem.photos) {
+                        if (p.localPath != null && p.localPath.equals(photoData.localPath)) {
+                            alreadyExists = true;
+                            break;
+                        }
+                    }
+                }
+                if (!alreadyExists) {
+                    MessageItem updatedItem = existingItem.withAddedPhoto(photoData, caption);
+                    byId.put(mainMessageId, updatedItem);
+                }
+                return;
+            }
+        }
+
+        MessageItem newItem = toItem(m);
+        byId.put(m.id, newItem);
+        if (albumId != 0) {
+            albumGroups.put(albumId, m.id);
+        }
+    }
+
+    private MessageItem toItem(TdApi.Message m) {
+        UiContent ui = uiMapper.map(m);
+        String time = formatTime(m.date);
+
+        List<PhotoData> photos = new ArrayList<>();
+        if (m.content instanceof TdApi.MessagePhoto) {
+            PhotoData pd = extractPhoto(m.id, ((TdApi.MessagePhoto) m.content).photo);
+            if (pd != null) photos.add(pd);
+        }
+
+        return new MessageItem(
+                m.id, m.chatId, m.isOutgoing,
+                time, photos, m.mediaAlbumId,
+                ui
+        );
+    }
+
+    private void onUserLoaded(TdApi.User user) {
+        String fullName = (user.firstName + " " + user.lastName).trim();
+        String oldName = userNameCache.get(user.id);
+
+        if (oldName == null || !oldName.equals(fullName)) {
+            userNameCache.put(user.id, fullName);
+
+            new Thread(() -> {
+                boolean needUpdate = false;
+                for (MessageItem item : byId.values()) {
+                    if (item.chatId == user.id) {
+                        TdApi.Message raw = rawMessages.get(item.id);
+                        if (raw != null) {
+                            byId.put(item.id, toItem(raw));
+                            needUpdate = true;
+                        }
+                    }
+                }
+                if (needUpdate) {
+                    publishSorted(false, false);
+                }
+            }).start();
+        }
+    }
+
+    private void publishSorted(boolean isPagination, boolean maybeScrollToBottom) {
+        if (!isAdded()) return;
+
+        ArrayList<MessageItem> list = new ArrayList<>(byId.values());
+        list.sort((m1, m2) -> {
+            return Long.compare(m1.id, m2.id);
+        });
+
+        mainHandler.post(() -> {
+            long anchorMsgId = -1;
+            int anchorOffset = 0;
+
+            if (isPagination) {
+                int firstPos = lm.findFirstVisibleItemPosition();
+                if (firstPos != RecyclerView.NO_POSITION) {
+                    View child = lm.findViewByPosition(firstPos);
+
+                    boolean isLoader = (topLoading.isVisible() && firstPos == 0);
+
+                    if (isLoader) {
+                        int msgPos = firstPos + 1;
+                        if (msgPos < adapter.getItemCount() + 1) {
+                            View msgView = lm.findViewByPosition(msgPos);
+                            if (msgView != null) {
+                                int adapterIndex = msgPos - 1;
+                                if (adapterIndex >= 0 && adapterIndex < adapter.getItemCount()) {
+                                    anchorMsgId = adapter.getItemId(adapterIndex);
+                                    anchorOffset = msgView.getTop();
+                                }
+                            }
+                        }
+                    } else {
+                        if (child != null) {
+                            int adapterIndex = firstPos - (topLoading.isVisible() ? 1 : 0);
+                            if (adapterIndex >= 0 && adapterIndex < adapter.getItemCount()) {
+                                anchorMsgId = adapter.getItemId(adapterIndex);
+                                anchorOffset = child.getTop();
+                            }
+                        }
+                    }
+                }
+            }
+
+            final long finalAnchorId = anchorMsgId;
+            final int finalAnchorOffset = anchorOffset;
+
+            adapter.submitList(list, () -> {
+                if (isPagination) {
+                    setTopLoading(false);
+
+                    if (finalAnchorId != -1) {
+                        int newPos = adapter.findPositionById(finalAnchorId);
+                        if (newPos != RecyclerView.NO_POSITION) {
+                            lm.scrollToPositionWithOffset(newPos, finalAnchorOffset);
+                        }
+                    }
+                } else {
+                    boolean isUserInteracting = rv.getScrollState() != RecyclerView.SCROLL_STATE_IDLE;
+                    if (maybeScrollToBottom && isNearBottom() && !isUserInteracting) {
+                        rv.scrollToPosition(adapter.getItemCount() - 1);
+                    }
+                }
+                loading = false;
+            });
+        });
     }
 
     private void sendMessage() {
-        if (clientActorRef == null) return;
-
+        if (session == null) return;
         String text = et.getText().toString().trim();
         if (TextUtils.isEmpty(text)) return;
 
@@ -382,652 +659,91 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
         TdApi.InputMessageContent content =
                 new TdApi.InputMessageText(new TdApi.FormattedText(text, null), null, true);
 
-        TdApi.SendMessage req = new TdApi.SendMessage(
-                chatId,
-                null,
-                null,
-                null,
-                null,
-                content
-        );
-
-        clientActorRef.tell(new TdMessages.Send(req));
+        session.send(new TdApi.SendMessage(chatId, null, null, null, null, content), null);
     }
 
-    @Override
-    protected AbstractActor createActor() {
-        return new ChatActor();
-    }
-
-    private static class RequestOlder {}
-
-    private static class ClickButton {
-        final long chatId;
-        final long msgId;
-        final UiContent.UiButton btn;
-
-        ClickButton(long chatId, long msgId, UiContent.UiButton btn) {
-            this.chatId = chatId;
-            this.msgId = msgId;
-            this.btn = btn;
-        }
-    }
-
-    private final class ChatActor extends BaseUiActor {
-
-        private static final long REQ_CHAT_INFO = 9001L;
-
-        private final HashMap<Long, MessageItem> byId = new HashMap<>();
-        private final HashMap<Long, TdApi.Message> rawMessages = new HashMap<>();
-        private final HashMap<Long, Long> albumGroups = new HashMap<>();
-        private final HashMap<Long, String> userNameCache = new HashMap<>();
-        private final MessageUiMapper uiMapper = new MessageUiMapper(
-                0,
-                userNameCache::get,
-                this::onUserLoaded
-        );
-
-        private boolean loading = false;
-        private boolean hasMore = true;
-        private long oldestId = 0;
-
-        private boolean uiReady = false;
-        private boolean clientReady = false;
-        private boolean started = false;
-
-        @Override
-        public void onReceive(Object message) {
-            super.onReceive(message);
-
-            if (message instanceof ActorRef) {
-                clientReady = (clientActorRef != null);
-                tryStart();
-            }
-        }
-
-        @Override
-        protected void onReceiveMessage(Object message) {
-            if(message instanceof UiReady){
-                uiReady = true;
-                if(!byId.isEmpty()){
-                    publishSorted(false, topLoading.isVisible());
-                }
-                tryStart();
-                return;
-            }
-
-            if (message instanceof RequestOlder) {
-                requestOlder();
-                return;
-            }
-
-            if (message instanceof ClickButton){
-                handleClick((ClickButton) message);
-            }
-
-            if (message instanceof TdMessages.ChatHistoryLoaded) {
-                onHistory(((TdMessages.ChatHistoryLoaded) message).messages);
-                return;
-            }
-
-            if (message instanceof TdMessages.TdUpdate) {
-                handleUpdate(((TdMessages.TdUpdate) message).object);
-            }
-
-            if (message instanceof TdMessages.ResultWithId r) {
-                if (r.requestId == REQ_OPEN_CHAT) {
-                    requestInitial();
-                    return;
-                }
-                if (r.requestId == REQ_CHAT_INFO && r.result instanceof TdApi.Chat chat) {
-                    applyChatHeader(chat);
-                    return;
-                }
-            }
-        }
-
-        private void requestInitial() {
-            if (loading) return;
-
-            loading = true;
-            hasMore = true;
-            oldestId = 0;
-
-            autoFill = false;
-            autoFillRequests = 0;
-
-            byId.clear();
-            rawMessages.clear();
-            albumGroups.clear();
-
-            pendingKind = HistoryReqKind.INITIAL;
-
-            if (clientActorRef != null) {
-                clientActorRef.tell(new TdMessages.GetChatHistory(chatId, 0L, 0, 70, self()));
-            }
-        }
-
-        private void requestChatInfo() {
-            if (clientActorRef != null) {
-                clientActorRef.tell(new TdMessages.SendWithId(REQ_CHAT_INFO, new TdApi.GetChat(chatId), self()));
-            }
-        }
-
-        private void tryStart() {
-            if (started) return;
-            if (!uiReady || !clientReady) return;
-
-            started = true;
-            if (clientActorRef != null) {
-                clientActorRef.tell(new TdMessages.SendWithId(
-                        REQ_OPEN_CHAT,
-                        new TdApi.OpenChat(chatId),
-                        self()
-                ));
-            }
-
-            requestChatInfo();
-        }
-
-        private void requestOlder() {
-            if (loading || !hasMore) return;
-            if (oldestId == 0) return;
-
-            loading = true;
-            pendingKind = HistoryReqKind.OLDER;
-
-            if(isAdded()){
-                captureAnchor();
-                setTopLoading(true);
-            }
-
-            if (clientActorRef != null) {
-                clientActorRef.tell(new TdMessages.GetChatHistory(chatId, oldestId, -1, 70, self()));
-            }
-        }
-
-        private void requestAutoFillMore() {
-            if (!autoFill) return;
-            if (loading) return;
-            if (!hasMore) { autoFill = false; return; }
-            if (clientActorRef == null) { autoFill = false; return; }
-            if (oldestId == 0) { autoFill = false; return; }
-
-            if (byId.size() >= AUTO_FILL_TARGET) {
-                autoFill = false;
-                return;
-            }
-
-            if (autoFillRequests >= AUTO_FILL_MAX_REQUESTS) {
-                autoFill = false;
-                return;
-            }
-
-            autoFillRequests++;
-            loading = true;
-            pendingKind = HistoryReqKind.AUTO;
-
-            clientActorRef.tell(new TdMessages.GetChatHistory(chatId, oldestId, -1, AUTO_FILL_BATCH, self()));
-        }
-
-
-        private void onHistory(TdApi.Messages messages) {
-            loading = false;
-
-            HistoryReqKind kind = pendingKind;
-            pendingKind = HistoryReqKind.INITIAL;
-
-            int count = (messages == null || messages.messages == null) ? 0 : messages.messages.length;
-
-            if (count == 0) {
-                if (kind == HistoryReqKind.OLDER) {
-                    hasMore = false;
-                    setTopLoading(false);
-                }
-                if (kind == HistoryReqKind.AUTO) {
-                    hasMore = false;
-                    autoFill = false;
-                }
-                if (kind == HistoryReqKind.INITIAL) {
-                    hasMore = false;
-                }
-                return;
-            }
-
-            for (TdApi.Message m : messages.messages) {
-                if (m == null || m.chatId != chatId) continue;
-
-                processMessageAndPut(m);
-                if (oldestId == 0 || m.id < oldestId) oldestId = m.id;
-            }
-
-            publishSorted(false, topLoading.isVisible());
-
-            if (kind == HistoryReqKind.OLDER) {
-                setTopLoading(false);
-            }
-
-            if (kind == HistoryReqKind.INITIAL && count == 1) {
-                autoFill = true;
-                autoFillRequests = 0;
-                requestAutoFillMore();
-                return;
-            }
-
-            if (autoFill) {
-                requestAutoFillMore();
-            }
-        }
-
-
-        private void handleUpdate(TdApi.Object update) {
-            if (update instanceof TdApi.UpdateNewMessage u) {
-                TdApi.Message m = u.message;
-                if (m != null && m.chatId == chatId) {
-                    processMessageAndPut(m);
-                    publishSorted(true, topLoading.isVisible());
-                }
-            }
-            else if (update instanceof TdApi.UpdateMessageSendSucceeded u) {
-                if (u.message != null) {
-                    if (u.message.chatId != chatId) return;
-
-                    byId.remove(u.oldMessageId);
-                    rawMessages.remove(u.oldMessageId);
-
-                    rawMessages.put(u.message.id, u.message);
-                    byId.put(u.message.id, toItem(u.message));
-
-                    publishSorted(true, topLoading.isVisible());
-                }
-            }
-            else if (update instanceof TdApi.UpdateDeleteMessages u) {
-                if (u.chatId != chatId) return;
-                for (long id : u.messageIds) {
-                    byId.remove(id);
-                    rawMessages.remove(id);
-                }
-                publishSorted(false, topLoading.isVisible());
-            }else if (update instanceof TdApi.UpdateMessageEdited u) {
-                if (u.chatId != chatId) return;
-
-                TdApi.Message raw = rawMessages.get(u.messageId);
-                if (raw != null) raw.replyMarkup = u.replyMarkup;
-
-                MessageItem cur = byId.get(u.messageId);
-                if (cur == null) return;
-
-                UiContent newUi;
-                if (raw != null) {
-                    newUi = uiMapper.map(raw);
-                } else {
-                    newUi = cur.ui;
-                    if (u.replyMarkup == null
-                            || u.replyMarkup.getConstructor() == TdApi.ReplyMarkupRemoveKeyboard.CONSTRUCTOR) {
-                        newUi.buttons.clear();
-                    }
-                }
-                MessageItem updated = cur.withUi(newUi);
-                byId.put(u.messageId, updated);
-
-                publishSorted(false, topLoading.isVisible());
-            }else if (update instanceof TdApi.UpdateChatPhoto u) {
-                if (u.chatId == chatId) applyChatHeaderPhoto(u.photo);
-            }else if (update instanceof TdApi.UpdateChatTitle u) {
-                if (u.chatId == chatId) {
-                    title = u.title;
-                    if (isAdded()) requireActivity().runOnUiThread(() -> {
-                        TextView tvTitle = content.findViewById(R.id.tv_title);
-                        tvTitle.setText(u.title);
-                    });
-                }
-            }else if(update instanceof TdApi.UpdateChatAction uca){
-                if(uca.chatId == chatId){
-                    if(uca.action != null){
-                        TdApi.ChatAction ca = uca.action;
-                        switch (ca.getConstructor()) {
-                            case TdApi.ChatActionTyping.CONSTRUCTOR -> {
-                                if(uca.senderId instanceof TdApi.MessageSenderUser u){
-                                    long uid = u.userId; // TODO: extract username?
-                                    // TODO: add in list writen messages this username
-                                    showTyping("печатает…");
-                                }else if(uca.senderId instanceof TdApi.MessageSenderChat c){
-                                    if(c.chatId == chatId && !title.isEmpty()) {
-                                        // TODO: add in list writen messages this chatname
-                                        showTyping("печатает...");
-                                    }
-                                }
-                            }
-                            case TdApi.ChatActionRecordingVideo.CONSTRUCTOR -> { } // TODO: implement other
-                            case TdApi.ChatActionUploadingVideo.CONSTRUCTOR -> { }
-                            case TdApi.ChatActionRecordingVoiceNote.CONSTRUCTOR -> { }
-                            case TdApi.ChatActionUploadingVoiceNote.CONSTRUCTOR -> { }
-                            case TdApi.ChatActionUploadingPhoto.CONSTRUCTOR -> { }
-                            case TdApi.ChatActionUploadingDocument.CONSTRUCTOR -> { }
-                            case TdApi.ChatActionChoosingSticker.CONSTRUCTOR -> { }
-                            case TdApi.ChatActionChoosingLocation.CONSTRUCTOR -> { }
-                            case TdApi.ChatActionChoosingContact.CONSTRUCTOR -> { }
-                            case TdApi.ChatActionStartPlayingGame.CONSTRUCTOR -> { }
-                            case TdApi.ChatActionRecordingVideoNote.CONSTRUCTOR -> { }
-                            case TdApi.ChatActionUploadingVideoNote.CONSTRUCTOR -> { }
-                            case TdApi.ChatActionWatchingAnimations.CONSTRUCTOR -> { }
-                            case TdApi.ChatActionCancel.CONSTRUCTOR -> { hideTyping(); }
-                        }
-                    }
-                }
-            }
-        }
-
-        private void showTyping(String text) {
-            if (!isAdded() || typingDrawable == null) return;
-
-            TextView tv = typingBar.findViewById(R.id.typing_text);
-            if (tv != null) tv.setText(text);
-
-            typingBar.setVisibility(View.VISIBLE);
-            typingDrawable.start();
-        }
-
-        private void hideTyping() {
-            if (typingDrawable != null) {
-                typingDrawable.stop();
-            }
-            if (typingBar != null) {
-                typingBar.setVisibility(View.GONE);
-            }
-        }
-
-        private void applyChatHeader(TdApi.Chat chat) {
-            if (!isAdded()) return;
-
-            title = chat.title;
-
-            requireActivity().runOnUiThread(() -> {
-                TextView tvTitle = content.findViewById(R.id.tv_title);
-                tvTitle.setText(chat.title);
-
-                applyChatAvatar(chat.photo);
-            });
-        }
-
-        private void applyChatHeaderPhoto(TdApi.ChatPhotoInfo photo) {
-            if (!isAdded()) return;
-            requireActivity().runOnUiThread(() -> applyChatAvatar(photo));
-        }
-
-        private void applyChatAvatar(TdApi.ChatPhotoInfo photo) {
-            if (ivChatAvatar == null) return;
-
-            Glide.with(ivChatAvatar).clear(ivChatAvatar);
-            ivChatAvatar.setImageResource(R.drawable.bg_badge);
-
-            if (photo == null || photo.small == null) return;
-
-            int fid = photo.small.id;
-            if (fid == 0) return;
-
-            adapter.setChatAvatar(fid);
-
-            final String tag = "chat:" + chatId + ":" + fid;
-            ivChatAvatar.setTag(tag);
-
-            String cached = TdMediaRepository.get().getCachedPath(fid);
-            if (!TextUtils.isEmpty(cached)) {
-                Glide.with(ivChatAvatar)
-                        .load(cached)
-                        .apply(RequestOptions.circleCropTransform())
-                        .placeholder(R.drawable.bg_badge)
-                        .error(R.drawable.bg_badge)
-                        .into(ivChatAvatar);
-                return;
-            }
-
-            TdMediaRepository.get().getPathOrRequest(fid, p -> {
-                Object cur = ivChatAvatar.getTag();
-                if (!(cur instanceof String) || !tag.equals(cur)) return;
-                if (TextUtils.isEmpty(p)) return;
-
-                Glide.with(ivChatAvatar)
-                        .load(p)
-                        .apply(RequestOptions.circleCropTransform())
-                        .placeholder(R.drawable.bg_badge)
-                        .error(R.drawable.bg_badge)
-                        .into(ivChatAvatar);
-            });
-        }
-
-        private void processMessageAndPut(TdApi.Message m) {
-            rawMessages.put(m.id, m);
-
-            long albumId = m.mediaAlbumId;
-
-            PhotoData photoData = null;
-            String caption = "";
-
-            if (m.content instanceof TdApi.MessagePhoto photoContent) {
-                photoData = extractPhoto(m.id, photoContent.photo);
-                if (photoContent.caption != null && !TextUtils.isEmpty(photoContent.caption.text)) {
-                    caption = photoContent.caption.text;
-                }
-            }
-
-            if (albumId != 0 && albumGroups.containsKey(albumId)) {
-                long mainMessageId = albumGroups.get(albumId);
-                MessageItem existingItem = byId.get(mainMessageId);
-
-                if (existingItem != null
-                        && photoData != null
-                        && existingItem.ui instanceof UiContent.Media) {
-
-                    boolean alreadyExists = false;
-                    for (PhotoData p : existingItem.photos) {
-                        if (p.localPath != null && p.localPath.equals(photoData.localPath)) {
-                            alreadyExists = true;
-                            break;
-                        }
-                    }
-
-                    if (!alreadyExists) {
-                        MessageItem updatedItem = existingItem.withAddedPhoto(photoData, caption);
-                        byId.put(mainMessageId, updatedItem);
-                    }
-
-                    return;
-                }
-            }
-
-            MessageItem newItem = toItem(m);
-            byId.put(m.id, newItem);
-
-            if (albumId != 0) {
-                albumGroups.put(albumId, m.id);
-            }
-        }
-
-        private void publishSorted(boolean maybeScrollToBottom, boolean hideTopLoaderAfterCommit) {
-            ArrayList<MessageItem> list = new ArrayList<>(byId.values());
-            list.sort((a, b) -> Long.compare(a.id, b.id));
-
-            if (!isAdded()) return;
-
-            requireActivity().runOnUiThread(() -> {
-                boolean nearBottom = isNearBottom();
-
-                long savedId = anchorMsgId;
-                int savedTop = anchorTop;
-
-                final boolean loaderVisibleNow = topLoading.isVisible();
-                final int offset = loaderVisibleNow ? 1 : 0;
-
-                adapter.submitList(list, () -> {
-                    if (savedId != 0) {
-                        int pos = adapter.findPositionById(savedId);
-                        if (pos >= 0) {
-                            int globalPos = pos + offset;
-
-                            int top = savedTop + (loaderVisibleNow && hideTopLoaderAfterCommit ? topLoaderHeightPx : 0);
-
-                            lm.scrollToPositionWithOffset(globalPos, top);
-                        }
-                        anchorMsgId = 0;
-                    }
-
-                    if (maybeScrollToBottom && nearBottom) {
-                        rv.scrollToPosition(Math.max(0, adapter.getItemCount() - 1));
-                    }
-
-                    if (adapter.getItemCount() > 0 && lm.findLastVisibleItemPosition() < 0) {
-                        rv.scrollToPosition(adapter.getItemCount() - 1);
-                    }
-
-                    if(hideTopLoaderAfterCommit){
-                        rv.post(()->setTopLoading(false));
-                    }
+    private void handleClick(long chatId, long msgId, UiContent.UiButton btn) {
+        if (btn.isUrl()) {
+            if (isAdded()) {
+                mainHandler.post(() -> {
+                    Intent i = new Intent(
+                            Intent.ACTION_VIEW,
+                            android.net.Uri.parse(btn.url)
+                    );
+                    startActivity(i);
                 });
-            });
-        }
-
-        private boolean isNearBottom() {
-            int lastGlobal = lm.findLastVisibleItemPosition();
-            int offset = topLoading.isVisible() ? 1 : 0;
-
-            int totalMessages = adapter.getItemCount();
-            int totalGlobal = offset + totalMessages;
-
-            return totalMessages == 0 || lastGlobal >= totalGlobal - 3;
-        }
-
-        private MessageItem toItem(TdApi.Message m) {
-            UiContent ui = uiMapper.map(m);
-            String time = formatTime(m.date);
-
-            List<PhotoData> photos = new ArrayList<>();
-            if (m.content instanceof TdApi.MessagePhoto photoContent) {
-                PhotoData pd = extractPhoto(m.id, photoContent.photo);
-                if (pd != null) photos.add(pd);
             }
+            return;
+        }
 
-            return new MessageItem(
-                    m.id, m.chatId, m.isOutgoing,
-                    time, photos, m.mediaAlbumId,
-                    ui
+        if (session == null) return;
+
+        if (btn.data != null) {
+            TdApi.GetCallbackQueryAnswer req = new TdApi.GetCallbackQueryAnswer(
+                    chatId, msgId, new TdApi.CallbackQueryPayloadData(btn.data)
             );
+            session.send(req, null);
+        } else {
+            TdApi.InputMessageContent content =
+                    new TdApi.InputMessageText(new TdApi.FormattedText(btn.text, null), null, true);
+            session.send(new TdApi.SendMessage(chatId, null, null, null, null, content), null);
+        }
+    }
+
+    private void applyChatHeader(TdApi.Chat chat) {
+        if (!isAdded()) return;
+        title = chat.title;
+        mainHandler.post(() -> {
+            TextView tvTitle = content.findViewById(R.id.tv_title);
+            tvTitle.setText(chat.title);
+            applyChatAvatar(chat.photo);
+        });
+    }
+
+    private void applyChatHeaderPhoto(TdApi.ChatPhotoInfo photo) {
+        if (!isAdded()) return;
+        mainHandler.post(() -> applyChatAvatar(photo));
+    }
+
+    private void applyChatAvatar(TdApi.ChatPhotoInfo photo) {
+        if (ivChatAvatar == null) return;
+
+        Glide.with(ivChatAvatar).clear(ivChatAvatar);
+        ivChatAvatar.setImageResource(R.drawable.bg_badge);
+
+        if (photo == null || photo.small == null) return;
+
+        int fid = photo.small.id;
+        if (fid == 0) return;
+
+        adapter.setChatAvatar(fid);
+
+        final String tag = "chat:" + chatId + ":" + fid;
+        ivChatAvatar.setTag(tag);
+
+        String cached = TdMediaRepository.get().getCachedPath(fid);
+        if (!TextUtils.isEmpty(cached)) {
+            Glide.with(ivChatAvatar)
+                    .load(cached)
+                    .apply(RequestOptions.circleCropTransform())
+                    .placeholder(R.drawable.bg_badge)
+                    .error(R.drawable.bg_badge)
+                    .into(ivChatAvatar);
+            return;
         }
 
-        private PhotoData extractPhoto(long rowMessageId, TdApi.Photo photo) {
-            if (photo == null || photo.sizes.length == 0) return null;
+        TdMediaRepository.get().getPathOrRequest(fid, p -> {
+            Object cur = ivChatAvatar.getTag();
+            if (!(cur instanceof String) || !tag.equals(cur)) return;
+            if (TextUtils.isEmpty(p)) return;
 
-            TdApi.PhotoSize best = findBestPhotoSize(photo.sizes);
-
-            int fileId = best.photo.id;
-            String localPath = best.photo.local != null ? best.photo.local.path : null;
-
-            boolean completed = best.photo.local != null && best.photo.local.isDownloadingCompleted;
-
-            if (TextUtils.isEmpty(localPath) || !completed) {
-                TdMediaRepository.get().getPathOrRequest(fileId, p -> {
-                    if (!TextUtils.isEmpty(p)) {
-                        notifyMessageChanged(rowMessageId, MessagesAdapter.PAYLOAD_MEDIA);
-                    }
-                });
-                String cached = TdMediaRepository.get().getCachedPath(fileId);
-                if (!TextUtils.isEmpty(cached)) localPath = cached;
-            }
-
-            return new PhotoData(fileId, localPath, best.width, best.height);
-        }
-
-        private TdApi.PhotoSize findBestPhotoSize(TdApi.PhotoSize[] sizes) {
-            TdApi.PhotoSize sizeX = null;
-            TdApi.PhotoSize sizeY = null;
-            TdApi.PhotoSize sizeM = null;
-
-            for (TdApi.PhotoSize sz : sizes) {
-                switch (sz.type) {
-                    case "y": sizeY = sz; break;
-                    case "x": sizeX = sz; break;
-                    case "m": sizeM = sz; break;
-                }
-            }
-
-            if (sizeY != null) return sizeY;
-            if (sizeX != null) return sizeX;
-            if (sizeM != null) return sizeM;
-
-            return sizes[sizes.length - 1];
-        }
-
-        private String formatTime(int unixSeconds) {
-            long ms = unixSeconds * 1000L;
-            return new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date(ms));
-        }
-
-        private void onUserLoaded(TdApi.User user) {
-            String fullName = (user.firstName + " " + user.lastName).trim();
-            if (fullName.isEmpty()) fullName = "Deleted Account";
-
-            userNameCache.put(user.id, fullName);
-
-            boolean needUpdate = false;
-
-            for (TdApi.Message msg : rawMessages.values()) {
-                long senderId = getSenderId(msg);
-
-                if (senderId == user.id) {
-                    MessageItem updatedItem = toItem(msg);
-
-                    byId.put(msg.id, updatedItem);
-                    needUpdate = true;
-                }
-            }
-
-            if (needUpdate) {
-                publishSorted(false, topLoading.isVisible());
-            }
-        }
-
-        private long getSenderId(TdApi.Message msg) {
-            if (msg.senderId instanceof TdApi.MessageSenderUser) {
-                return ((TdApi.MessageSenderUser) msg.senderId).userId;
-            }
-            return 0;
-        }
-
-        private void handleClick(ClickButton cb) {
-            if (cb.btn.isUrl()) {
-                if (isAdded()) {
-                    requireActivity().runOnUiThread(() -> {
-                        android.content.Intent i = new android.content.Intent(
-                                android.content.Intent.ACTION_VIEW,
-                                android.net.Uri.parse(cb.btn.url)
-                        );
-                        startActivity(i);
-                    });
-                }
-                return;
-            }
-
-            if (cb.btn.data != null) {
-                if (clientActorRef != null) {
-                    TdApi.GetCallbackQueryAnswer req = new TdApi.GetCallbackQueryAnswer(
-                            cb.chatId,
-                            cb.msgId,
-                            new TdApi.CallbackQueryPayloadData(cb.btn.data)
-                    );
-                    clientActorRef.tell(new TdMessages.Send(req));
-                }
-            } else {
-                if (clientActorRef != null) {
-                    TdApi.InputMessageContent content =
-                            new TdApi.InputMessageText(new TdApi.FormattedText(cb.btn.text, null), null, true);
-
-                    TdApi.SendMessage req = new TdApi.SendMessage(
-                            cb.chatId, null, null, null, null, content
-                    );
-                    clientActorRef.tell(new TdMessages.Send(req));
-                }
-            }
-        }
+            Glide.with(ivChatAvatar)
+                    .load(p)
+                    .apply(RequestOptions.circleCropTransform())
+                    .placeholder(R.drawable.bg_badge)
+                    .error(R.drawable.bg_badge)
+                    .into(ivChatAvatar);
+        });
     }
 
     @Override
@@ -1036,17 +752,94 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
         if (inputMode == InputMode.VOICE) {
             cancelVoiceRecording();
         }
-        if (clientActorRef != null) {
-            clientActorRef.tell(new TdMessages.Send(new TdApi.CloseChat(chatId)));
+        if (session != null) {
+            session.send(new TdApi.CloseChat(chatId), null);
+            session.removeUpdateHandler(this);
         }
+        mainHandler.removeCallbacksAndMessages(null);
         super.onDestroyView();
     }
 
+    private void setTopLoading(boolean v) {
+        if (!isAdded() || rv == null) return;
+        rv.post(() -> topLoading.setVisible(v));
+    }
+
+    private boolean isNearBottom() {
+        if (adapter.getItemCount() == 0) return true;
+
+        int lastVisiblePosition = lm.findLastVisibleItemPosition();
+        int lastItemPosition = adapter.getItemCount() - 1 + (topLoading.isVisible() ? 1 : 0);
+
+        return lastVisiblePosition >= lastItemPosition;
+    }
+
+    private void showTyping(String text) {
+        if (!isAdded() || typingDrawable == null) return;
+        TextView tv = typingBar.findViewById(R.id.typing_text);
+        if (tv != null) tv.setText(text);
+        typingBar.setVisibility(View.VISIBLE);
+        typingDrawable.start();
+        mainHandler.removeCallbacksAndMessages("typing");
+        mainHandler.postDelayed(() -> hideTyping(), 5000);
+    }
+
+    private void hideTyping() {
+        if (typingDrawable != null) typingDrawable.stop();
+        if (typingBar != null) typingBar.setVisibility(View.GONE);
+    }
+
+    private String formatTime(int unixSeconds) {
+        long ms = unixSeconds * 1000L;
+        return new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date(ms));
+    }
+
+    private void notifyMessageChanged(long msgId, int payload) {
+        if (!isAdded()) return;
+        mainHandler.post(() -> {
+            int pos = adapter.findPositionById(msgId);
+            if (pos >= 0) adapter.notifyItemChanged(pos, payload);
+        });
+    }
+
+    private PhotoData extractPhoto(long rowMessageId, TdApi.Photo photo) {
+        if (photo == null || photo.sizes.length == 0) return null;
+
+        TdApi.PhotoSize best = findBestPhotoSize(photo.sizes);
+        int fileId = best.photo.id;
+        String localPath = best.photo.local != null ? best.photo.local.path : null;
+        boolean completed = best.photo.local != null && best.photo.local.isDownloadingCompleted;
+
+        if (TextUtils.isEmpty(localPath) || !completed) {
+            TdMediaRepository.get().getPathOrRequest(fileId, p -> {
+                if (!TextUtils.isEmpty(p)) {
+                    notifyMessageChanged(rowMessageId, MessagesAdapter.PAYLOAD_MEDIA);
+                }
+            });
+            String cached = TdMediaRepository.get().getCachedPath(fileId);
+            if (!TextUtils.isEmpty(cached)) localPath = cached;
+        }
+        return new PhotoData(fileId, localPath, best.width, best.height);
+    }
+
+    private TdApi.PhotoSize findBestPhotoSize(TdApi.PhotoSize[] sizes) {
+        TdApi.PhotoSize sizeX = null, sizeY = null, sizeM = null;
+        for (TdApi.PhotoSize sz : sizes) {
+            switch (sz.type) {
+                case "y": sizeY = sz; break;
+                case "x": sizeX = sz; break;
+                case "m": sizeM = sz; break;
+            }
+        }
+        if (sizeY != null) return sizeY;
+        if (sizeX != null) return sizeX;
+        if (sizeM != null) return sizeM;
+        return sizes[sizes.length - 1];
+    }
+
     private void applyInsets(View root, View content) {
-        final int[] lastImeBottom = {0};
         final int[] statusTop = {0};
         final int[] navBottom = {0};
-        final boolean[] isImeAnimating = {false};
 
         BlurView header = content.findViewById(R.id.header_blur);
         BlurView inputBar = content.findViewById(R.id.input_blur);
@@ -1078,96 +871,32 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
             navBottom[0] = nav.bottom;
             boolean imeVisible = ime.bottom > 0;
 
-            header.setPadding(
-                    headerBaseLeft,
-                    headerBaseTop + status.top,
-                    headerBaseRight,
-                    headerBaseBottom
-            );
+            header.setPadding(headerBaseLeft, headerBaseTop + status.top, headerBaseRight, headerBaseBottom);
+            inputBar.setPadding(inputBaseLeft, inputBaseTop, inputBaseRight, inputBaseBottom + nav.bottom);
 
-            inputBar.setPadding(
-                    inputBaseLeft,
-                    inputBaseTop,
-                    inputBaseRight,
-                    inputBaseBottom + nav.bottom
-            );
-
-            if (!isImeAnimating[0] && imeVisible) {
-                rv.setPadding(
-                        rvBaseLeft,
-                        rvBaseTop + statusTop[0],
-                        rvBaseRight,
-                        rvBaseBottom + navBottom[0] + ime.bottom
-                );
-            } else {
-                rv.setPadding(
-                        rvBaseLeft,
-                        rvBaseTop + status.top,
-                        rvBaseRight,
-                        rvBaseBottom + nav.bottom
-                );
-            }
-
-            lastImeBottom[0] = ime.bottom;
+            rv.setPadding(rvBaseLeft, rvBaseTop + statusTop[0], rvBaseRight,
+                    rvBaseBottom + navBottom[0] + ime.bottom);
 
             return insets;
         });
 
-        ViewCompat.setWindowInsetsAnimationCallback(
-                root,
-                new WindowInsetsAnimationCompat.Callback(
-                        WindowInsetsAnimationCompat.Callback.DISPATCH_MODE_CONTINUE_ON_SUBTREE) {
-
-                    final boolean[] isImeAnimating = {false};
-
-                    @NonNull
-                    @Override
-                    public WindowInsetsCompat onProgress(
-                            @NonNull WindowInsetsCompat insets,
-                            @NonNull List<WindowInsetsAnimationCompat> runningAnimations
-                    ) {
-                        Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
-                        int imeBottom = ime.bottom;
-
-                        inputBar.setTranslationY(-imeBottom);
-
-                        rv.setPadding(
-                                rvBaseLeft,
-                                rvBaseTop + statusTop[0],
-                                rvBaseRight,
-                                rvBaseBottom + navBottom[0] + imeBottom
-                        );
-
-                        return insets;
-                    }
-
-                    @Override
-                    public void onPrepare(@NonNull WindowInsetsAnimationCompat animation) {
-                        if ((animation.getTypeMask() & WindowInsetsCompat.Type.ime()) != 0) {
-                            isImeAnimating[0] = true;
-                        }
-                    }
-
-                    @Override
-                    public void onEnd(@NonNull WindowInsetsAnimationCompat animation) {
-                        if ((animation.getTypeMask() & WindowInsetsCompat.Type.ime()) != 0) {
-                            isImeAnimating[0] = false;
-                            ViewCompat.requestApplyInsets(root);
-                        }
-                    }
-                }
-        );
-
-        ViewCompat.requestApplyInsets(root);
+        ViewCompat.setWindowInsetsAnimationCallback(root, new WindowInsetsAnimationCompat.Callback(
+                WindowInsetsAnimationCompat.Callback.DISPATCH_MODE_CONTINUE_ON_SUBTREE) {
+            @NonNull @Override
+            public WindowInsetsCompat onProgress(@NonNull WindowInsetsCompat insets, @NonNull List<WindowInsetsAnimationCompat> runningAnimations) {
+                Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+                inputBar.setTranslationY(-ime.bottom);
+                rv.setPadding(rvBaseLeft, rvBaseTop + statusTop[0], rvBaseRight, rvBaseBottom + navBottom[0] + ime.bottom);
+                return insets;
+            }
+        });
     }
 
     private void setupBlur(View view) {
         BlurTarget target = view.findViewById(R.id.blur_target);
         BlurView header = view.findViewById(R.id.header_blur);
         BlurView input = view.findViewById(R.id.input_blur);
-
         Drawable bg = requireActivity().getWindow().getDecorView().getBackground();
-
         header.setupWith(target).setFrameClearDrawable(bg).setBlurRadius(BLUR_RADIUS);
         input.setupWith(target).setFrameClearDrawable(bg).setBlurRadius(BLUR_RADIUS);
     }
@@ -1175,12 +904,8 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
     private void closeAnimated() {
         if (closing) return;
         closing = true;
-
-        if (edge != null) {
-            edge.animateDismiss();
-        } else {
-            ChatFragment.super.dismissAllowingStateLoss();
-        }
+        if (edge != null) edge.animateDismiss();
+        else super.dismissAllowingStateLoss();
     }
 
     private static ImageView findImageView(View root, String... names) {
@@ -1195,39 +920,9 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
         return null;
     }
 
-    private void captureAnchor() {
-        int firstGlobal = lm.findFirstVisibleItemPosition();
-        if (firstGlobal == RecyclerView.NO_POSITION) return;
-
-        int offset = topLoading.isVisible() ? 1 : 0;
-
-        int anchorGlobal = Math.max(firstGlobal, offset);
-        int msgPos = anchorGlobal - offset;
-        if (msgPos < 0 || msgPos >= adapter.getItemCount()) return;
-
-        View v = lm.findViewByPosition(anchorGlobal);
-        if (v == null) return;
-
-        anchorMsgId = adapter.getItemId(msgPos);
-        anchorTop = v.getTop();
-    }
-
-    private void notifyMessageChanged(long msgId, int payload) {
-        if (!isAdded()) return;
-        requireActivity().runOnUiThread(() -> {
-            int pos = adapter.findPositionById(msgId);
-            if (pos >= 0) {
-                adapter.notifyItemChanged(pos, payload);
-            }
-        });
-    }
-
     private void onSendClicked() {
-        if (inputMode == InputMode.VOICE) {
-            finishAndSendVoice();
-            return;
-        }
-        sendMessage();
+        if (inputMode == InputMode.VOICE) finishAndSendVoice();
+        else sendMessage();
     }
 
     private void startVoiceFlow() {
@@ -1245,42 +940,31 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
 
     private void startVoiceRecording() {
         if (inputMode == InputMode.VOICE) return;
-
         hideKeyboard();
         et.clearFocus();
-
         inputMode = InputMode.VOICE;
         voicePaused = false;
         voiceLevels.clear();
         updateVoiceUi(true);
-
-        voiceTempFile = new File(requireContext().getCacheDir(),
-                "voice_" + System.currentTimeMillis() + ".wav");
-
-        voiceRecorder = new VoiceWavRecorder(44100, voiceTempFile, level0to100 -> {
+        voiceTempFile = new File(requireContext().getCacheDir(), "voice_" + System.currentTimeMillis() + ".wav");
+        voiceRecorder = new VoiceWavRecorder(44100, voiceTempFile, level -> {
             if (!isAdded() || waveRecord == null) return;
-
-            requireActivity().runOnUiThread(() -> {
+            mainHandler.post(() -> {
                 if (inputMode != InputMode.VOICE || voicePaused) return;
-
-                voiceLevels.add(level0to100);
+                voiceLevels.add(level);
                 if (voiceLevels.size() > MAX_VOICE_POINTS) voiceLevels.remove(0);
-
                 int[] arr = new int[voiceLevels.size()];
                 for (int i = 0; i < voiceLevels.size(); ++i) arr[i] = voiceLevels.get(i);
-
                 waveRecord.setSampleFrom(arr);
                 waveRecord.setMaxProgress((float) arr.length);
                 waveRecord.setProgress((float) arr.length);
             });
         });
-
         voiceRecorder.start();
     }
 
     private void toggleVoicePause() {
         if (inputMode != InputMode.VOICE || voiceRecorder == null) return;
-
         voicePaused = !voicePaused;
         if (voicePaused) {
             voiceRecorder.pause();
@@ -1293,17 +977,14 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
 
     private void cancelVoiceRecording() {
         if (inputMode != InputMode.VOICE) return;
-
         if (voiceRecorder != null) {
             voiceRecorder.stopAndFinalize();
             voiceRecorder = null;
         }
         if (voiceTempFile != null) {
-            //noinspection ResultOfMethodCallIgnored
             voiceTempFile.delete();
             voiceTempFile = null;
         }
-
         inputMode = InputMode.TEXT;
         voicePaused = false;
         updateVoiceUi(false);
@@ -1311,38 +992,28 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
 
     private void finishAndSendVoice() {
         if (inputMode != InputMode.VOICE) return;
-
         if (voiceRecorder != null) {
             voiceRecorder.stopAndFinalize();
             voiceRecorder = null;
         }
-
         File wav = voiceTempFile;
         voiceTempFile = null;
-
         inputMode = InputMode.TEXT;
         voicePaused = false;
         updateVoiceUi(false);
-
         if (wav == null || !wav.exists() || wav.length() == 0) return;
 
         final ArrayList<Integer> levels = new ArrayList<>(voiceLevels);
         voiceLevels.clear();
-
-        File m4a = new File(requireContext().getCacheDir(),
-                "voice_" + System.currentTimeMillis() + ".m4a");
+        File m4a = new File(requireContext().getCacheDir(), "voice_" + System.currentTimeMillis() + ".m4a");
 
         new Thread(() -> {
             try {
                 int durationSec = durationSecFromWav(wav, 44100, 1);
                 byte[] waveform = buildTelegramWaveform5bit(levels, 100);
-
                 convertWavToM4a(wav, m4a, 44100, 1, 64000);
-
                 wav.delete();
-
                 sendVoiceNote(m4a, durationSec, waveform);
-
             } catch (Throwable t) {
                 t.printStackTrace();
             }
@@ -1350,31 +1021,14 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
     }
 
     private void sendVoiceNote(File audioFile, int durationSec, byte[] waveform) {
-        if (clientActorRef == null || audioFile == null || !audioFile.exists()) return;
+        if (session == null || audioFile == null || !audioFile.exists()) return;
 
         TdApi.InputFile input = new TdApi.InputFileLocal(audioFile.getAbsolutePath());
-
-        TdApi.InputMessageContent content;
-        content = new TdApi.InputMessageVoiceNote(
-                input,
-                durationSec,
-                waveform != null ? waveform : new byte[0],
-                null,
-                null
+        TdApi.InputMessageContent content = new TdApi.InputMessageVoiceNote(
+                input, durationSec, waveform != null ? waveform : new byte[0], null, null
         );
-        TdApi.SendMessage req = null;
-        req = new TdApi.SendMessage(
-                chatId,
-                null,
-                null,
-                null,
-                null,
-                content
-        );
-
-        clientActorRef.tell(new TdMessages.Send(req));
+        session.send(new TdApi.SendMessage(chatId, null, null, null, null, content), null);
     }
-
 
     private void updateVoiceUi(boolean voiceMode) {
         if (waveRecord != null) {
@@ -1389,7 +1043,6 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
                 }).start();
             }
         }
-
         if (et != null) {
             if (voiceMode) {
                 et.animate().alpha(0f).setDuration(120).withEndAction(() -> {
@@ -1402,17 +1055,11 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
                 et.animate().alpha(1f).setDuration(180).start();
             }
         }
-
         if (btnAttach != null) {
-            btnAttach.setImageResource(
-                    voiceMode ? android.R.drawable.ic_menu_close_clear_cancel : R.drawable.ic_attach_outline
-            );
+            btnAttach.setImageResource(voiceMode ? android.R.drawable.ic_menu_close_clear_cancel : R.drawable.ic_attach_outline);
         }
-
         if (btnAction != null) {
-            btnAction.setImageResource(
-                    voiceMode ? android.R.drawable.ic_media_pause : R.drawable.ic_sticker_smile_outline
-            );
+            btnAction.setImageResource(voiceMode ? android.R.drawable.ic_media_pause : R.drawable.ic_sticker_smile_outline);
         }
     }
 
@@ -1421,7 +1068,6 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
         View v = requireActivity().getCurrentFocus();
         if (v == null) v = getView();
         if (v == null) return;
-
         InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
         if (imm != null) imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
     }
@@ -1429,8 +1075,7 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
     private static int durationSecFromWav(File wav, int sampleRate, int channels) {
         long bytes = Math.max(0, wav.length() - 44);
         double seconds = bytes / (double) (sampleRate * channels * 2);
-        int sec = (int) Math.ceil(seconds);
-        return Math.max(1, sec);
+        return Math.max(1, (int) Math.ceil(seconds));
     }
 
     private static void convertWavToM4a(File wav, File m4a,
@@ -1553,7 +1198,6 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
         }
     }
 
-
     private static byte[] buildTelegramWaveform5bit(List<Integer> levels0to100, int targetPoints) {
         if (levels0to100 == null || levels0to100.isEmpty() || targetPoints <= 0) return new byte[0];
 
@@ -1571,7 +1215,7 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
                 if (v < 0) v = 0;
                 if (v > 100) v = 100;
                 sum += v;
-                cnt++;
+                ++cnt;
             }
             int avg = (cnt == 0) ? 0 : (int) (sum / cnt);
 
@@ -1603,12 +1247,8 @@ public class ChatFragment extends BaseTdCustomSheetDialogFragment {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == REQ_RECORD_AUDIO) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                startVoiceRecording();
-            } else {
-                // TODO: snackbar
-            }
+        if (requestCode == REQ_RECORD_AUDIO && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            startVoiceRecording();
         }
     }
 }

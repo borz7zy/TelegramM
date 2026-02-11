@@ -4,7 +4,7 @@ import android.os.Bundle;
 import android.view.View;
 
 import androidx.annotation.NonNull;
-import androidx.fragment.app.Fragment;
+import androidx.fragment.app.DialogFragment;
 import androidx.lifecycle.LiveData;
 
 import com.github.borz7zy.telegramm.AppManager;
@@ -15,7 +15,7 @@ import com.github.borz7zy.telegramm.core.accounts.AccountStorage;
 
 import org.drinkless.tdlib.TdApi;
 
-public abstract class BaseTelegramFragment extends Fragment {
+public abstract class BaseTelegramDialogFragment extends DialogFragment {
     private final Class<?> clazz = this.getClass();
     private final String TAG = clazz.getSimpleName();
 

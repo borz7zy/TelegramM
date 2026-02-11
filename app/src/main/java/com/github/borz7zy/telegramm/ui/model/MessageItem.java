@@ -7,6 +7,7 @@ import com.github.borz7zy.telegramm.ui.chat.UiContent;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 public final class MessageItem {
     public final long id;
@@ -58,5 +59,24 @@ public final class MessageItem {
                 mediaAlbumId,
                 newUi
         );
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        MessageItem that = (MessageItem) o;
+        return id == that.id &&
+                chatId == that.chatId &&
+                outgoing == that.outgoing &&
+                mediaAlbumId == that.mediaAlbumId &&
+                Objects.equals(time, that.time) &&
+                Objects.equals(ui, that.ui) &&
+                Objects.equals(photos, that.photos);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, ui, time);
     }
 }

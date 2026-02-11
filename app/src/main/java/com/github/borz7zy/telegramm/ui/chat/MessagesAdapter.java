@@ -420,24 +420,7 @@ public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewH
 
         @Override
         public boolean areContentsTheSame(@NonNull MessageItem oldItem, @NonNull MessageItem newItem) {
-            if (oldItem.outgoing != newItem.outgoing) return false;
-            if (!TextUtils.equals(oldItem.time, newItem.time)) return false;
-            if (oldItem.mediaAlbumId != newItem.mediaAlbumId) return false;
-
-            if (oldItem.ui == null && newItem.ui != null) return false;
-            if (oldItem.ui != null && !oldItem.ui.equals(newItem.ui)) return false;
-
-            if (!buttonsEqual(oldItem.ui, newItem.ui)) return false;
-
-            if (oldItem.photos.size() != newItem.photos.size()) return false;
-            for (int i = 0; i < oldItem.photos.size(); ++i) {
-                PhotoData a = oldItem.photos.get(i);
-                PhotoData b = newItem.photos.get(i);
-                if (!TextUtils.equals(a.localPath, b.localPath)) return false;
-                if (a.width != b.width || a.height != b.height) return false;
-            }
-
-            return true;
+            return oldItem.equals(newItem);
         }
 
         @Override
