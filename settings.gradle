@@ -24,5 +24,4 @@ rootProject.name = "Telegram M"
 include ':app'
 include ':tdlib'
 include ':SharedUtils'
-include ':NativeUi'
 include ':SlidingMenu'
