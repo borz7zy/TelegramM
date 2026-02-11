@@ -1,184 +1,243 @@
-package com.github.borz7zy.telegramm.ui;
+package com.github.borz7zy.telegramm.ui
 
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.TextView;
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.TextView
+import androidx.lifecycle.Observer
+import androidx.navigation.fragment.NavHostFragment
+import com.github.borz7zy.telegramm.AppManager
+import com.github.borz7zy.telegramm.R
+import com.github.borz7zy.telegramm.background.AsyncTask
+import com.github.borz7zy.telegramm.core.accounts.AccountEntity
+import com.github.borz7zy.telegramm.core.accounts.AccountManager
+import com.github.borz7zy.telegramm.core.accounts.AccountSession
+import com.github.borz7zy.telegramm.core.accounts.AccountSingleCallback
+import com.github.borz7zy.telegramm.core.accounts.AccountStorage
+import com.github.borz7zy.telegramm.ui.base.BaseTelegramFragment
+import com.github.borz7zy.telegramm.utils.Logger
+import org.drinkless.tdlib.TdApi.AuthorizationState
+import org.drinkless.tdlib.TdApi.AuthorizationStateReady
+import org.drinkless.tdlib.TdApi.AuthorizationStateWaitCode
+import org.drinkless.tdlib.TdApi.AuthorizationStateWaitPassword
+import org.drinkless.tdlib.TdApi.AuthorizationStateWaitPhoneNumber
+import org.drinkless.tdlib.TdApi.AuthorizationStateWaitTdlibParameters
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
-import androidx.annotation.NonNull;
-import androidx.navigation.NavController;
-import androidx.navigation.fragment.NavHostFragment;
+class SplashFragment : BaseTelegramFragment() {
+    private var splashText: TextView? = null
+    private var latestState: AuthorizationState? = null
+    private val mainHandler = Handler(Looper.getMainLooper())
 
-import com.github.borz7zy.telegramm.AppManager;
-import com.github.borz7zy.telegramm.background.AsyncTask;
-import com.github.borz7zy.telegramm.core.accounts.AccountEntity;
-import com.github.borz7zy.telegramm.core.accounts.AccountSession;
-import com.github.borz7zy.telegramm.core.accounts.AccountStorage;
-import com.github.borz7zy.telegramm.core.accounts.AccountManager;
-import com.github.borz7zy.telegramm.R;
-import com.github.borz7zy.telegramm.ui.base.BaseTelegramFragment;
-import com.github.borz7zy.telegramm.utils.Logger;
-
-import org.drinkless.tdlib.TdApi;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
-
-public class SplashFragment extends BaseTelegramFragment {
-    private TextView splashText;
-    private TdApi.AuthorizationState latestState;
-    private final Handler mainHandler = new Handler(Looper.getMainLooper());
-
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_splash, container, false);
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        return inflater.inflate(R.layout.fragment_splash, container,
+            false)
     }
 
-    @Override
-    public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        splashText = view.findViewById(R.id.splashText);
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        splashText = view.findViewById<TextView>(R.id.splashText)
 
-        startTypewriterEffect();
-        startAsyncWaitState();
+        startTypewriterEffect()
+        startAsyncWaitState()
     }
 
-    private void startTypewriterEffect() {
-        String fullText = getString(R.string.app_name);
-        splashText.setText("|");
+    private fun startTypewriterEffect() {
+        val fullText = getString(R.string.app_name)
+        splashText!!.text = "|"
 
-        long totalDuration = 2000;
-        long charDelay = totalDuration / fullText.length();
+        val totalDuration: Long = 2000
+        val charDelay = totalDuration / fullText.length
 
-        new Runnable() {
-            int c = 0;
-            StringBuilder currentText = new StringBuilder();
+        object : Runnable {
+            var c: Int = 0
+            var currentText: StringBuilder = StringBuilder()
 
-            @Override
-            public void run() {
-                if (!isAdded()) return;
+            override fun run() {
+                if (!isAdded()) return
 
-                if (c < fullText.length()) {
-                    currentText.append(fullText.charAt(c));
-                    splashText.setText(currentText.toString() + "|");
+                if (c < fullText.length) {
+                    currentText.append(fullText.get(c))
+                    splashText!!.setText("$currentText|")
 
-                    ++c;
-                    mainHandler.postDelayed(this, charDelay);
+                    ++c
+                    mainHandler.postDelayed(this, charDelay)
                 } else {
-                    startBlinkingCursor(fullText);
+                    startBlinkingCursor(fullText)
                 }
             }
-        }.run();
+        }.run()
     }
 
-    private void startBlinkingCursor(String text) {
-        mainHandler.postDelayed(new Runnable() {
-            boolean showCursor = false;
+    private fun startBlinkingCursor(text: String?) {
+        mainHandler.postDelayed(object : Runnable {
+            var showCursor: Boolean = false
 
-            @Override
-            public void run() {
-                if (!isAdded()) return;
+            override fun run() {
+                if (!isAdded) return
 
-                splashText.setText(showCursor ? text + "|" : text);
-                showCursor = !showCursor;
+                splashText!!.setText(if (showCursor) "$text|" else text)
+                showCursor = !showCursor
 
-                mainHandler.postDelayed(this, 500);
+                mainHandler.postDelayed(this, 500)
             }
-        }, 500);
+        }, 500)
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        mainHandler.removeCallbacksAndMessages(null);
+    override fun onDestroyView() {
+        super.onDestroyView()
+        mainHandler.removeCallbacksAndMessages(null)
     }
 
-    @Override
-    protected void onAuthStateChanged(TdApi.AuthorizationState state) {
-        latestState = state;
-        Logger.LOGD("SplashFragment", "onAuthStateChanged: " + state.getClass().getSimpleName());
+    override fun onAuthStateChanged(state: AuthorizationState) {
+        latestState = state
+        Logger.LOGD("SplashFragment",
+            "onAuthStateChanged: " + state.javaClass.getSimpleName())
     }
 
-    private void startAsyncWaitState() {
-        new AsyncTask<Void, Void, TdApi.AuthorizationState>() {
+    private fun startAsyncWaitState() {
+        object : AsyncTask<Void?, Void?, AuthorizationState?>() {
+            @Throws(Throwable::class)
+            override fun doInBackground(vararg params: Void?): AuthorizationState? {
+                val latch = CountDownLatch(1)
+                val result = AtomicReference<AuthorizationState?>()
 
-            @Override
-            protected TdApi.AuthorizationState doInBackground(Void... params) throws Throwable {
-                CountDownLatch latch = new CountDownLatch(1);
-                AtomicReference<TdApi.AuthorizationState> result = new AtomicReference<>();
+                AppManager.getInstance().executorDb.execute(Runnable {
+                    AccountStorage.getInstance()
+                        .getCurrentActive(AccountSingleCallback
+                        { account: AccountEntity? ->
+                            if (account == null) {
+                                AppManager.getInstance()
+                                    .executorDb
+                                    .execute(Runnable {
+                                    val newAccount = AccountEntity(
+                                        null,
+                                        0L,
+                                        "New Account",
+                                        "")
+                                    val newId =
+                                        AppManager.getInstance().appDatabase.accountDao()
+                                            .insert(newAccount)
+                                    newAccount.setAccountId(newId.toInt())
+                                    AccountStorage.getInstance()
+                                        .setCurrentActive(newAccount.getAccountId())
+                                    Logger.LOGD(
+                                        "SplashFragment",
+                                        "Created new account ID: " + newAccount.getAccountId()
+                                    )
 
-                AppManager.getInstance().getExecutorDb().execute(() -> {
-                    AccountStorage.getInstance().getCurrentActive(account -> {
-                        if (account == null) {
-                            AppManager.getInstance().getExecutorDb().execute(() -> {
-                                AccountEntity newAccount = new AccountEntity(null, 0L, "New Account", "");
-                                long newId = AppManager.getInstance().getAppDatabase().accountDao().insert(newAccount);
-                                newAccount.setAccountId((int) newId);
-                                AccountStorage.getInstance().setCurrentActive(newAccount.getAccountId());
-                                Logger.LOGD("SplashFragment", "Created new account ID: " + newAccount.getAccountId());
+                                    val session =
+                                        AccountManager.getInstance().getOrCreateSession(newAccount)
+                                    mainHandler.post(Runnable {
+                                        subscribeAuthState(
+                                            session,
+                                            latch,
+                                            result
+                                        )
+                                    })
+                                })
+                            } else {
+                                val session =
+                                    AccountManager.getInstance().getOrCreateSession(/* account = */
+                                        account)
+                                Logger.LOGD(
+                                    /* tag = */ "SplashFragment",
+                                    /* msg = */ "Session created for account: "
+                                            + account.getAccountId()
+                                )
+                                mainHandler.post(Runnable {
+                                    subscribeAuthState(
+                                        session,
+                                        latch,
+                                        result
+                                    )
+                                })
+                            }
+                        })
+                })
 
-                                AccountSession session = AccountManager.getInstance().getOrCreateSession(newAccount);
+                latch.await()
+                return result.get()
+            }
 
-                                mainHandler.post(() -> subscribeAuthState(session, latch, result));
-                            });
-                        } else {
-                            AccountSession session = AccountManager.getInstance().getOrCreateSession(account);
-                            Logger.LOGD("SplashFragment", "Session created for account: " + account.getAccountId());
-                            mainHandler.post(() -> subscribeAuthState(session, latch, result));
+            fun subscribeAuthState(
+                session: AccountSession,
+                latch: CountDownLatch,
+                result: AtomicReference<AuthorizationState?>
+            ) {
+                val counted = AtomicBoolean(false)
+
+                session.observeAuthState()
+                    .observe(getViewLifecycleOwner(), Observer
+                    { state: AuthorizationState? ->
+                        Logger.LOGD(
+                            "SplashFragment",
+                            "observeAuthState update: " + state!!.javaClass.getSimpleName()
+                        )
+                        if (state is AuthorizationStateWaitTdlibParameters) {
+                            return@Observer
                         }
-                    });
-                });
-
-                latch.await();
-                return result.get();
+                        if (counted.compareAndSet(
+                                false,
+                                true)
+                        ) {
+                            result.set(state)
+                            latch.countDown()
+                        }
+                    })
             }
 
-            private void subscribeAuthState(AccountSession session, CountDownLatch latch, AtomicReference<TdApi.AuthorizationState> result){
-                AtomicBoolean counted = new AtomicBoolean(false);
+            override fun onPostExecute(state: AuthorizationState?) {
+                if (!isAdded) return
 
-                session.observeAuthState().observe(getViewLifecycleOwner(), state -> {
-                    Logger.LOGD("SplashFragment", "observeAuthState update: " + state.getClass().getSimpleName());
+                Logger.LOGD(
+                    "SplashFragment",
+                    "AsyncTask finished with state: "
+                            + (if (state != null) state.javaClass.getSimpleName() else "null")
+                )
 
-                    if (state instanceof TdApi.AuthorizationStateWaitTdlibParameters) {
-                        return;
+                val nav = NavHostFragment.findNavController(this@SplashFragment)
+
+                when (state) {
+                    is AuthorizationStateReady -> {
+                        Logger.LOGD("SplashFragment", "Navigate to Main")
+                        nav.navigate(R.id.frag_splash_to_main)
                     }
 
-                    if(state != null && counted.compareAndSet(false, true)){
-                        result.set(state);
-                        latch.countDown();
+                    is AuthorizationStateWaitPhoneNumber -> {
+                        Logger.LOGD("SplashFragment", "Navigate to Phone")
+                        nav.navigate(R.id.action_splashFragment_to_authPhoneFragment)
                     }
-                });
-            }
 
-            @Override
-            protected void onPostExecute(TdApi.AuthorizationState state) {
-                if (!isAdded()) return;
+                    is AuthorizationStateWaitCode -> {
+                        Logger.LOGD("SplashFragment", "Navigate to Code")
+                        nav.navigate(R.id.action_splashFragment_to_authCodeFragment)
+                    }
 
-                Logger.LOGD("SplashFragment", "AsyncTask finished with state: " + (state != null ? state.getClass().getSimpleName() : "null"));
+                    is AuthorizationStateWaitPassword -> {
+                        Logger.LOGD("SplashFragment", "Navigate to Password")
+                        nav.navigate(R.id.action_splashFragment_to_authPasswordFragment)
+                    }
 
-                NavController nav = NavHostFragment.findNavController(SplashFragment.this);
-
-                if (state instanceof TdApi.AuthorizationStateReady) {
-                    Logger.LOGD("SplashFragment", "Navigate to Main");
-                    nav.navigate(R.id.frag_splash_to_main);
-                } else if (state instanceof TdApi.AuthorizationStateWaitPhoneNumber) {
-                    Logger.LOGD("SplashFragment", "Navigate to Phone");
-                    nav.navigate(R.id.action_splashFragment_to_authPhoneFragment);
-                } else if (state instanceof TdApi.AuthorizationStateWaitCode) {
-                    Logger.LOGD("SplashFragment", "Navigate to Code");
-                    nav.navigate(R.id.action_splashFragment_to_authCodeFragment);
-                } else if (state instanceof TdApi.AuthorizationStateWaitPassword) {
-                    Logger.LOGD("SplashFragment", "Navigate to Password");
-                    nav.navigate(R.id.action_splashFragment_to_authPasswordFragment);
-                } else {
-                    Logger.LOGD("SplashFragment", "Unknown auth state: " + (state != null ? state.getClass().getSimpleName() : "null"));
+                    else -> {
+                        Logger.LOGD(
+                            "SplashFragment",
+                            "Unknown auth state: "
+                                    + (if (state != null) {
+                                state.javaClass.getSimpleName()
+                            } else "null")
+                        )
+                    }
                 }
             }
-        }.execPool();
+        }.execPool()
     }
 }
