@@ -101,7 +101,7 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
     private SpringRecyclerView rv;
     private LinearLayoutManager lm;
     private TopLoadingAdapter topLoading;
-    private MessagesAdapter adapter;
+    private ChatAdapter adapter;
     private EditText et;
     private ImageView btnSend;
 
@@ -306,7 +306,7 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
         });
 
         topLoading = new TopLoadingAdapter();
-        adapter = new MessagesAdapter();
+        adapter = new ChatAdapter();
         lm = new LinearLayoutManager(requireContext());
         lm.setStackFromEnd(true);
 
@@ -857,7 +857,7 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
         if (TextUtils.isEmpty(localPath) || !completed) {
             TdMediaRepository.get().getPathOrRequest(fileId, p -> {
                 if (!TextUtils.isEmpty(p)) {
-                    notifyMessageChanged(rowMessageId, MessagesAdapter.PAYLOAD_MEDIA);
+                    notifyMessageChanged(rowMessageId, ChatAdapter.PAYLOAD_MEDIA);
                 }
             });
             String cached = TdMediaRepository.get().getCachedPath(fileId);

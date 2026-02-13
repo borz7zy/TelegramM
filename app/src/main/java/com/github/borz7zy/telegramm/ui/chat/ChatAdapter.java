@@ -30,7 +30,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewHolder> {
+public class ChatAdapter extends ListAdapter<MessageItem, RecyclerView.ViewHolder> {
 
     private static final int VT_IN = 0;
     private static final int VT_OUT = 1;
@@ -55,7 +55,7 @@ public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewH
         this.btnListener = listener;
     }
 
-    public MessagesAdapter() {
+    public ChatAdapter() {
         super(DIFF);
         setHasStableIds(true);
     }
