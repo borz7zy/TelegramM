@@ -47,6 +47,11 @@ public class Logger {
         write("E", tag, msg + "\n" + Log.getStackTraceString(t));
     }
 
+    public static void LOGE(String tag, String msg) {
+        Log.e(tag, msg);
+        write("E", tag, msg);
+    }
+
     private static void write(String level, String tag, String msg) {
 
         if (logFile == null) return;

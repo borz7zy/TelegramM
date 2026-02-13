@@ -29,7 +29,7 @@
             android:layout_height="wrap_content"
             android:paddingTop="8dp"
             android:textSize="18sp"
-            android:textColor="#90FFFFFF"
+            android:textColor="@color/secondaryContainerColor"
             android:visibility="gone"
             tools:visibility="visible"
             tools:text="Telegram premium" />
@@ -40,7 +40,7 @@
             android:layout_height="wrap_content"
             android:paddingTop="8dp"
             android:textSize="16sp"
-            android:textColor="#90FFFFFF"
+            android:textColor="@color/secondaryContainerColor"
             android:gravity="center"
             android:visibility="visible"
             tools:visibility="visible"
@@ -53,7 +53,7 @@
             android:visibility="gone"
             tools:visibility="visible"
             android:paddingTop="8dp"
-            android:textColor="#90FFFFFF"
+            android:textColor="@color/secondaryContainerColor"
             android:gravity="center"
             tools:text="Пук пук среньк комментарий нахуй"/>
 
@@ -69,7 +69,8 @@
                 android:id="@+id/gift_action_1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-
+                android:backgroundTint="@color/primaryColor"
+                android:textColor="@color/onPrimaryColor"
                 tools:text="Открыть подарок"/>
 
         </LinearLayout>

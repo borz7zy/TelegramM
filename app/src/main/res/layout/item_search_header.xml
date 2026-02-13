@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="48dp"
     xmlns:tools="http://schemas.android.com/tools"
-    app:cardBackgroundColor="#502A2A2A"
+    app:cardBackgroundColor="@color/surfaceColor"
     app:cardElevation="0dp"
     app:cardCornerRadius="24dp">
 
@@ -20,7 +21,7 @@
             android:layout_height="24dp"
             android:layout_centerVertical="true"
             android:src="@drawable/ic_search_outline"
-            app:tint="#9E9E9E" />
+            app:tint="@color/onSurfaceColor" />
 
         <EditText
             android:id="@+id/editSearch"
@@ -35,7 +36,7 @@
             android:hint="Search dialogs"
             tools:hint="Поиск диалогов"
             android:textColor="@color/white"
-            android:textColorHint="#9E9E9E"
+            android:textColorHint="@color/onSurfaceColor"
             android:textSize="16sp"
             android:singleLine="true"
             android:imeOptions="actionSearch"
@@ -49,7 +50,7 @@
             android:layout_centerVertical="true"
             android:src="@drawable/ic_cancel_outline"
             android:visibility="gone"
-            app:tint="#9E9E9E"
+            app:tint="@color/onSurfaceColor"
             tools:visibility="visible" />
 
     </RelativeLayout>

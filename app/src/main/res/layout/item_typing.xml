@@ -9,7 +9,7 @@
     android:gravity="center_vertical"
     android:paddingStart="8dp"
     android:paddingEnd="8dp"
-    android:background="@android:color/transparent">
+    android:background="@color/surfaceColor">
 
     <ImageView
         android:id="@+id/ic_typing"
@@ -19,8 +19,8 @@
         android:background="@android:color/transparent"
         android:src="@drawable/ic_typing_list"
         android:scaleType="centerInside"
-        android:contentDescription="Play and pause button"
-        app:tint="@android:color/white"
+        android:contentDescription="Icon status writing message"
+        app:tint="@color/secondaryContainerColor"
         app:tintMode="src_in"/>
 
     <TextView
@@ -33,7 +33,7 @@
         android:insetLeft="0dp"
         android:insetRight="0dp"
         android:minWidth="0dp"
-        android:textColor="@android:color/darker_gray"
+        android:textColor="@color/secondaryContainerColor"
         android:minHeight="0dp"
         android:text=""
         tools:text="Юрий печатает"/>

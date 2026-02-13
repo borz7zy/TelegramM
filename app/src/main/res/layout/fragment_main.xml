@@ -2,9 +2,10 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/dialogs_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/tg_background"
+    android:background="@android:color/transparent"
     tools:context=".ui.dialogs.DialogsFragment">
 
     <eightbitlab.com.blurview.BlurTarget
@@ -24,7 +25,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
-        app:blurOverlayColor="@color/tg_background_t">
+        app:blurOverlayColor="@android:color/transparent">
 
         <LinearLayout
             android:id="@+id/topbar"
@@ -90,7 +91,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        app:blurOverlayColor="@color/tg_background_t">
+        app:blurOverlayColor="@android:color/transparent">
 
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/bottom_nav_view"

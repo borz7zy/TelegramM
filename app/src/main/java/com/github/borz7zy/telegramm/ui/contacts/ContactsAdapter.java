@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.github.borz7zy.telegramm.R;
+import com.github.borz7zy.telegramm.ui.ThemeEngine;
 import com.github.borz7zy.telegramm.ui.model.ContactItem;
 import com.github.borz7zy.telegramm.utils.TdMediaRepository;
 
@@ -20,6 +21,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ContactsAdapter extends RecyclerView.Adapter<ContactsAdapter.VH> {
+
+    private ThemeEngine.Theme theme;
+
+    public void setTheme(ThemeEngine.Theme theme){
+        this.theme = theme;
+    }
 
     public interface OnContactClickListener{
         void onContactClick(ContactItem item);
@@ -66,6 +73,11 @@ public class ContactsAdapter extends RecyclerView.Adapter<ContactsAdapter.VH> {
 
         h.contactName.setText(item.name);
         h.contactLastOnlineTime.setText(item.lastOnline != null ? item.lastOnline : "");
+
+        if (theme != null) {
+            h.contactName.setTextColor(theme.onSurfaceColor);
+            h.contactLastOnlineTime.setTextColor(theme.secondaryContainerColor);
+        }
 
         Glide.with(h.avatar.getContext())
                 .load(!TextUtils.isEmpty(item.avatarPath)

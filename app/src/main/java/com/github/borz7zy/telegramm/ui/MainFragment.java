@@ -16,6 +16,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.github.borz7zy.telegramm.AppManager;
 import com.github.borz7zy.telegramm.R;
 import com.github.borz7zy.telegramm.ui.contacts.ContactsFragment;
 import com.github.borz7zy.telegramm.ui.dialogs.DialogsFragment;
@@ -47,6 +48,8 @@ public class MainFragment extends Fragment {
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        View root = view.findViewById(R.id.dialogs_root);
+
         bottomNav = view.findViewById(R.id.bottom_nav_view);
         header = view.findViewById(R.id.header_blur);
         bottomNavView = view.findViewById(R.id.bottom_blur);
@@ -75,6 +78,13 @@ public class MainFragment extends Fragment {
                     mainViewModel.getCurrentTab().getValue() : R.id.nav_chats
             );
         }
+
+        AppManager.getInstance().getThemeEngine().getCurrentTheme().observe(getViewLifecycleOwner(), theme->{
+            root.setBackgroundColor(theme.surfaceColor);
+
+            header.setOverlayColor(theme.surfaceColor);
+            bottomNavView.setOverlayColor(theme.surfaceColor);
+        });
     }
 
     private void switchToFragment(int id){

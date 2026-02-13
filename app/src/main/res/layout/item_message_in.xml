@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:paddingEnd="12dp"
@@ -11,10 +13,11 @@
         android:id="@+id/card_avatar"
         android:layout_width="40dp"
         android:layout_height="40dp"
-        app:cardCornerRadius="28dp"
+        app:cardCornerRadius="20dp"
         app:cardElevation="0dp"
-        app:layout_constraintBottom_toBottomOf="@+id/bubble"
-        app:layout_constraintStart_toStartOf="parent">
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="@id/bubble">
 
         <ImageView
             android:id="@+id/msg_avatar"
@@ -34,8 +37,8 @@
         android:clipToOutline="true"
         android:orientation="vertical"
         android:paddingStart="12dp"
-        android:paddingEnd="12dp"
         android:paddingTop="8dp"
+        android:paddingEnd="12dp"
         android:paddingBottom="6dp"
         app:layout_constraintStart_toEndOf="@id/card_avatar"
         app:layout_constraintTop_toTopOf="parent"
@@ -46,43 +49,50 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:padding="4dp"
-            android:visibility="gone"/>
+            android:visibility="gone"
+            tools:visibility="visible" />
 
         <TextView
             android:id="@+id/tv_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:breakStrategy="simple"
+            android:hyphenationFrequency="none"
             android:includeFontPadding="false"
-            android:textSize="16sp"
             android:lineSpacingExtra="2dp"
             android:maxWidth="300dp"
-            android:breakStrategy="simple"
-            android:hyphenationFrequency="none" />
+            android:textSize="16sp"
+            android:textColor="@color/onPrimaryColor"
+            tools:text="Message text" />
 
         <com.github.borz7zy.telegramm.ui.widget.JustifiedLayout
             android:id="@+id/image_board_bottom"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:padding="4dp"
-            android:visibility="gone"/>
+            android:visibility="gone"
+            tools:visibility="visible" />
 
         <LinearLayout
             android:id="@+id/buttons_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:visibility="gone" />
-
-        <TextView
-            android:id="@+id/tv_time"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="end"
-            android:layout_marginTop="4dp"
-            android:includeFontPadding="false"
-            android:alpha="0.65"
-            android:textSize="12sp" />
+            android:visibility="gone"
+            tools:visibility="visible" />
 
     </LinearLayout>
+
+    <TextView
+        android:id="@+id/tv_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:alpha="0.65"
+        android:includeFontPadding="false"
+        android:textColor="@color/secondaryContainerColor"
+        android:textSize="12sp"
+        app:layout_constraintStart_toStartOf="@+id/bubble"
+        app:layout_constraintTop_toBottomOf="@+id/bubble"
+        tools:text="10:00" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

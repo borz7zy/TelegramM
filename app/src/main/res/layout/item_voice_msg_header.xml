@@ -1,38 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/voice_player_bar"
     android:layout_width="match_parent"
-    android:layout_height="28dp"
+    android:layout_height="36dp"
     android:orientation="horizontal"
     android:gravity="center_vertical"
     android:paddingStart="8dp"
     android:paddingEnd="8dp"
-    android:background="@android:color/transparent">
+    android:background="@color/surfaceColor">
 
     <ImageButton
         android:id="@+id/btn_play_pause"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
         android:layout_marginEnd="8dp"
         android:background="@android:color/transparent"
         android:src="@drawable/ic_pause"
         android:scaleType="centerInside"
-        android:contentDescription="Play and pause button"
-        app:tint="@android:color/white" />
+        android:contentDescription="Play/Pause"
+        app:tint="@color/onSurfaceColor" />
 
     <com.github.borz7zy.telegramm.ui.widget.WavySeekBar
         android:id="@+id/seek_voice"
         android:layout_width="0dp"
-        android:layout_height="40dp"
+        android:layout_height="28dp"
         android:layout_weight="1"
         android:layout_marginEnd="8dp"
         android:max="10000"
         android:progress="3000"
         android:splitTrack="false"
         android:background="@android:color/transparent"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp" />
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_speed"
@@ -52,16 +53,18 @@
         android:paddingBottom="0dp"
         android:text="x1.0"
         app:cornerRadius="14dp"
-        android:background="@android:color/transparent"/>
+        android:background="@android:color/transparent"
+        app:iconTint="@color/onSurfaceColor"
+        android:textColor="@color/onSurfaceColor" />
 
     <ImageButton
         android:id="@+id/btn_close_player"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
         android:background="@android:color/transparent"
         android:scaleType="centerInside"
         android:contentDescription="Stop play"
         android:src="@drawable/ic_cancel_outline"
-        app:tint="@android:color/white" />
+        app:tint="@color/onSurfaceColor" />
 
 </LinearLayout>

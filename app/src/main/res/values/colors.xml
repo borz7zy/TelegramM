@@ -21,4 +21,13 @@
     <color name="tg_navbar_selected">#806E9BFF</color>
 
     <color name="white">#FFFFFF</color>
+
+    <!-- LibMonet -->
+    <color name="primaryColor">#6E9BFF</color>
+    <color name="onPrimaryColor">#FFFFFF</color>
+    <color name="secondaryContainerColor">#DCE3FF</color>
+    <color name="onSecondaryContainerColor">#1C3A80</color>
+    <color name="surfaceColor">#FFFFFF</color>
+    <color name="onSurfaceColor">#1A1A1A</color>
+
 </resources>

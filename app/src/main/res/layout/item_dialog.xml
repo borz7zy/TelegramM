@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
     android:background="?attr/selectableItemBackground"
     android:padding="12dp">
 
@@ -21,7 +22,8 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:scaleType="centerCrop"
-            android:src="@drawable/bg_badge"/>
+            android:src="@drawable/bg_badge"
+            tools:ignore="ContentDescription" />
 
     </androidx.cardview.widget.CardView>
 
@@ -35,8 +37,9 @@
         android:ellipsize="end"
         android:maxLines="1"
         android:singleLine="true"
-        app:layout_constraintEnd_toStartOf="@id/tv_time"
+        android:textColor="@color/primaryColor"
         app:layout_constraintStart_toEndOf="@id/card_avatar"
+        app:layout_constraintEnd_toStartOf="@id/tv_time"
         app:layout_constraintTop_toTopOf="@id/card_avatar"
         tools:text="Сквад 79 сисек A.K.A лучшие уголовники в подвале" />
 
@@ -45,6 +48,7 @@
         style="@style/TgSubtitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:textColor="@color/secondaryContainerColor"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@id/dialog_name"
         tools:text="14:88" />
@@ -58,26 +62,27 @@
         android:layout_marginEnd="8dp"
         android:ellipsize="end"
         android:maxLines="1"
-        app:layout_constraintEnd_toStartOf="@id/badge_unread"
+        android:textColor="@color/onSurfaceColor"
         app:layout_constraintStart_toStartOf="@id/dialog_name"
+        app:layout_constraintEnd_toStartOf="@id/badge_unread"
         app:layout_constraintTop_toBottomOf="@id/dialog_name"
         tools:text="Всем привет я новенький" />
 
     <TextView
-        style="@style/Text.GoogleSans.Bold"
         android:id="@+id/badge_unread"
+        style="@style/Text.GoogleSans.Bold"
         android:layout_width="wrap_content"
         android:minWidth="24dp"
         android:layout_height="24dp"
         android:background="@drawable/bg_badge"
         android:gravity="center"
-        tools:text="1"
-        android:textColor="@android:color/white"
+        android:textColor="@color/onPrimaryColor"
         android:textSize="12sp"
         android:textStyle="bold"
         android:visibility="visible"
+        app:layout_constraintTop_toTopOf="@id/dialog_message"
         app:layout_constraintBottom_toBottomOf="@id/dialog_message"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/dialog_message" />
+        tools:text="1" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

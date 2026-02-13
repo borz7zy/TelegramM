@@ -1,6 +1,9 @@
 package com.github.borz7zy.telegramm;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
+
+import com.github.borz7zy.telegramm.ui.ThemeEngine;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -17,6 +20,8 @@ public class AppManager {
     private static volatile AppManager INSTANCE;
     private final Context context;
 
+    private ThemeEngine themeEngine;
+
     public static void init(Context context){
         if(INSTANCE == null){
             synchronized (AppManager.class){
@@ -32,12 +37,18 @@ public class AppManager {
             throw new IllegalStateException("AppManager is not initialized! Call AppManager.init() in the App class.");
         return INSTANCE;
     }
+    @SuppressLint("ResourceAsColor")
     private AppManager(Context context){
         this.context = context.getApplicationContext();
 
         this.executorDb = Executors.newSingleThreadExecutor();
 
         this.db = AppDatabase.getDatabase(App.getApplication().getApplicationContext());
+
+        this.themeEngine = new ThemeEngine();
+        boolean isNight = true; // TODO
+        final int seedColor = R.color.primaryColor;
+        this.themeEngine.initTheme(seedColor, isNight);
     }
 
     // --------------------
@@ -54,5 +65,9 @@ public class AppManager {
 
     public Context getContext(){
         return context;
+    }
+
+    public ThemeEngine getThemeEngine(){
+        return themeEngine;
     }
 }

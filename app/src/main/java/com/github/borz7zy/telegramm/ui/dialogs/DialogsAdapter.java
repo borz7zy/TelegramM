@@ -1,5 +1,6 @@
 package com.github.borz7zy.telegramm.ui.dialogs;
 
+import android.annotation.SuppressLint;
 import android.graphics.Color;
 import android.text.TextUtils;
 import android.view.HapticFeedbackConstants;
@@ -17,6 +18,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.github.borz7zy.telegramm.R;
+import com.github.borz7zy.telegramm.ui.ThemeEngine;
 import com.github.borz7zy.telegramm.ui.model.DialogItem;
 import com.github.borz7zy.telegramm.utils.TdMediaRepository;
 
@@ -24,6 +26,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DialogsAdapter extends RecyclerView.Adapter<DialogsAdapter.VH> {
+
+    private ThemeEngine.Theme theme;
 
     public interface OnDialogClickListener {
         void onDialogClick(DialogItem item);
@@ -42,6 +46,11 @@ public class DialogsAdapter extends RecyclerView.Adapter<DialogsAdapter.VH> {
 
     public void setOnDragListener(OnStartDragListener l){
         dragListener = l;
+    }
+
+    public void setTheme(ThemeEngine.Theme theme){
+        this.theme = theme;
+        notifyDataSetChanged();
     }
 
     private final ArrayList<DialogItem> items = new ArrayList<>();
@@ -130,6 +139,7 @@ public class DialogsAdapter extends RecyclerView.Adapter<DialogsAdapter.VH> {
         return new VH(v);
     }
 
+    @SuppressLint("ResourceAsColor")
     @Override
     public void onBindViewHolder(@NonNull VH h, int position) {
         DialogItem item = getItem(position);
@@ -145,20 +155,27 @@ public class DialogsAdapter extends RecyclerView.Adapter<DialogsAdapter.VH> {
             return true;
         });
 
+        int nameColor = theme != null ? theme.primaryColor : R.color.primaryColor;
+        int messageColor = theme != null ? theme.onSurfaceColor : R.color.onSurfaceColor;
+        int timeColor = theme != null ? theme.secondaryContainerColor : R.color.secondaryContainerColor;
+        int badgeColor = theme != null ? theme.onPrimaryColor : R.color.onPrimaryColor;
+
         h.name.setText(item.name);
         h.time.setText(item.time);
+        h.time.setTextColor(timeColor);
 
         if (item.isTyping) {
             h.message.setText("Печатает...");
-            h.message.setTextColor(ContextCompat.getColor(h.itemView.getContext(), R.color.tg_primary));
+            h.message.setTextColor(nameColor);
         } else {
             h.message.setText(item.text);
-            h.message.setTextColor(Color.GRAY);
+            h.message.setTextColor(messageColor);
         }
 
         if (item.unread > 0) {
             h.unread.setVisibility(View.VISIBLE);
             h.unread.setText(String.valueOf(item.unread));
+            h.unread.setTextColor(badgeColor);
         } else {
             h.unread.setVisibility(View.GONE);
         }

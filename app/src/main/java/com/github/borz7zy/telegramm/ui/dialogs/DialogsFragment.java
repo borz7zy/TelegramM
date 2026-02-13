@@ -1,5 +1,6 @@
 package com.github.borz7zy.telegramm.ui.dialogs;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -8,16 +9,19 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.github.borz7zy.telegramm.AppManager;
 import com.github.borz7zy.telegramm.R;
 import com.github.borz7zy.telegramm.core.accounts.AccountManager;
 import com.github.borz7zy.telegramm.core.accounts.AccountSession;
 import com.github.borz7zy.telegramm.core.accounts.AccountStorage;
 import com.github.borz7zy.telegramm.ui.LayoutViewModel;
+import com.github.borz7zy.telegramm.ui.ThemeEngine;
 import com.github.borz7zy.telegramm.ui.base.BaseTelegramFragment;
 import com.github.borz7zy.telegramm.ui.chat.ChatFragment;
 import com.github.borz7zy.telegramm.ui.model.DialogItem;
@@ -31,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DialogsFragment extends BaseTelegramFragment implements Client.ResultHandler {
@@ -55,6 +60,7 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
         return inflater.inflate(R.layout.fragment_dialogs, container, false);
     }
 
+    @SuppressLint("ResourceAsColor")
     @Override
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -62,6 +68,16 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
         recyclerView = view.findViewById(R.id.recycler_dialogs);
         setupRecyclerView();
         setupInsets();
+
+        AppManager.getInstance().getThemeEngine().getCurrentTheme().observe(getViewLifecycleOwner(), new Observer<ThemeEngine.Theme>() {
+            @Override
+            public void onChanged(ThemeEngine.Theme theme) {
+                adapter.setTheme(theme);
+            }
+        });
+
+        int bgColor = Objects.requireNonNull(AppManager.getInstance().getThemeEngine().getCurrentTheme().getValue()).surfaceColor;
+        view.setBackgroundColor(bgColor);
     }
 
     private void setupRecyclerView() {

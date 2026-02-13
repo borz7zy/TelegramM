@@ -11,6 +11,7 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.github.borz7zy.telegramm.AppManager;
 import com.github.borz7zy.telegramm.R;
 import com.github.borz7zy.telegramm.core.accounts.AccountManager;
 import com.github.borz7zy.telegramm.core.accounts.AccountSession;
@@ -52,6 +53,14 @@ public class ContactsFragment extends BaseTelegramFragment implements Client.Res
 
         recyclerView = view.findViewById(R.id.recycler_contacts);
         setupRecyclerView();
+
+        AppManager.getInstance().getThemeEngine().getCurrentTheme().observe(getViewLifecycleOwner(), theme->{
+            view.setBackgroundColor(theme.surfaceColor);
+
+            if(adapter != null){
+                adapter.setTheme(theme);
+            }
+        });
     }
 
     private void setupRecyclerView() {
