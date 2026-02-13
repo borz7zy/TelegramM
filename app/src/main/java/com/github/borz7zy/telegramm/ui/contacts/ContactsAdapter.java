@@ -26,7 +26,7 @@ public class ContactsAdapter extends RecyclerView.Adapter<ContactsAdapter.VH> {
     }
 
     private OnContactClickListener clickListener;
-    public void setOnConctactClickListener(OnContactClickListener l){
+    public void setOnContactClickListener(OnContactClickListener l){
         this.clickListener = l;
     }
 

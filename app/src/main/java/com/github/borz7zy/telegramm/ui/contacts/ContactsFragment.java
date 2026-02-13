@@ -59,7 +59,7 @@ public class ContactsFragment extends BaseTelegramFragment implements Client.Res
         adapter = new ContactsAdapter();
         recyclerView.setAdapter(adapter);
 
-        adapter.setOnConctactClickListener(item -> {
+        adapter.setOnContactClickListener(item -> {
             // TODO: open profile fragment
         });
     }
