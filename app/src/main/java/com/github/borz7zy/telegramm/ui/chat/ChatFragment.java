@@ -61,6 +61,7 @@ import org.drinkless.tdlib.TdApi;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -125,6 +126,12 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
 
     private boolean closing = false;
     private OnBackPressedCallback backCallback;
+
+    private static final long BATCH_DELAY_MS = 200;
+    private final Object batchLock = new Object();
+    private boolean updateScheduled = false;
+    private boolean pendingScrollToBottom = false;
+    private boolean pendingPagination = false;
 
     public static ChatFragment newInstance(long chatId, String title) {
         ChatFragment f = new ChatFragment();
@@ -382,7 +389,7 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
             TdApi.Message m = ((TdApi.UpdateNewMessage) object).message;
             if (m != null && m.chatId == chatId) {
                 processMessageAndPut(m);
-                publishSorted(false, true);
+                scheduleUiUpdate(false, true);
             }
         }
         else if (object instanceof TdApi.UpdateMessageSendSucceeded) {
@@ -394,7 +401,7 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
                 rawMessages.put(u.message.id, u.message);
                 byId.put(u.message.id, toItem(u.message));
 
-                publishSorted(false, true);
+                scheduleUiUpdate(false, true);
             }
         }
         else if (object instanceof TdApi.UpdateDeleteMessages) {
@@ -404,7 +411,7 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
                     byId.remove(id);
                     rawMessages.remove(id);
                 }
-                publishSorted(false, false);
+                scheduleUiUpdate(false, false);
             }
         }
         else if (object instanceof TdApi.UpdateMessageEdited) {
@@ -426,7 +433,7 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
                     }
                     MessageItem updated = cur.withUi(newUi);
                     byId.put(u.messageId, updated);
-                    publishSorted(false, false);
+                    scheduleUiUpdate(false, false);
                 }
             }
         }
@@ -475,10 +482,10 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
         }
 
         if (isInitialLoad) {
-            publishSorted(false, true);
+            scheduleUiUpdate(false, true);
             isInitialLoad = false;
         } else {
-            publishSorted(true, false);
+            scheduleUiUpdate(true, false);
         }
     }
 
@@ -576,76 +583,103 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
                     }
                 }
                 if (needUpdate) {
-                    publishSorted(false, false);
+                    scheduleUiUpdate(false, false);
                 }
             }).start();
         }
     }
 
-    private void publishSorted(boolean isPagination, boolean maybeScrollToBottom) {
+    private void scheduleUiUpdate(boolean isPagination, boolean scrollToBottom) {
+        synchronized (batchLock) {
+            if (isPagination) pendingPagination = true;
+            if (scrollToBottom) pendingScrollToBottom = true;
+
+            if (!updateScheduled) {
+                updateScheduled = true;
+                mainHandler.postDelayed(this::performBufferedUpdate, BATCH_DELAY_MS);
+            }
+        }
+    }
+
+    private void performBufferedUpdate() {
+        boolean doScroll;
+        boolean doPagination;
+
+        synchronized (batchLock) {
+            doScroll = pendingScrollToBottom;
+            doPagination = pendingPagination;
+            pendingScrollToBottom = false;
+            pendingPagination = false;
+            updateScheduled = false;
+        }
+
         if (!isAdded()) return;
 
-        ArrayList<MessageItem> list = new ArrayList<>(byId.values());
-        list.sort((m1, m2) -> {
-            return Long.compare(m1.id, m2.id);
-        });
+        new Thread(() -> {
+            ArrayList<MessageItem> list = new ArrayList<>(byId.values());
+            list.sort((m1, m2) -> Long.compare(m1.id, m2.id));
 
-        mainHandler.post(() -> {
-            long anchorMsgId = -1;
-            int anchorOffset = 0;
+            mainHandler.post(() -> applyListToAdapter(list, doPagination, doScroll));
+        }).start();
+    }
 
-            if (isPagination) {
-                int firstPos = lm.findFirstVisibleItemPosition();
-                if (firstPos != RecyclerView.NO_POSITION) {
-                    View child = lm.findViewByPosition(firstPos);
+    private void applyListToAdapter(List<MessageItem> list, boolean isPagination, boolean maybeScrollToBottom) {
+        if (!isAdded()) return;
 
-                    boolean isLoader = (topLoading.isVisible() && firstPos == 0);
+        long anchorMsgId = -1;
+        int anchorOffset = 0;
 
-                    if (isLoader) {
-                        int msgPos = firstPos + 1;
-                        if (msgPos < adapter.getItemCount() + 1) {
-                            View msgView = lm.findViewByPosition(msgPos);
-                            if (msgView != null) {
-                                int adapterIndex = msgPos - 1;
-                                if (adapterIndex >= 0 && adapterIndex < adapter.getItemCount()) {
-                                    anchorMsgId = adapter.getItemId(adapterIndex);
-                                    anchorOffset = msgView.getTop();
-                                }
-                            }
-                        }
-                    } else {
-                        if (child != null) {
-                            int adapterIndex = firstPos - (topLoading.isVisible() ? 1 : 0);
+        if (isPagination) {
+            int firstPos = lm.findFirstVisibleItemPosition();
+            if (firstPos != RecyclerView.NO_POSITION) {
+                View child = lm.findViewByPosition(firstPos);
+                boolean isLoader = (topLoading.isVisible() && firstPos == 0);
+
+                if (isLoader) {
+                    int msgPos = firstPos + 1;
+                    if (msgPos < adapter.getItemCount() + 1) {
+                        View msgView = lm.findViewByPosition(msgPos);
+                        if (msgView != null) {
+                            int adapterIndex = msgPos - 1;
                             if (adapterIndex >= 0 && adapterIndex < adapter.getItemCount()) {
                                 anchorMsgId = adapter.getItemId(adapterIndex);
-                                anchorOffset = child.getTop();
+                                anchorOffset = msgView.getTop();
                             }
+                        }
+                    }
+                } else {
+                    if (child != null) {
+                        int adapterIndex = firstPos - (topLoading.isVisible() ? 1 : 0);
+                        if (adapterIndex >= 0 && adapterIndex < adapter.getItemCount()) {
+                            anchorMsgId = adapter.getItemId(adapterIndex);
+                            anchorOffset = child.getTop();
                         }
                     }
                 }
             }
+        }
 
-            final long finalAnchorId = anchorMsgId;
-            final int finalAnchorOffset = anchorOffset;
+        final long finalAnchorId = anchorMsgId;
+        final int finalAnchorOffset = anchorOffset;
 
-            adapter.submitList(list, () -> {
-                if (isPagination) {
-                    setTopLoading(false);
-
-                    if (finalAnchorId != -1) {
-                        int newPos = adapter.findPositionById(finalAnchorId);
-                        if (newPos != RecyclerView.NO_POSITION) {
-                            lm.scrollToPositionWithOffset(newPos, finalAnchorOffset);
-                        }
-                    }
-                } else {
-                    boolean isUserInteracting = rv.getScrollState() != RecyclerView.SCROLL_STATE_IDLE;
-                    if (maybeScrollToBottom && isNearBottom() && !isUserInteracting) {
-                        rv.scrollToPosition(adapter.getItemCount() - 1);
+        adapter.submitList(list, () -> {
+            if (isPagination) {
+                setTopLoading(false);
+                if (finalAnchorId != -1) {
+                    int newPos = adapter.findPositionById(finalAnchorId);
+                    if (newPos != RecyclerView.NO_POSITION) {
+                        lm.scrollToPositionWithOffset(newPos, finalAnchorOffset);
                     }
                 }
-                loading = false;
-            });
+            } else {
+                boolean isUserInteracting = rv.getScrollState() != RecyclerView.SCROLL_STATE_IDLE;
+                if (maybeScrollToBottom && !isUserInteracting) {
+                    rv.scrollToPosition(adapter.getItemCount() - 1);
+                } else if (maybeScrollToBottom && isNearBottom()) {
+                    rv.scrollToPosition(adapter.getItemCount() - 1);
+                }
+            }
+            loading = false;
         });
     }
 
@@ -732,17 +766,24 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
             return;
         }
 
+        WeakReference<ImageView> refInfo = new WeakReference<>(ivChatAvatar);
+
         TdMediaRepository.get().getPathOrRequest(fid, p -> {
-            Object cur = ivChatAvatar.getTag();
+            ImageView iv = refInfo.get();
+            if (iv == null) return;
+
+            Object cur = iv.getTag();
             if (!(cur instanceof String) || !tag.equals(cur)) return;
             if (TextUtils.isEmpty(p)) return;
 
-            Glide.with(ivChatAvatar)
-                    .load(p)
-                    .apply(RequestOptions.circleCropTransform())
-                    .placeholder(R.drawable.bg_badge)
-                    .error(R.drawable.bg_badge)
-                    .into(ivChatAvatar);
+            iv.post(() -> {
+                Glide.with(iv)
+                        .load(p)
+                        .apply(RequestOptions.circleCropTransform())
+                        .placeholder(R.drawable.bg_badge)
+                        .error(R.drawable.bg_badge)
+                        .into(iv);
+            });
         });
     }
 
