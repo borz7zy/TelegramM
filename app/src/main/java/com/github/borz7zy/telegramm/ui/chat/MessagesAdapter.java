@@ -28,6 +28,7 @@ import com.github.borz7zy.telegramm.utils.TdMediaRepository;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewHolder> {
 
@@ -312,10 +313,11 @@ public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewH
         final int photoCount = photos.size();
 
         int targetHeight = (photoCount == 1) ? bubbleWidth : dp(layout, 120);
+        Object currentMode = layout.getTag(R.id.tag_layout_mode);
 
-        if (layout.getTag(R.id.tag_layout_mode) == null ||
-                (int)layout.getTag(R.id.tag_layout_mode) != targetHeight) {
+        boolean needLayoutUpdate = (currentMode == null || !currentMode.equals(targetHeight));
 
+        if (needLayoutUpdate) {
             layout.setTag(R.id.tag_layout_mode, targetHeight);
 
             if (photoCount == 1) {
@@ -342,50 +344,59 @@ public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewH
             ImageView iv = (ImageView) layout.getChildAt(i);
 
             if (i >= photoCount) {
-                iv.setVisibility(View.GONE);
+                if (iv.getVisibility() != View.GONE) {
+                    iv.setVisibility(View.GONE);
+                    Glide.with(iv).clear(iv);
+                }
                 continue;
             }
 
-            iv.setVisibility(View.VISIBLE);
-            PhotoData photo = photos.get(i);
+            if (iv.getVisibility() != View.VISIBLE) {
+                iv.setVisibility(View.VISIBLE);
+            }
 
-            final int fid = photo.fileId;
+            PhotoData photo = photos.get(i);
 
             JustifiedLayout.LayoutParams lp = (JustifiedLayout.LayoutParams) iv.getLayoutParams();
             if (lp == null) {
                 lp = new JustifiedLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            }
-
-            if (Math.abs(lp.aspectRatio - photo.aspectRatio) > 0.01f) {
+                lp.aspectRatio = photo.aspectRatio;
+                iv.setLayoutParams(lp);
+            } else if (Math.abs(lp.aspectRatio - photo.aspectRatio) > 0.001f) {
                 lp.aspectRatio = photo.aspectRatio;
                 iv.setLayoutParams(lp);
             }
 
-            int oldFid = getTagId(iv);
-            if (oldFid == fid) {
+            String contentKey = (photo.fileId != 0) ? "remote_" + photo.fileId : "local_" + photo.localPath;
+            Object currentKey = iv.getTag();
+
+            if (Objects.equals(contentKey, currentKey)) {
                 continue;
             }
 
-            iv.setTag(fid);
-            Glide.with(iv).clear(iv);
+            iv.setTag(contentKey);
 
             String path = photo.localPath;
-            if (TextUtils.isEmpty(path) && fid != 0) {
-                path = TdMediaRepository.get().getCachedPath(fid);
+            if (TextUtils.isEmpty(path) && photo.fileId != 0) {
+                path = TdMediaRepository.get().getCachedPath(photo.fileId);
             }
 
             if (!TextUtils.isEmpty(path)) {
                 loadGlideImage(iv, path);
-            } else if (fid != 0) {
+            } else if (photo.fileId != 0) {
                 iv.setImageResource(R.drawable.bg_msg_bubble);
 
                 WeakReference<ImageView> weakImg = new WeakReference<>(iv);
+                final int reqFid = photo.fileId;
+                final String reqKey = contentKey;
 
-                TdMediaRepository.get().getPathOrRequest(fid, p -> {
+                TdMediaRepository.get().getPathOrRequest(reqFid, p -> {
                     ImageView v = weakImg.get();
                     if (v == null) return;
 
-                    if (getTagId(v) != fid) return;
+                    Object tag = v.getTag();
+                    if (!Objects.equals(tag, reqKey)) return;
+
                     if (TextUtils.isEmpty(p)) return;
 
                     v.post(() -> loadGlideImage(v, p));
@@ -405,6 +416,7 @@ public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewH
                 .load(path)
                 .centerCrop()
                 .dontAnimate()
+                .override(iv.getWidth(), iv.getHeight())
                 .placeholder(R.drawable.bg_msg_bubble)
                 .error(R.drawable.bg_msg_bubble)
                 .into(iv);
