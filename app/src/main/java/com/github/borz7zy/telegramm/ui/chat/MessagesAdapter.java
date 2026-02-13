@@ -25,6 +25,7 @@ import com.github.borz7zy.telegramm.ui.widget.JustifiedLayout;
 import com.github.borz7zy.telegramm.utils.RoundedOutlineProvider;
 import com.github.borz7zy.telegramm.utils.TdMediaRepository;
 
+import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.List;
 
@@ -270,16 +271,24 @@ public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewH
 
         iv.setTag(fid);
 
+        WeakReference<ImageView> weakIv = new WeakReference<>(iv);
+
         TdMediaRepository.get().getPathOrRequest(fid, path -> {
-            Object tag = iv.getTag();
+            ImageView view = weakIv.get();
+            if (view == null) return;
+
+            Object tag = view.getTag();
             if (!(tag instanceof Integer) || ((Integer) tag) != fid) return;
+
             if (TextUtils.isEmpty(path)) return;
 
-            Glide.with(iv)
-                    .load(path)
-                    .placeholder(R.drawable.bg_badge)
-                    .error(R.drawable.bg_badge)
-                    .into(iv);
+            view.post(() -> {
+                Glide.with(view)
+                        .load(path)
+                        .placeholder(R.drawable.bg_badge)
+                        .error(R.drawable.bg_badge)
+                        .into(view);
+            });
         });
     }
 
@@ -302,9 +311,7 @@ public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewH
 
         final int photoCount = photos.size();
 
-        int targetHeight = (photoCount == 1)
-                ? bubbleWidth
-                : dp(layout, 120);
+        int targetHeight = (photoCount == 1) ? bubbleWidth : dp(layout, 120);
 
         if (layout.getTag(R.id.tag_layout_mode) == null ||
                 (int)layout.getTag(R.id.tag_layout_mode) != targetHeight) {
@@ -320,22 +327,18 @@ public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewH
                 layout.setRowHeightBoundsPx(dp(layout, 80), dp(layout, 200));
                 layout.setJustifyLastRow(true);
             }
-
             layout.setSpacingPx(dp(layout,2));
         }
 
         while (layout.getChildCount() < MAX_PHOTO_POOL) {
             ImageView iv = new ImageView(layout.getContext());
             iv.setScaleType(ImageView.ScaleType.CENTER_CROP);
-
             iv.setClipToOutline(true);
-            iv.setOutlineProvider(new RoundedOutlineProvider(dp(layout,10)));
-
+            iv.setOutlineProvider(new RoundedOutlineProvider(dp(layout, 10)));
             layout.addView(iv);
         }
 
         for (int i = 0; i < MAX_PHOTO_POOL; ++i) {
-
             ImageView iv = (ImageView) layout.getChildAt(i);
 
             if (i >= photoCount) {
@@ -344,20 +347,13 @@ public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewH
             }
 
             iv.setVisibility(View.VISIBLE);
-
             PhotoData photo = photos.get(i);
 
             final int fid = photo.fileId;
-            final int w = photo.width;
-            final int h = photo.height;
 
-            JustifiedLayout.LayoutParams lp =
-                    (JustifiedLayout.LayoutParams) iv.getLayoutParams();
-
+            JustifiedLayout.LayoutParams lp = (JustifiedLayout.LayoutParams) iv.getLayoutParams();
             if (lp == null) {
-                lp = new JustifiedLayout.LayoutParams(
-                        ViewGroup.LayoutParams.WRAP_CONTENT,
-                        ViewGroup.LayoutParams.WRAP_CONTENT);
+                lp = new JustifiedLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             }
 
             if (Math.abs(lp.aspectRatio - photo.aspectRatio) > 0.01f) {
@@ -366,13 +362,11 @@ public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewH
             }
 
             int oldFid = getTagId(iv);
-
             if (oldFid == fid) {
                 continue;
             }
 
             iv.setTag(fid);
-
             Glide.with(iv).clear(iv);
 
             String path = photo.localPath;
@@ -383,15 +377,18 @@ public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewH
             if (!TextUtils.isEmpty(path)) {
                 loadGlideImage(iv, path);
             } else if (fid != 0) {
-
                 iv.setImageResource(R.drawable.bg_msg_bubble);
 
-                TdMediaRepository.get().getPathOrRequest(fid, p -> {
+                WeakReference<ImageView> weakImg = new WeakReference<>(iv);
 
-                    if (getTagId(iv) != fid) return;
+                TdMediaRepository.get().getPathOrRequest(fid, p -> {
+                    ImageView v = weakImg.get();
+                    if (v == null) return;
+
+                    if (getTagId(v) != fid) return;
                     if (TextUtils.isEmpty(p)) return;
 
-                    loadGlideImage(iv, p);
+                    v.post(() -> loadGlideImage(v, p));
                 });
             }
         }
@@ -559,8 +556,7 @@ public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewH
 
         final String tag = "msg:" + m.chatId + ":" + fid;
 
-        if (tag.equals(h.avatar.getTag()))
-            return;
+        if (tag.equals(h.avatar.getTag())) return;
 
         h.avatar.setTag(tag);
         Glide.with(h.avatar).clear(h.avatar);
@@ -577,17 +573,24 @@ public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewH
             return;
         }
 
+        WeakReference<ImageView> weakAvatar = new WeakReference<>(h.avatar);
+
         TdMediaRepository.get().getPathOrRequest(fid, p -> {
-            Object cur = h.avatar.getTag();
+            ImageView iv = weakAvatar.get();
+            if (iv == null) return;
+
+            Object cur = iv.getTag();
             if (!(cur instanceof String) || !tag.equals(cur)) return;
             if (TextUtils.isEmpty(p)) return;
 
-            Glide.with(h.avatar)
-                    .load(p)
-                    .apply(RequestOptions.circleCropTransform())
-                    .placeholder(R.drawable.bg_badge)
-                    .error(R.drawable.bg_badge)
-                    .into(h.avatar);
+            iv.post(() -> {
+                Glide.with(iv)
+                        .load(p)
+                        .apply(RequestOptions.circleCropTransform())
+                        .placeholder(R.drawable.bg_badge)
+                        .error(R.drawable.bg_badge)
+                        .into(iv);
+            });
         });
     }
 
