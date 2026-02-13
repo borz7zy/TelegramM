@@ -10,6 +10,7 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/LibMonet" />
             <option value="$PROJECT_DIR$/SharedUtils" />
             <option value="$PROJECT_DIR$/SlidingMenu" />
             <option value="$PROJECT_DIR$/app" />

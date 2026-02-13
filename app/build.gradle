@@ -76,6 +76,7 @@ dependencies {
     implementation project(':SharedUtils')
     implementation project(':SlidingMenu')
     implementation libs.core.ktx
+    implementation project(':LibMonet')
     annotationProcessor 'com.github.bumptech.glide:compiler:4.16.0'
     implementation project(':tdlib')
     implementation libs.fragment
