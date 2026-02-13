@@ -389,6 +389,10 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
             TdApi.Message m = ((TdApi.UpdateNewMessage) object).message;
             if (m != null && m.chatId == chatId) {
                 processMessageAndPut(m);
+                boolean forceScroll = m.isOutgoing;
+                if(forceScroll){
+                    mainHandler.postDelayed(() -> rv.smoothScrollToPosition(adapter.getItemCount() - 1), 300);
+                }
                 scheduleUiUpdate(false, true);
             }
         }
@@ -629,6 +633,8 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
         long anchorMsgId = -1;
         int anchorOffset = 0;
 
+        boolean wasAtBottom = isNearBottom();
+
         if (isPagination) {
             int firstPos = lm.findFirstVisibleItemPosition();
             if (firstPos != RecyclerView.NO_POSITION) {
@@ -672,10 +678,7 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
                     }
                 }
             } else {
-                boolean isUserInteracting = rv.getScrollState() != RecyclerView.SCROLL_STATE_IDLE;
-                if (maybeScrollToBottom && !isUserInteracting) {
-                    rv.scrollToPosition(adapter.getItemCount() - 1);
-                } else if (maybeScrollToBottom && isNearBottom()) {
+                if (maybeScrollToBottom && wasAtBottom) {
                     rv.scrollToPosition(adapter.getItemCount() - 1);
                 }
             }
@@ -807,12 +810,12 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
     }
 
     private boolean isNearBottom() {
-        if (adapter.getItemCount() == 0) return true;
+        int count = adapter.getItemCount();
+        if (count == 0) return true;
 
         int lastVisiblePosition = lm.findLastVisibleItemPosition();
-        int lastItemPosition = adapter.getItemCount() - 1 + (topLoading.isVisible() ? 1 : 0);
 
-        return lastVisiblePosition >= lastItemPosition;
+        return lastVisiblePosition >= (count - 1) - 2;
     }
 
     private void showTyping(String text) {
