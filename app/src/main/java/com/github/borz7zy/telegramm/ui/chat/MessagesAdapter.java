@@ -470,27 +470,29 @@ public class MessagesAdapter extends ListAdapter<MessageItem, RecyclerView.ViewH
 
         @Override
         public boolean areContentsTheSame(@NonNull MessageItem oldItem, @NonNull MessageItem newItem) {
-            return oldItem.equals(newItem);
+            if (!TextUtils.equals(oldItem.time, newItem.time)) return false;
+            if (!Objects.equals(oldItem.ui, newItem.ui)) return false;
+            if (!Objects.equals(oldItem.photos, newItem.photos)) return false;
+            if (!buttonsEqual(oldItem.ui, newItem.ui)) return false;
+            return true;
         }
 
         @Override
         public Object getChangePayload(@NonNull MessageItem oldItem, @NonNull MessageItem newItem) {
-            UiContent.Kind ok = (oldItem.ui != null) ? oldItem.ui.kind() : null;
-            UiContent.Kind nk = (newItem.ui != null) ? newItem.ui.kind() : null;
-            if (ok != nk) return null;
-            if (ok == UiContent.Kind.SYSTEM) return null;
-
             int mask = 0;
 
-            if (!TextUtils.equals(oldItem.time, newItem.time)) mask |= PAYLOAD_TEXT;
+            if (!Objects.equals(oldItem.ui, newItem.ui)) {
+                mask |= PAYLOAD_TEXT;
+                mask |= PAYLOAD_BUTTONS;
+            }
 
-            boolean uiSame = (oldItem.ui == null && newItem.ui == null)
-                    || (oldItem.ui != null && oldItem.ui.equals(newItem.ui));
-            if (!uiSame) mask |= PAYLOAD_TEXT;
+            if (!TextUtils.equals(oldItem.time, newItem.time)) {
+                mask |= PAYLOAD_TEXT;
+            }
 
-            if (!buttonsEqual(oldItem.ui, newItem.ui)) mask |= PAYLOAD_BUTTONS;
-
-            if (!photosEqual(oldItem.photos, newItem.photos)) mask |= PAYLOAD_MEDIA;
+            if (!Objects.equals(oldItem.photos, newItem.photos)) {
+                mask |= PAYLOAD_MEDIA;
+            }
 
             return mask == 0 ? null : mask;
         }
