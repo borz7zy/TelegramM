@@ -37,6 +37,11 @@ public class Logger {
         write("I", tag, msg + "\n" + Log.getStackTraceString(t));
     }
 
+    public static void LOGI(String tag, String msg) {
+        Log.i(tag, msg);
+        write("I", tag, msg);
+    }
+
     public static void LOGW(String tag, String msg) {
         Log.w(tag, msg);
         write("W", tag, msg);
