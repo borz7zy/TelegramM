@@ -25,6 +25,7 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.BackEventCompat;
 import androidx.activity.ComponentDialog;
@@ -37,6 +38,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsAnimationCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.paging.PagingData;
 import androidx.recyclerview.widget.ConcatAdapter;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -45,18 +47,14 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.github.borz7zy.telegramm.R;
-import com.github.borz7zy.telegramm.core.accounts.AccountStorage;
 import com.github.borz7zy.telegramm.ui.base.BaseTelegramDialogFragment;
 import com.github.borz7zy.telegramm.ui.model.MessageItem;
-import com.github.borz7zy.telegramm.ui.model.PhotoData;
 import com.github.borz7zy.telegramm.ui.widget.EdgeSwipeDismissLayout;
 import com.github.borz7zy.telegramm.ui.widget.SpringRecyclerView;
 import com.github.borz7zy.telegramm.ui.widget.TypingDrawable;
-import com.github.borz7zy.telegramm.utils.Logger;
 import com.github.borz7zy.telegramm.utils.TdMediaRepository;
 import com.masoudss.lib.WaveformSeekBar;
 
-import org.drinkless.tdlib.Client;
 import org.drinkless.tdlib.TdApi;
 
 import java.io.File;
@@ -64,18 +62,13 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import eightbitlab.com.blurview.BlurTarget;
 import eightbitlab.com.blurview.BlurView;
 
-public class ChatFragment extends BaseTelegramDialogFragment implements Client.ResultHandler {
+public class ChatFragment extends BaseTelegramDialogFragment {
 
     private static final String ARG_CHAT_ID = "chat_id";
     private static final String ARG_TITLE = "title";
@@ -83,23 +76,19 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
 
     private long chatId;
     private String title;
+
+    private ChatViewModel viewModel;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
-    private final Map<Long, MessageItem> byId = new ConcurrentHashMap<>();
-    private final Map<Long, TdApi.Message> rawMessages = new ConcurrentHashMap<>();
-    private final Map<Long, Long> albumGroups = new ConcurrentHashMap<>();
-    private final Map<Long, String> userNameCache = new ConcurrentHashMap<>();
-    private MessageUiMapper uiMapper;
-    private boolean loading = false;
-    private boolean hasMore = true;
-    private long oldestId = 0;
-    private boolean isInitialLoad = true;
+
     private View content;
     private ImageView ivChatAvatar;
+    private TextView tvTitle;
     private View typingBar;
     private ImageView typingIcon;
     private TypingDrawable typingDrawable;
 
     private SpringRecyclerView rv;
+    private ConcatAdapter concat;
     private LinearLayoutManager lm;
     private TopLoadingAdapter topLoading;
     private ChatAdapter adapter;
@@ -116,7 +105,6 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
     private VoiceWavRecorder voiceRecorder;
     private File voiceTempFile;
     private boolean voicePaused = false;
-
     private final ArrayList<Integer> voiceLevels = new ArrayList<>();
     private static final int MAX_VOICE_POINTS = 240;
     private static final int REQ_RECORD_AUDIO = 501;
@@ -124,15 +112,13 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
     private EdgeSwipeDismissLayout edge;
     private FrameLayout sheet;
     private View scrim;
-
     private boolean closing = false;
     private OnBackPressedCallback backCallback;
 
-    private static final long BATCH_DELAY_MS = 200;
-    private final Object batchLock = new Object();
-    private boolean updateScheduled = false;
-//    private boolean pendingScrollToBottom = false;
-    private boolean pendingPagination = false;
+    private long pendingAnchorId = -1;
+    private int pendingAnchorOffset = 0;
+    private boolean isPaginationInProgress = false;
+    private boolean suppressAnchorRestore = false;
 
     public static ChatFragment newInstance(long chatId, String title) {
         ChatFragment f = new ChatFragment();
@@ -149,17 +135,11 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
     }
 
     @Override
-    public void onAttach(@NonNull Context context) {
-        super.onAttach(context);
-        Logger.LOGD("ChatFragment", "onAttach");
-    }
-
-    @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        viewModel = new ViewModelProvider(this).get(ChatViewModel.class);
 
         setCancelable(false);
-
         backCallback = new OnBackPressedCallback(true) {
             @Override public void handleOnBackPressed() {
                 closeAnimated();
@@ -230,7 +210,6 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
             }
             return false;
         });
-
         return d;
     }
 
@@ -260,14 +239,13 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
         sheet.animate().translationX(0f).setDuration(300).start();
 
         scrim.setOnClickListener(v -> closeAnimated());
-
         setupBlur(content);
 
         Bundle args = requireArguments();
         chatId = args.getLong(ARG_CHAT_ID);
         title = args.getString(ARG_TITLE, "Chat");
 
-        TextView tvTitle = content.findViewById(R.id.tv_title);
+        tvTitle = content.findViewById(R.id.tv_title);
         ImageView btnClose = content.findViewById(R.id.btn_close);
         tvTitle.setText(title);
         btnClose.setOnClickListener(v -> closeAnimated());
@@ -277,33 +255,25 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
 
         rv = content.findViewById(R.id.rv_messages);
         et = content.findViewById(R.id.et_message);
-
         btnAttach = content.findViewById(R.id.btn_attach);
         btnAction = content.findViewById(R.id.btnClear);
         btnSend = content.findViewById(R.id.btn_send);
-
         waveRecord = content.findViewById(R.id.wave_record);
         if (waveRecord != null) waveRecord.setOnTouchListener((v1, e) -> true);
 
         btnSend.setOnClickListener(v -> onSendClicked());
-
         btnSend.setOnLongClickListener(v -> {
             String t = et.getText() == null ? "" : et.getText().toString().trim();
             if (!TextUtils.isEmpty(t)) return true;
-
             v.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
             startVoiceFlow();
             return true;
         });
-
         btnAttach.setOnClickListener(v -> {
             if (inputMode == InputMode.VOICE) cancelVoiceRecording();
-            // else TODO: attach
         });
-
         btnAction.setOnClickListener(v -> {
             if (inputMode == InputMode.VOICE) toggleVoicePause();
-            // else TODO: stickers
         });
 
         topLoading = new TopLoadingAdapter();
@@ -311,9 +281,17 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
         lm = new LinearLayoutManager(requireContext());
         lm.setStackFromEnd(true);
 
-        adapter.setBtnListener((item, btn) -> handleClick(item.chatId, item.id, btn));
+        adapter.setBtnListener((item, btn) -> viewModel.handleUiClick(item.id, btn));
 
-        ConcatAdapter concat = new ConcatAdapter(
+        adapter.setLoadMoreListener(() -> {
+            if (!topLoading.isVisible()) {
+                captureScrollAnchor();
+            }
+            suppressAnchorRestore = true;
+            viewModel.loadMore();
+        });
+
+        concat = new ConcatAdapter(
                 new ConcatAdapter.Config.Builder()
                         .setStableIdMode(ConcatAdapter.Config.StableIdMode.NO_STABLE_IDS)
                         .setIsolateViewTypes(true).build(),
@@ -321,436 +299,183 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
                 adapter
         );
 
+        adapter.addOnPagesUpdatedListener(() -> {
+            if (!suppressAnchorRestore && isPaginationInProgress) {
+                handlePaginationRestore();
+                isPaginationInProgress = false;
+            }
+            suppressAnchorRestore = false;
+            return kotlin.Unit.INSTANCE;
+        });
+
         rv.setLayoutManager(lm);
         rv.setAdapter(concat);
 
         rv.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
-                if (dy >= 0) return;
-
-                int first = lm.findFirstVisibleItemPosition();
-                if (first == RecyclerView.NO_POSITION) return;
-
-                int threshold = 3 + (topLoading.isVisible() ? 1 : 0);
-
-                if (first <= threshold && !loading && hasMore) {
-                    requestOlder();
+                if (!isPaginationInProgress && !topLoading.isVisible()) {
+                    int firstVisible = lm.findFirstVisibleItemPosition();
+                    if (firstVisible != RecyclerView.NO_POSITION && firstVisible <= 2) {
+                        captureScrollAnchor();
+                        viewModel.loadMore();
+                    }
                 }
             }
         });
 
         applyInsets(view, content);
+        observeViewModel();
+    }
+
+    private void observeViewModel() {
+        viewModel.getMessages().observe(getViewLifecycleOwner(), list -> {
+            adapter.submitData(getLifecycle(), PagingData.from(list));
+        });
+
+        viewModel.getTopLoading().observe(getViewLifecycleOwner(), isLoading -> {
+            if (isLoading) {
+                isPaginationInProgress = true;
+            }
+            topLoading.setVisible(isLoading);
+        });
+
+        viewModel.getChatTitle().observe(getViewLifecycleOwner(), t -> {
+            if (tvTitle != null) tvTitle.setText(t);
+        });
+
+        viewModel.getChatAvatar().observe(getViewLifecycleOwner(), this::applyChatAvatar);
+
+        viewModel.getTypingStatus().observe(getViewLifecycleOwner(), status -> {
+            if (status != null) showTyping(status);
+            else hideTyping();
+        });
+
+        viewModel.getUiEvents().observe(getViewLifecycleOwner(), event -> {
+            if (event instanceof ChatViewModel.UiEvent.ScrollToBottom) {
+                if (adapter.getItemCount() == 0) return;
+
+                int lastVisible = lm.findLastCompletelyVisibleItemPosition();
+                int totalItems = adapter.getItemCount() - 1;
+                int realLastPosition = totalItems + (topLoading.isVisible() ? 1 : 0);
+
+                if (lastVisible >= realLastPosition) {
+                    return;
+                }
+
+                if (lastVisible >= realLastPosition - 1) {
+                    return;
+                }
+
+                rv.post(() -> {
+                    rv.smoothScrollToPosition(realLastPosition);
+                });
+            }
+            else if (event instanceof ChatViewModel.UiEvent.OpenUrl) {
+                String url = ((ChatViewModel.UiEvent.OpenUrl) event).url;
+                try {
+                    Intent i = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url));
+                    startActivity(i);
+                } catch (Exception e) {
+                    Toast.makeText(requireContext(), "Error opening link", Toast.LENGTH_SHORT).show();
+                }
+            }
+            else if (event instanceof ChatViewModel.UiEvent.PaginationApplied) {
+            }
+        });
     }
 
     @Override
     protected void onAuthorized() {
-        session.addUpdateHandler(this);
-
-        AccountStorage.getInstance().getCurrentActive(account -> {
-            if (account == null) return;
-
-            uiMapper = new MessageUiMapper(
-                    account.getAccountId(),
-                    userNameCache::get,
-                    this::onUserLoaded
-            );
-
-            TdMediaRepository.get().setCurrentAccountId(account.getAccountId());
-            requestInitialHistory();
-        });
+        if (session != null) {
+            viewModel.init(chatId, title, session);
+        }
     }
 
-    private void requestInitialHistory() {
-        if (loading || session == null) return;
-        loading = true;
-        hasMore = true;
-        oldestId = 0;
-        isInitialLoad = true;
-        byId.clear();
-        rawMessages.clear();
-        albumGroups.clear();
+    private void captureScrollAnchor() {
+        if (pendingAnchorId != -1) return;
 
-        session.send(new TdApi.GetChatHistory(chatId, 0L, 0, 70, false), this);
-    }
+        int firstPos = lm.findFirstVisibleItemPosition();
+        if (firstPos == RecyclerView.NO_POSITION) return;
 
-    private void requestOlder() {
-        if (loading || !hasMore || session == null || oldestId == 0) return;
-        loading = true;
-        setTopLoading(true);
-        session.send(new TdApi.GetChatHistory(chatId, oldestId, -1, 50, false), this);
-    }
+        boolean isLoaderVisible = topLoading.isVisible();
 
-    @Override
-    public void onResult(TdApi.Object object) {
-        if (object instanceof TdApi.Messages) {
-            handleHistory((TdApi.Messages) object);
-        }
-        else if (object instanceof TdApi.UpdateNewMessage) {
-            TdApi.Message m = ((TdApi.UpdateNewMessage) object).message;
-            if (m != null && m.chatId == chatId) {
-                processMessageAndPut(m);
-                boolean forceScroll = m.isOutgoing;
-                if(forceScroll){
-                    mainHandler.postDelayed(() -> rv.smoothScrollToPosition(adapter.getItemCount() - 1), 300);
-                }
-                scheduleUiUpdate(false, true);
-            }
-        }
-        else if (object instanceof TdApi.UpdateMessageSendSucceeded) {
-            TdApi.UpdateMessageSendSucceeded u = (TdApi.UpdateMessageSendSucceeded) object;
-            if (u.message != null && u.message.chatId == chatId) {
-                byId.remove(u.oldMessageId);
-                rawMessages.remove(u.oldMessageId);
+        int checkPos = (isLoaderVisible && firstPos == 0) ? 1 : firstPos;
 
-                rawMessages.put(u.message.id, u.message);
-                byId.put(u.message.id, toItem(u.message));
+        View child = lm.findViewByPosition(checkPos);
 
-                scheduleUiUpdate(false, true);
-            }
-        }
-        else if (object instanceof TdApi.UpdateDeleteMessages) {
-            TdApi.UpdateDeleteMessages u = (TdApi.UpdateDeleteMessages) object;
-            if (u.chatId == chatId) {
-                for (long id : u.messageIds) {
-                    byId.remove(id);
-                    rawMessages.remove(id);
-                }
-                scheduleUiUpdate(false, false);
-            }
-        }
-        else if (object instanceof TdApi.UpdateMessageEdited) {
-            TdApi.UpdateMessageEdited u = (TdApi.UpdateMessageEdited) object;
-            if (u.chatId == chatId) {
-                TdApi.Message raw = rawMessages.get(u.messageId);
-                if (raw != null) raw.replyMarkup = u.replyMarkup;
+        int adapterIndex = checkPos - (isLoaderVisible ? 1 : 0);
 
-                MessageItem cur = byId.get(u.messageId);
-                if (cur != null) {
-                    UiContent newUi;
-                    if (raw != null) {
-                        newUi = uiMapper.map(raw);
-                    } else {
-                        newUi = cur.ui;
-                        if (u.replyMarkup == null
-                                || u.replyMarkup.getConstructor() == TdApi.ReplyMarkupRemoveKeyboard.CONSTRUCTOR) {
-                        }
-                    }
-                    MessageItem updated = cur.withUi(newUi);
-                    byId.put(u.messageId, updated);
-                    scheduleUiUpdate(false, false);
+        if (child != null && adapterIndex >= 0 && adapterIndex < adapter.getItemCount()) {
+            List<MessageItem> items = adapter.snapshot().getItems();
+            if (adapterIndex < items.size()) {
+                MessageItem item = items.get(adapterIndex);
+                if (item != null) {
+                    pendingAnchorId = item.id;
+                    pendingAnchorOffset = child.getTop();
                 }
             }
         }
-        else if (object instanceof TdApi.Chat chat) {
-            if (chat.id == chatId) applyChatHeader(chat);
-        }
-        else if (object instanceof TdApi.UpdateChatTitle u) {
-            if (u.chatId == chatId) {
-                title = u.title;
-                mainHandler.post(() -> {
-                    TextView tv = content.findViewById(R.id.tv_title);
-                    if (tv != null) tv.setText(u.title);
-                });
-            }
-        }
-        else if (object instanceof TdApi.UpdateChatPhoto u) {
-            if (u.chatId == chatId) applyChatHeaderPhoto(u.photo);
-        }
-        else if (object instanceof TdApi.UpdateChatAction u) {
-            if (u.chatId == chatId) {
-                handleTyping(u);
-            }
-        }
-        else if (object instanceof TdApi.UpdateUser) {
-            onUserLoaded(((TdApi.UpdateUser) object).user);
-        }
-        else if (object instanceof TdApi.User) {
-            onUserLoaded((TdApi.User) object);
-        }
     }
 
-    private void handleHistory(TdApi.Messages messages) {
-        int count = (messages == null || messages.messages == null) ? 0 : messages.messages.length;
+    private void handlePaginationRestore() {
+        if (pendingAnchorId == -1) return;
+        int newPosInAdapter = findAdapterPositionById(pendingAnchorId);
 
-        if (count == 0) {
-            hasMore = false;
-            loading = false;
-            setTopLoading(false);
+        if (newPosInAdapter == -1) {
+            rv.scrollToPosition(0);
+            pendingAnchorId = -1;
             return;
         }
 
-        for (TdApi.Message m : messages.messages) {
-            if (m == null || m.chatId != chatId) continue;
-            processMessageAndPut(m);
-            if (oldestId == 0 || m.id < oldestId) oldestId = m.id;
-        }
+        int offsetHeader = topLoading.isVisible() ? 1 : 0;
+        int targetPosition = newPosInAdapter + offsetHeader;
 
-        if (isInitialLoad) {
-            scheduleUiUpdate(false, true);
-            isInitialLoad = false;
-        } else {
-            scheduleUiUpdate(true, false);
-        }
-    }
-
-    private void handleTyping(TdApi.UpdateChatAction uca) {
-        if (uca.action == null) return;
-        mainHandler.post(() -> {
-            switch (uca.action.getConstructor()) {
-                case TdApi.ChatActionTyping.CONSTRUCTOR:
-                    showTyping("печатает…");
-                    break;
-                case TdApi.ChatActionCancel.CONSTRUCTOR:
-                    hideTyping();
-                    break;
-                default:
-                    break;
-            }
-        });
-    }
-
-    private void processMessageAndPut(TdApi.Message m) {
-        rawMessages.put(m.id, m);
-        long albumId = m.mediaAlbumId;
-        PhotoData photoData = null;
-        String caption = "";
-
-        if (m.content instanceof TdApi.MessagePhoto photoContent) {
-            photoData = extractPhoto(m.id, photoContent.photo);
-            if (photoContent.caption != null && !TextUtils.isEmpty(photoContent.caption.text)) {
-                caption = photoContent.caption.text;
-            }
-        }
-
-        if (albumId != 0 && albumGroups.containsKey(albumId)) {
-            long mainMessageId = albumGroups.get(albumId);
-            MessageItem existingItem = byId.get(mainMessageId);
-
-            if (existingItem != null && photoData != null && existingItem.ui instanceof UiContent.Media) {
-                boolean alreadyExists = false;
-                if (existingItem.photos != null) {
-                    for (PhotoData p : existingItem.photos) {
-                        if (p.localPath != null && p.localPath.equals(photoData.localPath)) {
-                            alreadyExists = true;
-                            break;
-                        }
-                    }
-                }
-                if (!alreadyExists) {
-                    MessageItem updatedItem = existingItem.withAddedPhoto(photoData, caption);
-                    byId.put(mainMessageId, updatedItem);
-                }
-                return;
-            }
-        }
-
-        MessageItem newItem = toItem(m);
-        byId.put(m.id, newItem);
-        if (albumId != 0) {
-            albumGroups.put(albumId, m.id);
-        }
-    }
-
-    private MessageItem toItem(TdApi.Message m) {
-        UiContent ui = uiMapper.map(m);
-        String time = formatTime(m.date);
-
-        List<PhotoData> photos = new ArrayList<>();
-        if (m.content instanceof TdApi.MessagePhoto) {
-            PhotoData pd = extractPhoto(m.id, ((TdApi.MessagePhoto) m.content).photo);
-            if (pd != null) photos.add(pd);
-        }
-
-        return new MessageItem(
-                m.id, m.chatId, m.isOutgoing,
-                time, photos, m.mediaAlbumId,
-                ui
-        );
-    }
-
-    private void onUserLoaded(TdApi.User user) {
-        String fullName = (user.firstName + " " + user.lastName).trim();
-        String oldName = userNameCache.get(user.id);
-
-        if (oldName == null || !oldName.equals(fullName)) {
-            userNameCache.put(user.id, fullName);
-
-            new Thread(() -> {
-                boolean needUpdate = false;
-                for (MessageItem item : byId.values()) {
-                    if (item.chatId == user.id) {
-                        TdApi.Message raw = rawMessages.get(item.id);
-                        if (raw != null) {
-                            byId.put(item.id, toItem(raw));
-                            needUpdate = true;
-                        }
-                    }
-                }
-                if (needUpdate) {
-                    scheduleUiUpdate(false, false);
-                }
-            }).start();
-        }
-    }
-
-    private void scheduleUiUpdate(boolean isPagination, boolean scrollToBottom) {
-        synchronized (batchLock) {
-            if (isPagination) pendingPagination = true;
-//            if (scrollToBottom) pendingScrollToBottom = true;
-
-            if (!updateScheduled) {
-                updateScheduled = true;
-                mainHandler.postDelayed(this::performBufferedUpdate, BATCH_DELAY_MS);
-            }
-        }
-    }
-
-    private void performBufferedUpdate() {
-        final boolean doScroll = false;
-        boolean doPagination;
-
-        synchronized (batchLock) {
-//            doScroll = pendingScrollToBottom;
-            doPagination = pendingPagination;
-//            pendingScrollToBottom = false;
-            pendingPagination = false;
-            updateScheduled = false;
-        }
-
-        if (!isAdded()) return;
-
-        new Thread(() -> {
-            ArrayList<MessageItem> list = new ArrayList<>(byId.values());
-            list.sort((m1, m2) -> Long.compare(m1.id, m2.id));
-
-            mainHandler.post(() -> applyListToAdapter(list, doPagination, doScroll));
-        }).start();
-    }
-
-    private void applyListToAdapter(List<MessageItem> list, boolean isPagination, boolean maybeScrollToBottom) {
-        if (!isAdded()) return;
-
-        long anchorMsgId = -1;
-        int anchorOffset = 0;
-
-//        boolean wasAtBottom = isNearBottom();
-
-        if (isPagination) {
-            int firstPos = lm.findFirstVisibleItemPosition();
-            if (firstPos != RecyclerView.NO_POSITION) {
-                View child = lm.findViewByPosition(firstPos);
-                boolean isLoader = (topLoading.isVisible() && firstPos == 0);
-
-                if (isLoader) {
-                    int msgPos = firstPos + 1;
-                    if (msgPos < adapter.getItemCount() + 1) {
-                        View msgView = lm.findViewByPosition(msgPos);
-                        if (msgView != null) {
-                            int adapterIndex = msgPos - 1;
-                            if (adapterIndex >= 0 && adapterIndex < adapter.getItemCount()) {
-                                anchorMsgId = adapter.getItemId(adapterIndex);
-                                anchorOffset = msgView.getTop();
-                            }
-                        }
-                    }
-                } else {
-                    if (child != null) {
-                        int adapterIndex = firstPos - (topLoading.isVisible() ? 1 : 0);
-                        if (adapterIndex >= 0 && adapterIndex < adapter.getItemCount()) {
-                            anchorMsgId = adapter.getItemId(adapterIndex);
-                            anchorOffset = child.getTop();
-                        }
-                    }
-                }
-            }
-        }
-
-        final long finalAnchorId = anchorMsgId;
-        final int finalAnchorOffset = anchorOffset;
-
-        adapter.submitData(getLifecycle(), PagingData.from(list));
-        adapter.addOnPagesUpdatedListener(new kotlin.jvm.functions.Function0<kotlin.Unit>() {
-            @Override
-            public kotlin.Unit invoke() {
-                if (isPagination) {
-                    setTopLoading(false);
-                    if (finalAnchorId != -999L) {
-                        int newPos = adapter.findPositionById(finalAnchorId);
-                        if (newPos != RecyclerView.NO_POSITION) {
-                            lm.scrollToPositionWithOffset(newPos, finalAnchorOffset);
-                        }
-                    }
-                }// else {
-//                    if (maybeScrollToBottom && wasAtBottom) {
-//                        rv.scrollToPosition(adapter.getItemCount() - 1);
-//                    }
-//                }
-                loading = false;
-                return null;
-            }
-        });
-    }
-
-    private void sendMessage() {
-        if (session == null) return;
-        String text = et.getText().toString().trim();
-        if (TextUtils.isEmpty(text)) return;
-
-        et.setText("");
-
-        TdApi.InputMessageContent content =
-                new TdApi.InputMessageText(new TdApi.FormattedText(text, null), null, true);
-
-        session.send(new TdApi.SendMessage(chatId, null, null, null, null, content), null);
-    }
-
-    private void handleClick(long chatId, long msgId, UiContent.UiButton btn) {
-        if (btn.isUrl()) {
-            if (isAdded()) {
-                mainHandler.post(() -> {
-                    Intent i = new Intent(
-                            Intent.ACTION_VIEW,
-                            android.net.Uri.parse(btn.url)
-                    );
-                    startActivity(i);
-                });
-            }
+        if (isAtBottom()) {
+            pendingAnchorId = -1;
             return;
         }
 
-        if (session == null) return;
+        lm.scrollToPositionWithOffset(targetPosition, pendingAnchorOffset);
+        pendingAnchorId = -1;
+        pendingAnchorOffset = 0;
+    }
 
-        if (btn.data != null) {
-            TdApi.GetCallbackQueryAnswer req = new TdApi.GetCallbackQueryAnswer(
-                    chatId, msgId, new TdApi.CallbackQueryPayloadData(btn.data)
-            );
-            session.send(req, null);
-        } else {
-            TdApi.InputMessageContent content =
-                    new TdApi.InputMessageText(new TdApi.FormattedText(btn.text, null), null, true);
-            session.send(new TdApi.SendMessage(chatId, null, null, null, null, content), null);
+    private boolean isAtBottom() {
+        if (lm == null || rv == null) return false;
+
+        int lastVisible = lm.findLastCompletelyVisibleItemPosition();
+        if (lastVisible == RecyclerView.NO_POSITION) return false;
+
+        int total = concat.getItemCount() - 1;
+        return lastVisible >= total - 1;
+    }
+
+    private int findAdapterPositionById(long id) {
+        List<MessageItem> items = adapter.snapshot().getItems();
+        for (int i = 0; i < items.size(); ++i) {
+            if (items.get(i).id == id) {
+                return i;
+            }
         }
+        return -1;
     }
 
-    private void applyChatHeader(TdApi.Chat chat) {
-        if (!isAdded()) return;
-        title = chat.title;
-        mainHandler.post(() -> {
-            TextView tvTitle = content.findViewById(R.id.tv_title);
-            tvTitle.setText(chat.title);
-            applyChatAvatar(chat.photo);
-        });
+    private void showTyping(String text) {
+        if (!isAdded() || typingDrawable == null) return;
+        TextView tv = typingBar.findViewById(R.id.typing_text);
+        if (tv != null) tv.setText(text);
+        typingBar.setVisibility(View.VISIBLE);
+        typingDrawable.start();
     }
 
-    private void applyChatHeaderPhoto(TdApi.ChatPhotoInfo photo) {
-        if (!isAdded()) return;
-        mainHandler.post(() -> applyChatAvatar(photo));
+    private void hideTyping() {
+        if (typingDrawable != null) typingDrawable.stop();
+        if (typingBar != null) typingBar.setVisibility(View.GONE);
     }
 
     private void applyChatAvatar(TdApi.ChatPhotoInfo photo) {
         if (ivChatAvatar == null) return;
-
         Glide.with(ivChatAvatar).clear(ivChatAvatar);
         ivChatAvatar.setImageResource(R.drawable.bg_badge);
 
@@ -760,137 +485,37 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
         if (fid == 0) return;
 
         adapter.setChatAvatar(fid);
-
         final String tag = "chat:" + chatId + ":" + fid;
         ivChatAvatar.setTag(tag);
 
         String cached = TdMediaRepository.get().getCachedPath(fid);
         if (!TextUtils.isEmpty(cached)) {
-            Glide.with(ivChatAvatar)
-                    .load(cached)
-                    .apply(RequestOptions.circleCropTransform())
-                    .placeholder(R.drawable.bg_badge)
-                    .error(R.drawable.bg_badge)
-                    .into(ivChatAvatar);
+            loadAvatarPath(cached);
             return;
         }
 
         WeakReference<ImageView> refInfo = new WeakReference<>(ivChatAvatar);
-
         TdMediaRepository.get().getPathOrRequest(fid, p -> {
             ImageView iv = refInfo.get();
             if (iv == null) return;
-
             Object cur = iv.getTag();
             if (!(cur instanceof String) || !tag.equals(cur)) return;
             if (TextUtils.isEmpty(p)) return;
-
-            iv.post(() -> {
-                Glide.with(iv)
-                        .load(p)
-                        .apply(RequestOptions.circleCropTransform())
-                        .placeholder(R.drawable.bg_badge)
-                        .error(R.drawable.bg_badge)
-                        .into(iv);
-            });
+            iv.post(() -> loadAvatarPath(p));
         });
     }
 
-    @Override
-    public void onDestroyView() {
-        closing = false;
-        if (inputMode == InputMode.VOICE) {
-            cancelVoiceRecording();
-        }
-        if (session != null) {
-            session.send(new TdApi.CloseChat(chatId), null);
-            session.removeUpdateHandler(this);
-        }
-        mainHandler.removeCallbacksAndMessages(null);
-        super.onDestroyView();
-    }
-
-    private void setTopLoading(boolean v) {
-        if (!isAdded() || rv == null) return;
-        rv.post(() -> topLoading.setVisible(v));
-    }
-
-//    private boolean isNearBottom() {
-//        int count = adapter.getItemCount();
-//        if (count == 0) return true;
-//
-//        int lastVisiblePosition = lm.findLastVisibleItemPosition();
-//
-//        return lastVisiblePosition >= (count - 1) - 2;
-//    }
-
-    private void showTyping(String text) {
-        if (!isAdded() || typingDrawable == null) return;
-        TextView tv = typingBar.findViewById(R.id.typing_text);
-        if (tv != null) tv.setText(text);
-        typingBar.setVisibility(View.VISIBLE);
-        typingDrawable.start();
-        mainHandler.removeCallbacksAndMessages("typing");
-        mainHandler.postDelayed(() -> hideTyping(), 5000);
-    }
-
-    private void hideTyping() {
-        if (typingDrawable != null) typingDrawable.stop();
-        if (typingBar != null) typingBar.setVisibility(View.GONE);
-    }
-
-    private String formatTime(int unixSeconds) {
-        long ms = unixSeconds * 1000L;
-        return new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date(ms));
-    }
-
-    private void notifyMessageChanged(long msgId, int payload) {
-        if (!isAdded()) return;
-        mainHandler.post(() -> {
-            int pos = adapter.findPositionById(msgId);
-            if (pos >= 0) adapter.notifyItemChanged(pos, payload);
-        });
-    }
-
-    private PhotoData extractPhoto(long rowMessageId, TdApi.Photo photo) {
-        if (photo == null || photo.sizes.length == 0) return null;
-
-        TdApi.PhotoSize best = findBestPhotoSize(photo.sizes);
-        int fileId = best.photo.id;
-        String localPath = best.photo.local != null ? best.photo.local.path : null;
-        boolean completed = best.photo.local != null && best.photo.local.isDownloadingCompleted;
-
-        if (TextUtils.isEmpty(localPath) || !completed) {
-            TdMediaRepository.get().getPathOrRequest(fileId, p -> {
-                if (!TextUtils.isEmpty(p)) {
-                    notifyMessageChanged(rowMessageId, ChatAdapter.PAYLOAD_MEDIA);
-                }
-            });
-            String cached = TdMediaRepository.get().getCachedPath(fileId);
-            if (!TextUtils.isEmpty(cached)) localPath = cached;
-        }
-        return new PhotoData(fileId, localPath, best.width, best.height);
-    }
-
-    private TdApi.PhotoSize findBestPhotoSize(TdApi.PhotoSize[] sizes) {
-        TdApi.PhotoSize sizeX = null, sizeY = null, sizeM = null;
-        for (TdApi.PhotoSize sz : sizes) {
-            switch (sz.type) {
-                case "y": sizeY = sz; break;
-                case "x": sizeX = sz; break;
-                case "m": sizeM = sz; break;
-            }
-        }
-        if (sizeY != null) return sizeY;
-        if (sizeX != null) return sizeX;
-        if (sizeM != null) return sizeM;
-        return sizes[sizes.length - 1];
+    private void loadAvatarPath(String path) {
+        if (!isAdded() || ivChatAvatar == null) return;
+        Glide.with(ivChatAvatar)
+                .load(path)
+                .apply(RequestOptions.circleCropTransform())
+                .placeholder(R.drawable.bg_badge)
+                .error(R.drawable.bg_badge)
+                .into(ivChatAvatar);
     }
 
     private void applyInsets(View root, View content) {
-        final int[] statusTop = {0};
-        final int[] navBottom = {0};
-
         BlurView header = content.findViewById(R.id.header_blur);
         BlurView inputBar = content.findViewById(R.id.input_blur);
         SpringRecyclerView rv = content.findViewById(R.id.rv_messages);
@@ -912,6 +537,9 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
 
         rv.setClipToPadding(false);
 
+        final int[] statusTop = {0};
+        final int[] navBottom = {0};
+
         ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
             Insets status = insets.getInsets(WindowInsetsCompat.Type.statusBars());
             Insets nav = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
@@ -919,7 +547,6 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
 
             statusTop[0] = status.top;
             navBottom[0] = nav.bottom;
-            boolean imeVisible = ime.bottom > 0;
 
             header.setPadding(headerBaseLeft, headerBaseTop + status.top, headerBaseRight, headerBaseBottom);
             inputBar.setPadding(inputBaseLeft, inputBaseTop, inputBaseRight, inputBaseBottom + nav.bottom);
@@ -970,9 +597,23 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
         return null;
     }
 
+    @Override
+    public void onDestroyView() {
+        closing = false;
+        if (inputMode == InputMode.VOICE) {
+            cancelVoiceRecording();
+        }
+        mainHandler.removeCallbacksAndMessages(null);
+        super.onDestroyView();
+    }
+
     private void onSendClicked() {
         if (inputMode == InputMode.VOICE) finishAndSendVoice();
-        else sendMessage();
+        else {
+            String text = et.getText().toString();
+            viewModel.sendMessage(text);
+            et.setText("");
+        }
     }
 
     private void startVoiceFlow() {
@@ -1063,21 +704,11 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
                 byte[] waveform = buildTelegramWaveform5bit(levels, 100);
                 convertWavToM4a(wav, m4a, 44100, 1, 64000);
                 wav.delete();
-                sendVoiceNote(m4a, durationSec, waveform);
+                viewModel.sendVoice(m4a, durationSec, waveform);
             } catch (Throwable t) {
                 t.printStackTrace();
             }
         }, "VoiceConvertSend").start();
-    }
-
-    private void sendVoiceNote(File audioFile, int durationSec, byte[] waveform) {
-        if (session == null || audioFile == null || !audioFile.exists()) return;
-
-        TdApi.InputFile input = new TdApi.InputFileLocal(audioFile.getAbsolutePath());
-        TdApi.InputMessageContent content = new TdApi.InputMessageVoiceNote(
-                input, durationSec, waveform != null ? waveform : new byte[0], null, null
-        );
-        session.send(new TdApi.SendMessage(chatId, null, null, null, null, content), null);
     }
 
     private void updateVoiceUi(boolean voiceMode) {
@@ -1118,7 +749,7 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
         View v = requireActivity().getCurrentFocus();
         if (v == null) v = getView();
         if (v == null) return;
-        InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
+        InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
         if (imm != null) imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
     }
 
@@ -1128,19 +759,15 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
         return Math.max(1, (int) Math.ceil(seconds));
     }
 
-    private static void convertWavToM4a(File wav, File m4a,
-                                        int sampleRate, int channels, int bitRate) throws IOException {
-
+    private static void convertWavToM4a(File wav, File m4a, int sampleRate, int channels, int bitRate) throws IOException {
         MediaCodec codec = null;
         MediaMuxer muxer = null;
         FileInputStream fis = null;
-
         try {
             fis = new FileInputStream(wav);
             skipFully(fis, 44);
 
-            MediaFormat format = MediaFormat.createAudioFormat(
-                    MediaFormat.MIMETYPE_AUDIO_AAC, sampleRate, channels);
+            MediaFormat format = MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_AAC, sampleRate, channels);
             format.setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC);
             format.setInteger(MediaFormat.KEY_BIT_RATE, bitRate);
             format.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 16 * 1024);
@@ -1150,14 +777,11 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
             codec.start();
 
             muxer = new MediaMuxer(m4a.getAbsolutePath(), MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
-
             MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
             boolean inputDone = false;
             boolean outputDone = false;
-
             int trackIndex = -1;
             boolean muxerStarted = false;
-
             byte[] temp = new byte[16 * 1024];
             long totalSamples = 0;
 
@@ -1170,24 +794,20 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
                             inBuf.clear();
                             int toRead = Math.min(inBuf.remaining(), temp.length);
                             int read = fis.read(temp, 0, toRead);
-
                             if (read == -1) {
                                 codec.queueInputBuffer(inIndex, 0, 0, 0,
                                         MediaCodec.BUFFER_FLAG_END_OF_STREAM);
                                 inputDone = true;
                             } else {
                                 inBuf.put(temp, 0, read);
-
                                 int samplesRead = read / (2 * channels);
                                 long ptsUs = totalSamples * 1_000_000L / sampleRate;
                                 totalSamples += samplesRead;
-
                                 codec.queueInputBuffer(inIndex, 0, read, ptsUs, 0);
                             }
                         }
                     }
                 }
-
                 int outIndex = codec.dequeueOutputBuffer(info, 10_000);
                 if (outIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
                     if (muxerStarted) throw new IllegalStateException("Format changed twice");
@@ -1195,44 +815,24 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
                     trackIndex = muxer.addTrack(outFormat);
                     muxer.start();
                     muxerStarted = true;
-
-                } else if (outIndex == MediaCodec.INFO_TRY_AGAIN_LATER) {
-
                 } else if (outIndex >= 0) {
                     ByteBuffer outBuf = codec.getOutputBuffer(outIndex);
-                    if (outBuf == null) throw new IllegalStateException("Output buffer is null");
-
-                    if ((info.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
-                        info.size = 0;
-                    }
-
-                    if (info.size > 0) {
-                        if (!muxerStarted) throw new IllegalStateException("Muxer not started");
-                        outBuf.position(info.offset);
-                        outBuf.limit(info.offset + info.size);
-                        muxer.writeSampleData(trackIndex, outBuf, info);
-                    }
-
-                    codec.releaseOutputBuffer(outIndex, false);
-
-                    if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                        outputDone = true;
+                    if (outBuf != null) {
+                        if ((info.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) info.size = 0;
+                        if (info.size > 0 && muxerStarted) {
+                            outBuf.position(info.offset);
+                            outBuf.limit(info.offset + info.size);
+                            muxer.writeSampleData(trackIndex, outBuf, info);
+                        }
+                        codec.releaseOutputBuffer(outIndex, false);
+                        if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) outputDone = true;
                     }
                 }
             }
-
         } finally {
-            if (codec != null) {
-                try { codec.stop(); } catch (Throwable ignored) {}
-                try { codec.release(); } catch (Throwable ignored) {}
-            }
-            if (muxer != null) {
-                try { muxer.stop(); } catch (Throwable ignored) {}
-                try { muxer.release(); } catch (Throwable ignored) {}
-            }
-            if (fis != null) {
-                try { fis.close(); } catch (Throwable ignored) {}
-            }
+            if (codec != null) try { codec.stop(); codec.release(); } catch (Throwable ignored) {}
+            if (muxer != null) try { muxer.stop(); muxer.release(); } catch (Throwable ignored) {}
+            if (fis != null) try { fis.close(); } catch (Throwable ignored) {}
         }
     }
 
@@ -1248,45 +848,35 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
         }
     }
 
-    private static byte[] buildTelegramWaveform5bit(List<Integer> levels0to100, int targetPoints) {
-        if (levels0to100 == null || levels0to100.isEmpty() || targetPoints <= 0) return new byte[0];
-
-        int n = levels0to100.size();
+    private static byte[] buildTelegramWaveform5bit(List<Integer> levels, int targetPoints) {
+        if (levels == null || levels.isEmpty() || targetPoints <= 0) return new byte[0];
+        int n = levels.size();
         int[] p = new int[targetPoints];
         for (int i = 0; i < targetPoints; ++i) {
             int start = (int) ((long) i * n / targetPoints);
             int end = (int) ((long) (i + 1) * n / targetPoints);
             if (end <= start) end = Math.min(start + 1, n);
-
             long sum = 0;
             int cnt = 0;
             for (int j = start; j < end; ++j) {
-                int v = levels0to100.get(j);
-                if (v < 0) v = 0;
-                if (v > 100) v = 100;
-                sum += v;
-                ++cnt;
+                int v = levels.get(j);
+                if (v < 0) v = 0; if (v > 100) v = 100;
+                sum += v; cnt++;
             }
             int avg = (cnt == 0) ? 0 : (int) (sum / cnt);
-
             int v5 = Math.round(avg * 31f / 100f);
-            if (v5 < 0) v5 = 0;
-            if (v5 > 31) v5 = 31;
+            if (v5 < 0) v5 = 0; if (v5 > 31) v5 = 31;
             p[i] = v5;
         }
-
         int bits = targetPoints * 5;
         int bytes = (bits + 7) / 8;
         byte[] out = new byte[bytes];
-
         int bitPos = 0;
         for (int i = 0; i < targetPoints; ++i) {
             int v = p[i] & 0x1F;
             for (int b = 0; b < 5; ++b) {
                 if (((v >> b) & 1) != 0) {
-                    int byteIndex = (bitPos + b) / 8;
-                    int bitIndex = (bitPos + b) % 8;
-                    out[byteIndex] |= (byte) (1 << bitIndex);
+                    out[(bitPos + b) / 8] |= (byte) (1 << ((bitPos + b) % 8));
                 }
             }
             bitPos += 5;

@@ -8,7 +8,7 @@ import java.util.Objects;
 
 public abstract class UiContent {
 
-    public enum Kind { TEXT, MEDIA, SYSTEM }
+    public enum Kind { TEXT, MEDIA, SYSTEM, UNKNOWN }
 
     public final List<List<UiButton>> buttons = new ArrayList<>();
 
@@ -44,6 +44,28 @@ public abstract class UiContent {
             if (this == o) return true;
             if (!(o instanceof Text that)) return false;
             return Objects.equals(text, that.text);
+        }
+
+        @Override public int hashCode() { return Objects.hash(text); }
+    }
+
+    public static final class Unknown extends UiContent {
+        public final String text;
+        public Unknown(){
+            text = "Unknown content";
+        }
+
+        @NonNull
+        @Override
+        public Kind kind() {
+            return Kind.UNKNOWN;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof Media that)) return false;
+            return Objects.equals(text, that.caption);
         }
 
         @Override public int hashCode() { return Objects.hash(text); }

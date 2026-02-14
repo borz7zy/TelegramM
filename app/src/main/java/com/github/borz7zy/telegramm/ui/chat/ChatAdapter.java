@@ -46,6 +46,9 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
 
     private static final int MAX_PHOTO_POOL = 10;
 
+    private Runnable loadMoreListener;
+    private static final int LOAD_MORE_THRESHOLD = 8;
+
     public interface OnBtnClickListener {
         void onBtnClick(MessageItem item, UiContent.UiButton btn);
     }
@@ -54,6 +57,10 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
 
     public void setBtnListener(OnBtnClickListener listener) {
         this.btnListener = listener;
+    }
+
+    public void setLoadMoreListener(Runnable listener) {
+        this.loadMoreListener = listener;
     }
 
     public ChatAdapter() {
@@ -107,6 +114,10 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
 
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        if (position < LOAD_MORE_THRESHOLD && loadMoreListener != null) {
+            loadMoreListener.run();
+        }
+
         MessageItem m = getItem(position);
 
         if (m == null) {
