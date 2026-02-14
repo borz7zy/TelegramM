@@ -7,8 +7,6 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.DialogFragment;
 import androidx.lifecycle.LiveData;
 
-import com.github.borz7zy.telegramm.AppManager;
-import com.github.borz7zy.telegramm.core.accounts.AccountEntity;
 import com.github.borz7zy.telegramm.core.accounts.AccountManager;
 import com.github.borz7zy.telegramm.core.accounts.AccountSession;
 import com.github.borz7zy.telegramm.core.accounts.AccountStorage;
@@ -51,11 +49,11 @@ public abstract class BaseTelegramDialogFragment extends DialogFragment {
 
                     onSessionReady(session);
 
-                    observeAuthState(session, account);
+                    observeAuthState(session);
                 });
     }
 
-    private void observeAuthState(AccountSession session, AccountEntity account) {
+    private void observeAuthState(AccountSession session) {
 
         if (authLiveData != null) {
             authLiveData.removeObservers(getViewLifecycleOwner());
@@ -68,28 +66,6 @@ public abstract class BaseTelegramDialogFragment extends DialogFragment {
             onAuthStateChanged(state);
 
             if (state instanceof TdApi.AuthorizationStateReady) {
-
-                session.send(new TdApi.GetMe(), result -> {
-
-                    if (result instanceof TdApi.User user) {
-
-                        AppManager.getInstance()
-                                .getExecutorDb()
-                                .execute(() -> {
-
-                                    account.setAccountTgId(user.id);
-                                    account.setAccountName(
-                                            user.firstName + " " + user.lastName);
-                                    account.setAccountUsername(user.phoneNumber);
-
-                                    AppManager.getInstance()
-                                            .getAppDatabase()
-                                            .accountDao()
-                                            .update(account);
-                                });
-                    }
-                });
-
                 onAuthorized();
             }
         });

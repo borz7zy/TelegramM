@@ -7,6 +7,7 @@ import android.util.Log;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import com.github.borz7zy.telegramm.AppManager;
 import com.github.borz7zy.telegramm.R;
 
 import org.drinkless.tdlib.Client;
@@ -27,6 +28,8 @@ public class AccountSession {
 
     private final java.util.concurrent.CopyOnWriteArrayList<Client.ResultHandler> updateHandlers =
             new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    private boolean meRequested = false;
 
     public AccountSession(Context context, AccountEntity account){
         this.context = context;
@@ -52,11 +55,13 @@ public class AccountSession {
     }
 
     private void onUpdate(Object update){
+
         if(update instanceof TdApi.UpdateAuthorizationState){
 
             TdApi.AuthorizationState state =
                     ((TdApi.UpdateAuthorizationState)update).authorizationState;
 
+            lastAuthState = state;
             authStateLiveData.postValue(state);
 
             switch(state.getConstructor()){
@@ -64,11 +69,44 @@ public class AccountSession {
                 case TdApi.AuthorizationStateWaitTdlibParameters.CONSTRUCTOR:
                     sendTdlibParameters();
                     break;
+
+                case TdApi.AuthorizationStateReady.CONSTRUCTOR:
+                    loadMeOnce();
+                    break;
             }
         }
+
         for (Client.ResultHandler handler : updateHandlers) {
             handler.onResult((TdApi.Object) update);
         }
+    }
+
+    private void loadMeOnce(){
+
+        if(meRequested) return;
+        meRequested = true;
+
+        client.send(new TdApi.GetMe(), result -> {
+
+            if(result instanceof TdApi.User user){
+
+                AppManager.getInstance()
+                        .getExecutorDb()
+                        .execute(() -> {
+
+                            account.setAccountTgId(user.id);
+                            account.setAccountName(
+                                    user.firstName + " " + user.lastName);
+
+                            account.setAccountUsername(user.phoneNumber);
+
+                            AppManager.getInstance()
+                                    .getAppDatabase()
+                                    .accountDao()
+                                    .update(account);
+                        });
+            }
+        });
     }
 
     private void processAuthState(TdApi.AuthorizationState state) {
