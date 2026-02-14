@@ -8,7 +8,7 @@ import androidx.lifecycle.MutableLiveData;
 
 import com.google.ux.material.libmonet.dynamiccolor.MaterialDynamicColors;
 import com.google.ux.material.libmonet.hct.Hct;
-import com.google.ux.material.libmonet.scheme.SchemeNeutral;
+import com.google.ux.material.libmonet.scheme.SchemeFidelity;
 
 public class ThemeEngine {
 
@@ -19,8 +19,12 @@ public class ThemeEngine {
     }
 
     public void initTheme(@ColorInt int seedColor, boolean isNightMode) {
-        Theme theme = new Theme(seedColor, isNightMode);
-        currentTheme.setValue(theme);
+        updateTheme(seedColor, isNightMode);
+    }
+
+    public void updateTheme(@ColorInt int seedColor, boolean isNightMode) {
+        Theme newTheme = new Theme(seedColor, isNightMode);
+        currentTheme.setValue(newTheme);
     }
 
     public static class Theme {
@@ -39,7 +43,7 @@ public class ThemeEngine {
             Hct sourceHct = Hct.fromInt(seedColor);
             MaterialDynamicColors dynamicColors = new MaterialDynamicColors();
 
-            SchemeNeutral scheme = new SchemeNeutral(sourceHct, isNightMode, 0.0);
+            SchemeFidelity scheme = new SchemeFidelity(sourceHct, isNightMode, 0.0);
 
             primaryColor = dynamicColors.primary().getArgb(scheme);
             onPrimaryColor = dynamicColors.onPrimary().getArgb(scheme);

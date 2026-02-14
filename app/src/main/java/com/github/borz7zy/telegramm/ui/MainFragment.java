@@ -1,5 +1,6 @@
 package com.github.borz7zy.telegramm.ui;
 
+import android.content.res.ColorStateList;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -15,6 +16,8 @@ import androidx.lifecycle.ViewModelProvider;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.github.borz7zy.telegramm.AppManager;
 import com.github.borz7zy.telegramm.R;
@@ -32,7 +35,9 @@ public class MainFragment extends Fragment {
     private BottomNavigationView bottomNav;
     private FragmentContainerView fragmentContainer;
     private BlurView header;
+    private TextView headerTitle;
     private BlurView bottomNavView;
+    private ImageView buttonSearch;
     private MainViewModel mainViewModel;
     private Fragment dialogsFragment;
     private Fragment contactsFragment;
@@ -52,8 +57,11 @@ public class MainFragment extends Fragment {
 
         bottomNav = view.findViewById(R.id.bottom_nav_view);
         header = view.findViewById(R.id.header_blur);
+        headerTitle = view.findViewById(R.id.header_title);
         bottomNavView = view.findViewById(R.id.bottom_blur);
         fragmentContainer = view.findViewById(R.id.fragment_container);
+
+        buttonSearch = view.findViewById(R.id.btn_search);
 
         mainViewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
 
@@ -83,7 +91,40 @@ public class MainFragment extends Fragment {
             root.setBackgroundColor(theme.surfaceColor);
 
             header.setOverlayColor(theme.surfaceColor);
+            headerTitle.setTextColor(theme.onSurfaceColor);
+
+            buttonSearch.setColorFilter(theme.onSurfaceColor);
+
             bottomNavView.setOverlayColor(theme.surfaceColor);
+
+            int activeColor = theme.onPrimaryColor;
+            int activeTextColor = theme.onSurfaceColor;
+            int inactiveColor = theme.onSurfaceColor;
+
+            ColorStateList iconColor = new ColorStateList(
+                    new int[][]{
+                            new int[]{android.R.attr.state_checked},
+                            new int[]{-android.R.attr.state_checked}
+                    },
+                    new int[]{
+                            activeColor,
+                            inactiveColor
+                    }
+            );
+
+            ColorStateList textColor = new ColorStateList(
+                    new int[][]{
+                            new int[]{android.R.attr.state_checked},
+                            new int[]{-android.R.attr.state_checked}
+                    },
+                    new int[]{
+                            activeTextColor,
+                            inactiveColor
+                    }
+            );
+
+            bottomNav.setItemIconTintList(iconColor);
+            bottomNav.setItemTextColor(textColor);
         });
     }
 

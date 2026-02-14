@@ -2,6 +2,9 @@ package com.github.borz7zy.telegramm.ui.dialogs;
 
 import android.annotation.SuppressLint;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.ShapeDrawable;
+import android.graphics.drawable.shapes.OvalShape;
 import android.text.TextUtils;
 import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
@@ -12,6 +15,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -20,6 +24,7 @@ import com.bumptech.glide.request.RequestOptions;
 import com.github.borz7zy.telegramm.R;
 import com.github.borz7zy.telegramm.ui.ThemeEngine;
 import com.github.borz7zy.telegramm.ui.model.DialogItem;
+import com.github.borz7zy.telegramm.utils.Logger;
 import com.github.borz7zy.telegramm.utils.TdMediaRepository;
 
 import java.util.ArrayList;
@@ -49,6 +54,7 @@ public class DialogsAdapter extends RecyclerView.Adapter<DialogsAdapter.VH> {
     }
 
     public void setTheme(ThemeEngine.Theme theme){
+        if (theme == null) throw new IllegalArgumentException("Theme cannot be null!");
         this.theme = theme;
         notifyDataSetChanged();
     }
@@ -155,41 +161,51 @@ public class DialogsAdapter extends RecyclerView.Adapter<DialogsAdapter.VH> {
             return true;
         });
 
-        int nameColor = theme != null ? theme.primaryColor : R.color.primaryColor;
-        int messageColor = theme != null ? theme.onSurfaceColor : R.color.onSurfaceColor;
-        int timeColor = theme != null ? theme.secondaryContainerColor : R.color.secondaryContainerColor;
-        int badgeColor = theme != null ? theme.onPrimaryColor : R.color.onPrimaryColor;
+        int nameColor = theme.onSurfaceColor;
+        int messageColor = theme.onSecondaryContainerColor;
+        int timeColor = theme.onSecondaryContainerColor;
+        int badgeColor = theme.primaryColor;
+        int textBadgeColor = theme.onPrimaryColor;
 
         h.name.setText(item.name);
+        h.name.setTextColor(nameColor);
         h.time.setText(item.time);
         h.time.setTextColor(timeColor);
 
         if (item.isTyping) {
-            h.message.setText("Печатает...");
-            h.message.setTextColor(nameColor);
+            h.message.setText("Печатает..."); // TODO
         } else {
             h.message.setText(item.text);
-            h.message.setTextColor(messageColor);
         }
+        h.message.setTextColor(messageColor);
 
         if (item.unread > 0) {
             h.unread.setVisibility(View.VISIBLE);
             h.unread.setText(String.valueOf(item.unread));
-            h.unread.setTextColor(badgeColor);
+            h.unread.setTextColor(textBadgeColor);
+
+            Drawable bg = DrawableCompat.wrap(h.unread.getBackground().mutate());
+            DrawableCompat.setTint(bg, badgeColor);
+            h.unread.setBackground(bg);
         } else {
             h.unread.setVisibility(View.GONE);
         }
 
-        bindAvatar(h.avatar, item.chatId, item.avatarFileId, item.avatarPath);
+        bindAvatar(h.avatar, item.chatId, item.avatarFileId, item.avatarPath, badgeColor);
     }
 
-    private void bindAvatar(ImageView iv, long chatId, int fileId, String pathFromModel) {
+    private void bindAvatar(ImageView iv, long chatId, int fileId, String pathFromModel, int badgeColor) {
         if (iv == null) return;
 
         Glide.with(iv).clear(iv);
-        iv.setImageResource(R.drawable.bg_badge);
 
-        if (fileId == 0) return;
+        ShapeDrawable placeholder = new ShapeDrawable(new OvalShape());
+        placeholder.getPaint().setColor(badgeColor);
+
+        if (fileId == 0) {
+            iv.setImageDrawable(placeholder);
+            return;
+        }
 
         final String tag = chatId + ":" + fileId;
         iv.setTag(tag);
@@ -201,9 +217,9 @@ public class DialogsAdapter extends RecyclerView.Adapter<DialogsAdapter.VH> {
         if (!TextUtils.isEmpty(path)) {
             Glide.with(iv)
                     .load(path)
-                    .apply(RequestOptions.circleCropTransform())
-                    .placeholder(R.drawable.bg_badge)
-                    .error(R.drawable.bg_badge)
+                    .apply(RequestOptions.circleCropTransform()
+                            .placeholder(placeholder)
+                            .error(placeholder))
                     .into(iv);
             return;
         }
@@ -215,9 +231,9 @@ public class DialogsAdapter extends RecyclerView.Adapter<DialogsAdapter.VH> {
 
             Glide.with(iv)
                     .load(p)
-                    .apply(RequestOptions.circleCropTransform())
-                    .placeholder(R.drawable.bg_badge)
-                    .error(R.drawable.bg_badge)
+                    .apply(RequestOptions.circleCropTransform()
+                            .placeholder(placeholder)
+                            .error(placeholder))
                     .into(iv);
         });
     }

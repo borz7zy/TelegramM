@@ -1,5 +1,7 @@
 package com.github.borz7zy.telegramm.ui.contacts;
 
+import android.graphics.drawable.ShapeDrawable;
+import android.graphics.drawable.shapes.OvalShape;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -71,22 +73,55 @@ public class ContactsAdapter extends RecyclerView.Adapter<ContactsAdapter.VH> {
             if (clickListener != null) clickListener.onContactClick(item);
         });
 
-        h.contactName.setText(item.name);
-        h.contactLastOnlineTime.setText(item.lastOnline != null ? item.lastOnline : "");
+        int nameColor = theme.onSurfaceColor;
+        int statusColor = theme.onSecondaryContainerColor;
+        int badgeColor = theme.primaryColor;
 
-        if (theme != null) {
-            h.contactName.setTextColor(theme.onSurfaceColor);
-            h.contactLastOnlineTime.setTextColor(theme.secondaryContainerColor);
+        h.contactName.setText(item.name);
+        h.contactName.setTextColor(nameColor);
+
+        h.contactLastOnlineTime.setText(item.lastOnline != null ? item.lastOnline : ""); // TODO
+        h.contactLastOnlineTime.setTextColor(statusColor);
+
+        bindAvatar(h.avatar, item.avatarFileId, item.avatarPath, badgeColor);
+    }
+
+    private void bindAvatar(ImageView iv, int fileId, String pathFromModel, int badgeColor) {
+        if (iv == null) return;
+
+        Glide.with(iv.getContext()).clear(iv);
+
+        ShapeDrawable placeholder = new ShapeDrawable(new OvalShape());
+        placeholder.getPaint().setColor(badgeColor);
+
+        if (fileId == 0) {
+            iv.setImageDrawable(placeholder);
+            return;
         }
 
-        Glide.with(h.avatar.getContext())
-                .load(!TextUtils.isEmpty(item.avatarPath)
-                        ? item.avatarPath
-                        : TdMediaRepository.get().getCachedPath(item.avatarFileId))
-                .apply(RequestOptions.circleCropTransform()
-                        .placeholder(R.drawable.bg_badge)
-                        .error(R.drawable.bg_badge))
-                .into(h.avatar);
+        String path = !TextUtils.isEmpty(pathFromModel)
+                ? pathFromModel
+                : TdMediaRepository.get().getCachedPath(fileId);
+
+        if (!TextUtils.isEmpty(path)) {
+            Glide.with(iv)
+                    .load(path)
+                    .apply(RequestOptions.circleCropTransform()
+                            .placeholder(placeholder)
+                            .error(placeholder))
+                    .into(iv);
+            return;
+        }
+
+        TdMediaRepository.get().getPathOrRequest(fileId, p -> {
+            if (TextUtils.isEmpty(p)) return;
+            Glide.with(iv)
+                    .load(p)
+                    .apply(RequestOptions.circleCropTransform()
+                            .placeholder(placeholder)
+                            .error(placeholder))
+                    .into(iv);
+        });
     }
 
     static class VH extends RecyclerView.ViewHolder {

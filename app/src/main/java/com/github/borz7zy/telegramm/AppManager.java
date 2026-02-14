@@ -3,6 +3,8 @@ package com.github.borz7zy.telegramm;
 import android.annotation.SuppressLint;
 import android.content.Context;
 
+import androidx.core.content.ContextCompat;
+
 import com.github.borz7zy.telegramm.ui.ThemeEngine;
 
 import java.util.concurrent.ExecutorService;
@@ -43,11 +45,11 @@ public class AppManager {
 
         this.executorDb = Executors.newSingleThreadExecutor();
 
-        this.db = AppDatabase.getDatabase(App.getApplication().getApplicationContext());
+        this.db = AppDatabase.getDatabase(context);
 
         this.themeEngine = new ThemeEngine();
         boolean isNight = true; // TODO
-        final int seedColor = R.color.primaryColor;
+        final int seedColor = ContextCompat.getColor(context, R.color.primaryColor);
         this.themeEngine.initTheme(seedColor, isNight);
     }
 

@@ -69,15 +69,17 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
         setupRecyclerView();
         setupInsets();
 
-        AppManager.getInstance().getThemeEngine().getCurrentTheme().observe(getViewLifecycleOwner(), new Observer<ThemeEngine.Theme>() {
-            @Override
-            public void onChanged(ThemeEngine.Theme theme) {
-                adapter.setTheme(theme);
-            }
-        });
+        ThemeEngine themeEngine = AppManager.getInstance().getThemeEngine();
+        ThemeEngine.Theme currentTheme = themeEngine.getCurrentTheme().getValue();
+        if (currentTheme != null) {
+            adapter.setTheme(currentTheme);
+            view.setBackgroundColor(currentTheme.surfaceColor);
+        }
 
-        int bgColor = Objects.requireNonNull(AppManager.getInstance().getThemeEngine().getCurrentTheme().getValue()).surfaceColor;
-        view.setBackgroundColor(bgColor);
+        AppManager.getInstance().getThemeEngine().getCurrentTheme().observe(getViewLifecycleOwner(), theme -> {
+            adapter.setTheme(theme);
+            view.setBackgroundColor(theme.surfaceColor);
+        });
     }
 
     private void setupRecyclerView() {
