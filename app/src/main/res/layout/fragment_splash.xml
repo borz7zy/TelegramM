@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root_splash"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center"
-    android:background="@color/tg_background"
+    android:background="@color/surfaceColor"
     tools:context=".ui.SplashFragment">
 
     <TextView
@@ -15,6 +17,7 @@
         android:fontFamily="@font/family_google_sans"
         android:includeFontPadding="false"
         android:textSize="48sp"
+        android:textColor="@color/onSurfaceColor"
         android:text=""
         tools:text="Telegram M|"
         android:textStyle="bold"/>

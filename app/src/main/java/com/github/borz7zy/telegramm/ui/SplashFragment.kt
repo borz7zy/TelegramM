@@ -6,6 +6,7 @@ import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.NavHostFragment
@@ -44,10 +45,25 @@ class SplashFragment : BaseTelegramFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        val root = view.findViewById<LinearLayout>(R.id.root_splash)
+
+        root?.setBackgroundColor(AppManager.getInstance().themeEngine.currentTheme.value
+            ?.surfaceColor
+            ?: R.color.surfaceColor)
+
         splashText = view.findViewById<TextView>(R.id.splashText)
+
+        splashText?.setTextColor(AppManager.getInstance().themeEngine.currentTheme.value
+            ?.onSurfaceColor
+            ?: R.color.onSurfaceColor)
 
         startTypewriterEffect()
         startAsyncWaitState()
+
+        AppManager.getInstance().themeEngine.currentTheme.observe(viewLifecycleOwner, {Theme->
+            root?.setBackgroundColor(Theme.surfaceColor)
+            splashText?.setTextColor(Theme.onSurfaceColor)
+        })
     }
 
     private fun startTypewriterEffect() {
