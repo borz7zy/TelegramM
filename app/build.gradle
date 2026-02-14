@@ -67,20 +67,26 @@ dependencies {
     implementation libs.lifecycle.viewmodel.ktx
     implementation libs.navigation.fragment
     implementation libs.navigation.ui
+    implementation libs.core.ktx
+    implementation libs.fragment
+    implementation libs.preference
+
     implementation 'androidx.core:core:1.17.0'
     implementation 'androidx.dynamicanimation:dynamicanimation:1.0.0'
     implementation 'com.github.massoudss:waveformSeekBar:5.0.2'
     implementation 'com.github.lincollincol:amplituda:2.2.2'
     implementation 'com.github.Dimezis:BlurView:version-3.2.0'
+
     implementation 'com.github.bumptech.glide:glide:4.16.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.16.0'
+
     implementation project(':SharedUtils')
     implementation project(':SlidingMenu')
-    implementation libs.core.ktx
     implementation project(':LibMonet')
-    annotationProcessor 'com.github.bumptech.glide:compiler:4.16.0'
     implementation project(':tdlib')
-    implementation libs.fragment
-    implementation libs.preference
+
     implementation 'androidx.room:room-runtime:2.8.4'
     annotationProcessor 'androidx.room:room-compiler:2.8.4'
+
+    implementation 'androidx.paging:paging-runtime:3.4.1'
 }

@@ -37,6 +37,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsAnimationCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.paging.PagingData;
 import androidx.recyclerview.widget.ConcatAdapter;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -130,7 +131,7 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
     private static final long BATCH_DELAY_MS = 200;
     private final Object batchLock = new Object();
     private boolean updateScheduled = false;
-    private boolean pendingScrollToBottom = false;
+//    private boolean pendingScrollToBottom = false;
     private boolean pendingPagination = false;
 
     public static ChatFragment newInstance(long chatId, String title) {
@@ -314,7 +315,7 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
 
         ConcatAdapter concat = new ConcatAdapter(
                 new ConcatAdapter.Config.Builder()
-                        .setStableIdMode(ConcatAdapter.Config.StableIdMode.ISOLATED_STABLE_IDS)
+                        .setStableIdMode(ConcatAdapter.Config.StableIdMode.NO_STABLE_IDS)
                         .setIsolateViewTypes(true).build(),
                 topLoading,
                 adapter
@@ -596,7 +597,7 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
     private void scheduleUiUpdate(boolean isPagination, boolean scrollToBottom) {
         synchronized (batchLock) {
             if (isPagination) pendingPagination = true;
-            if (scrollToBottom) pendingScrollToBottom = true;
+//            if (scrollToBottom) pendingScrollToBottom = true;
 
             if (!updateScheduled) {
                 updateScheduled = true;
@@ -606,13 +607,13 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
     }
 
     private void performBufferedUpdate() {
-        boolean doScroll;
+        final boolean doScroll = false;
         boolean doPagination;
 
         synchronized (batchLock) {
-            doScroll = pendingScrollToBottom;
+//            doScroll = pendingScrollToBottom;
             doPagination = pendingPagination;
-            pendingScrollToBottom = false;
+//            pendingScrollToBottom = false;
             pendingPagination = false;
             updateScheduled = false;
         }
@@ -633,7 +634,7 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
         long anchorMsgId = -1;
         int anchorOffset = 0;
 
-        boolean wasAtBottom = isNearBottom();
+//        boolean wasAtBottom = isNearBottom();
 
         if (isPagination) {
             int firstPos = lm.findFirstVisibleItemPosition();
@@ -668,21 +669,26 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
         final long finalAnchorId = anchorMsgId;
         final int finalAnchorOffset = anchorOffset;
 
-        adapter.submitList(list, () -> {
-            if (isPagination) {
-                setTopLoading(false);
-                if (finalAnchorId != -1) {
-                    int newPos = adapter.findPositionById(finalAnchorId);
-                    if (newPos != RecyclerView.NO_POSITION) {
-                        lm.scrollToPositionWithOffset(newPos, finalAnchorOffset);
+        adapter.submitData(getLifecycle(), PagingData.from(list));
+        adapter.addOnPagesUpdatedListener(new kotlin.jvm.functions.Function0<kotlin.Unit>() {
+            @Override
+            public kotlin.Unit invoke() {
+                if (isPagination) {
+                    setTopLoading(false);
+                    if (finalAnchorId != -999L) {
+                        int newPos = adapter.findPositionById(finalAnchorId);
+                        if (newPos != RecyclerView.NO_POSITION) {
+                            lm.scrollToPositionWithOffset(newPos, finalAnchorOffset);
+                        }
                     }
-                }
-            } else {
-                if (maybeScrollToBottom && wasAtBottom) {
-                    rv.scrollToPosition(adapter.getItemCount() - 1);
-                }
+                }// else {
+//                    if (maybeScrollToBottom && wasAtBottom) {
+//                        rv.scrollToPosition(adapter.getItemCount() - 1);
+//                    }
+//                }
+                loading = false;
+                return null;
             }
-            loading = false;
         });
     }
 
@@ -809,14 +815,14 @@ public class ChatFragment extends BaseTelegramDialogFragment implements Client.R
         rv.post(() -> topLoading.setVisible(v));
     }
 
-    private boolean isNearBottom() {
-        int count = adapter.getItemCount();
-        if (count == 0) return true;
-
-        int lastVisiblePosition = lm.findLastVisibleItemPosition();
-
-        return lastVisiblePosition >= (count - 1) - 2;
-    }
+//    private boolean isNearBottom() {
+//        int count = adapter.getItemCount();
+//        if (count == 0) return true;
+//
+//        int lastVisiblePosition = lm.findLastVisibleItemPosition();
+//
+//        return lastVisiblePosition >= (count - 1) - 2;
+//    }
 
     private void showTyping(String text) {
         if (!isAdded() || typingDrawable == null) return;

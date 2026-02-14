@@ -11,13 +11,11 @@ import androidx.recyclerview.widget.RecyclerView;
 public class TopLoadingAdapter extends RecyclerView.Adapter<TopLoadingAdapter.VH> {
     private boolean visible;
 
-    public TopLoadingAdapter(){
-        setHasStableIds(true);
-    }
+    public TopLoadingAdapter(){}
 
     @Override
     public long getItemId(int position) {
-        return 1L;
+        return -999L;
     }
 
     public void setVisible(boolean v) {

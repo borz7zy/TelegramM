@@ -11,8 +11,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.paging.PagingDataAdapter;
 import androidx.recyclerview.widget.DiffUtil;
-import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
@@ -30,11 +30,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-public class ChatAdapter extends ListAdapter<MessageItem, RecyclerView.ViewHolder> {
+public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.ViewHolder> {
 
     private static final int VT_IN = 0;
     private static final int VT_OUT = 1;
     private static final int VT_SYSTEM = 2;
+    private static final int VT_LOADING = 3;
 
     private int chatAvatarFileId = 0;
 
@@ -57,23 +58,22 @@ public class ChatAdapter extends ListAdapter<MessageItem, RecyclerView.ViewHolde
 
     public ChatAdapter() {
         super(DIFF);
-        setHasStableIds(true);
-    }
-
-    @Override
-    public long getItemId(int position) {
-        return getItem(position).id;
     }
 
     @Override
     public int getItemViewType(int position) {
         MessageItem m = getItem(position);
+
+        if (m == null) {
+            return VT_LOADING;
+        }
+
         if (m.ui != null && m.ui.kind() == UiContent.Kind.SYSTEM) return VT_SYSTEM;
         return m.outgoing ? VT_OUT : VT_IN;
     }
 
     public int findPositionById(long id) {
-        List<MessageItem> cur = getCurrentList();
+        List<MessageItem> cur = snapshot().getItems();
         for (int i = 0; i < cur.size(); ++i) {
             if (cur.get(i).id == id) return i;
         }
@@ -84,6 +84,12 @@ public class ChatAdapter extends ListAdapter<MessageItem, RecyclerView.ViewHolde
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         LayoutInflater inf = LayoutInflater.from(parent.getContext());
+
+        if (viewType == VT_LOADING) {
+            View v = new View(parent.getContext());
+            v.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 100));
+            return new RecyclerView.ViewHolder(v){};
+        }
 
         if (viewType == VT_SYSTEM) {
             View v = inf.inflate(R.layout.item_message_system, parent, false);
@@ -103,44 +109,42 @@ public class ChatAdapter extends ListAdapter<MessageItem, RecyclerView.ViewHolde
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         MessageItem m = getItem(position);
 
-        if (holder instanceof SystemVH sh) {
-            UiContent.System sysUi = (UiContent.System) m.ui;
-
-            sh.giftImage.setVisibility(View.GONE);
-            sh.giftName.setVisibility(View.GONE);
-            sh.comment.setVisibility(View.GONE);
-
-            if (sysUi.messageType instanceof SystemMessages.PremiumGift pg) {
-                UiContent.System s = (UiContent.System) m.ui;
-                String title = s.text;
-                sh.giftName.setText(title);
-                sh.giftName.setVisibility(View.VISIBLE);
-
-                sh.system.setText(pg.complete_caption);
-                sh.system.setVisibility(View.VISIBLE);
-
-                sh.comment.setText(pg.comment);
-                sh.comment.setVisibility(View.VISIBLE);
-
-                sh.giftImage.setVisibility(View.VISIBLE);
-                bindGiftSticker(sh.giftImage, pg);
-
-                return;
-            }
-
-            if (sysUi.messageType instanceof SystemMessages.Default) {
-                UiContent.System s = (UiContent.System) m.ui;
-                String text = s.text;
-                sh.system.setText(text);
-                sh.system.setVisibility(View.VISIBLE);
-                return;
-            }
-
+        if (m == null) {
             return;
         }
 
-        VH h = (VH) holder;
+        if (holder instanceof SystemVH sh) {
+            bindSystemMessage(sh, m);
+            return;
+        }
 
+        if (holder instanceof VH h) {
+            bindUserMessage(h, m);
+        }
+    }
+
+    private void bindSystemMessage(SystemVH sh, MessageItem m) {
+        UiContent.System sysUi = (UiContent.System) m.ui;
+        sh.giftImage.setVisibility(View.GONE);
+        sh.giftName.setVisibility(View.GONE);
+        sh.comment.setVisibility(View.GONE);
+
+        if (sysUi.messageType instanceof SystemMessages.PremiumGift pg) {
+            sh.giftName.setText(sysUi.text);
+            sh.giftName.setVisibility(View.VISIBLE);
+            sh.system.setText(pg.complete_caption);
+            sh.system.setVisibility(View.VISIBLE);
+            sh.comment.setText(pg.comment);
+            sh.comment.setVisibility(View.VISIBLE);
+            sh.giftImage.setVisibility(View.VISIBLE);
+            bindGiftSticker(sh.giftImage, pg);
+        } else if (sysUi.messageType instanceof SystemMessages.Default) {
+            sh.system.setText(sysUi.text);
+            sh.system.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void bindUserMessage(VH h, MessageItem m) {
         String text = "";
         if (m.ui instanceof UiContent.Text t) text = t.text;
         else if (m.ui instanceof UiContent.Media md) text = md.caption;
@@ -153,7 +157,6 @@ public class ChatAdapter extends ListAdapter<MessageItem, RecyclerView.ViewHolde
         }
 
         h.time.setText(m.time);
-
         bindImages(h.imageBoardTop, m.photos);
         bindIncomingAvatar(h, m);
         bindButtons(h, m);
@@ -161,6 +164,12 @@ public class ChatAdapter extends ListAdapter<MessageItem, RecyclerView.ViewHolde
 
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position, @NonNull List<Object> payloads) {
+        MessageItem item = getItem(position);
+        if (item == null) {
+            super.onBindViewHolder(holder, position, payloads);
+            return;
+        }
+
         if (!payloads.isEmpty()) {
             int mask = 0;
             for (Object p : payloads) {
