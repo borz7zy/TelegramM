@@ -9,7 +9,6 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -20,7 +19,7 @@ import com.github.borz7zy.telegramm.R;
 import com.github.borz7zy.telegramm.core.accounts.AccountManager;
 import com.github.borz7zy.telegramm.core.accounts.AccountSession;
 import com.github.borz7zy.telegramm.core.accounts.AccountStorage;
-import com.github.borz7zy.telegramm.ui.LayoutViewModel;
+import com.github.borz7zy.telegramm.ui.MainViewModel;
 import com.github.borz7zy.telegramm.ui.ThemeEngine;
 import com.github.borz7zy.telegramm.ui.base.BaseTelegramFragment;
 import com.github.borz7zy.telegramm.ui.chat.ChatFragment;
@@ -35,7 +34,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DialogsFragment extends BaseTelegramFragment implements Client.ResultHandler {
@@ -54,6 +52,7 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
 
     private int currentTop = 0;
     private int currentBottom = 0;
+    private MainViewModel viewModel;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -64,6 +63,8 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
     @Override
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        viewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
 
         recyclerView = view.findViewById(R.id.recycler_dialogs);
         setupRecyclerView();
@@ -150,14 +151,12 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
     }
 
     private void setupInsets() {
-        LayoutViewModel viewModel = new ViewModelProvider(requireActivity()).get(LayoutViewModel.class);
-
-        viewModel.topInset.observe(getViewLifecycleOwner(), height -> {
+        viewModel.getTopInset().observe(getViewLifecycleOwner(), height -> {
             currentTop = height;
             updateRecyclerPadding();
         });
 
-        viewModel.bottomInset.observe(getViewLifecycleOwner(), height -> {
+        viewModel.getBottomInset().observe(getViewLifecycleOwner(), height -> {
             currentBottom = height;
             updateRecyclerPadding();
         });
@@ -247,7 +246,11 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
     }
 
     private void updateRecyclerPadding() {
-        recyclerView.setPadding(0, currentTop, 0, currentBottom);
+        recyclerView.setPadding(0,
+                currentTop,
+                0,
+                currentBottom
+        );
     }
 
     private void updateChat(TdApi.Chat chat) {

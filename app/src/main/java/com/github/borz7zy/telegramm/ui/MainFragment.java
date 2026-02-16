@@ -1,7 +1,6 @@
 package com.github.borz7zy.telegramm.ui;
 
 import android.content.res.ColorStateList;
-import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 
@@ -45,6 +44,39 @@ public class MainFragment extends Fragment {
     private Fragment settingsFragment;
     private Fragment currentFragment;
 
+    private enum Screen {
+        DIALOGS,
+        CONTACTS,
+        SETTINGS
+    }
+
+    private int[] getAnimation(Screen from, Screen to) {
+        if (from == null || to == null) return null;
+        switch (from) {
+            case DIALOGS:
+                if (to == Screen.CONTACTS)
+                    return new int[]{R.anim.nav_pop_enter, R.anim.nav_pop_exit};
+                if (to == Screen.SETTINGS)
+                    return new int[]{R.anim.nav_enter, R.anim.nav_exit};
+                break;
+
+            case CONTACTS:
+                if (to == Screen.DIALOGS)
+                    return new int[]{R.anim.nav_enter, R.anim.nav_exit};
+                if (to == Screen.SETTINGS)
+                    return new int[]{R.anim.nav_enter, R.anim.nav_exit};
+                break;
+
+            case SETTINGS:
+                if (to == Screen.DIALOGS)
+                    return new int[]{R.anim.nav_pop_enter, R.anim.nav_pop_exit};
+                if (to == Screen.CONTACTS)
+                    return new int[]{R.anim.nav_pop_enter, R.anim.nav_pop_exit};
+                break;
+        }
+        return null;
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -57,18 +89,19 @@ public class MainFragment extends Fragment {
 
         View root = view.findViewById(R.id.dialogs_root);
 
-        bottomNav = view.findViewById(R.id.bottom_nav_view);
-        header = view.findViewById(R.id.header_blur);
-        headerTitle = view.findViewById(R.id.header_title);
-        bottomNavView = view.findViewById(R.id.bottom_blur);
         fragmentContainer = view.findViewById(R.id.fragment_container);
+
+        header = view.findViewById(R.id.header_blur);
+        bottomNavView = view.findViewById(R.id.bottom_blur);
+
+        bottomNav = view.findViewById(R.id.bottom_nav_view);
+        headerTitle = view.findViewById(R.id.header_title);
 
         buttonSearch = view.findViewById(R.id.btn_search);
 
         mainViewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
 
         setupBlur(view);
-        applyInsets(view);
 
         dialogsFragment = getChildFragmentManager().findFragmentByTag("dialogs");
         contactsFragment = getChildFragmentManager().findFragmentByTag("contacts");
@@ -90,15 +123,14 @@ public class MainFragment extends Fragment {
             );
         }
 
+        applyInsets(view);
+
         AppManager.getInstance().getThemeEngine().getCurrentTheme().observe(getViewLifecycleOwner(), theme->{
             root.setBackgroundColor(theme.surfaceColor);
 
-            header.setOverlayColor(theme.surfaceColor);
             headerTitle.setTextColor(theme.onSurfaceColor);
 
             buttonSearch.setColorFilter(theme.onSurfaceColor);
-
-            bottomNavView.setOverlayColor(theme.surfaceColor);
 
             int activeColor = theme.onPrimaryColor;
             int activeTextColor = theme.onSurfaceColor;
@@ -152,13 +184,20 @@ public class MainFragment extends Fragment {
 
         var transaction = getChildFragmentManager().beginTransaction();
 
+        final Screen from = getScreen(currentFragment);
+        final Screen to = getScreen(target);
+
+        final int[] anim = getAnimation(from, to);
+
+        if(anim != null)
+            transaction.setCustomAnimations(anim[0], anim[1]);
+
         if (currentFragment != null)
             transaction.hide(currentFragment);
 
         if (target.isAdded())
             transaction.show(target);
         else {
-//            String tag = (target instanceof DialogsFragment) ? "dialogs" : "contacts";
             String tag = "dialogs";
             if(target instanceof DialogsFragment){
                 tag = "dialogs";
@@ -175,6 +214,13 @@ public class MainFragment extends Fragment {
         currentFragment = target;
     }
 
+    private Screen getScreen(Fragment f) {
+        if (f instanceof DialogsFragment) return Screen.DIALOGS;
+        if (f instanceof ContactsFragment) return Screen.CONTACTS;
+        if (f instanceof SettingsFragment) return Screen.SETTINGS;
+        return null;
+    }
+
     private void setupBlur(View view) {
         BlurTarget target = view.findViewById(R.id.blur_target);
 
@@ -183,12 +229,7 @@ public class MainFragment extends Fragment {
             bg = view.getBackground();
         }
 
-        if (bg == null) {
-            bg = new ColorDrawable(0x00000000);
-        }
-
         header.setupWith(target).setFrameClearDrawable(bg).setBlurRadius(BLUR_RADIUS);
-
         bottomNavView.setupWith(target).setFrameClearDrawable(bg).setBlurRadius(BLUR_RADIUS);
     }
 
@@ -199,40 +240,15 @@ public class MainFragment extends Fragment {
             header.setPadding(0, bars.top, 0, header.getPaddingBottom());
             bottomNavView.setPadding(0, bottomNavView.getPaddingTop(), 0, bars.bottom);
 
-            mainViewModel.getTopInset().setValue(header.getHeight() + bars.top);
-            mainViewModel.getBottomInset().setValue(bottomNavView.getHeight() + bars.bottom);
+            header.addOnLayoutChangeListener((v1, l, t, r, b, ol, ot, orr, ob) -> {
+                mainViewModel.getTopInset().setValue(v1.getHeight());
+            });
 
-            fragmentContainer.setPadding(
-                    0,
-                    mainViewModel.getTopInset().getValue() != null ? mainViewModel.getTopInset().getValue() : 0,
-                    0,
-                    mainViewModel.getBottomInset().getValue() != null ? mainViewModel.getBottomInset().getValue() : 0
-            );
+            bottomNavView.addOnLayoutChangeListener((v1, l, t, r, b, ol, ot, orr, ob) -> {
+                mainViewModel.getBottomInset().setValue(v1.getHeight());
+            });
 
             return insets;
-        });
-        setupLayoutObservers();
-    }
-
-    private void setupLayoutObservers() {
-        header.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, orr, ob) -> {
-            mainViewModel.getTopInset().setValue(v.getHeight());
-            fragmentContainer.setPadding(
-                    0,
-                    v.getHeight(),
-                    0,
-                    fragmentContainer.getPaddingBottom()
-            );
-        });
-
-        bottomNavView.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, orr, ob) -> {
-            mainViewModel.getBottomInset().setValue(v.getHeight());
-            fragmentContainer.setPadding(
-                    0,
-                    fragmentContainer.getPaddingTop(),
-                    0,
-                    v.getHeight()
-            );
         });
     }
 }
