@@ -619,18 +619,6 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         }
     };
 
-    private static ImageView findImageView(View root, String... names) {
-        String pkg = root.getContext().getPackageName();
-        for (String n : names) {
-            int id = root.getResources().getIdentifier(n, "id", pkg);
-            if (id != 0) {
-                View v = root.findViewById(id);
-                if (v instanceof ImageView) return (ImageView) v;
-            }
-        }
-        return null;
-    }
-
     private void bindIncomingAvatar(VH h, MessageItem m) {
         if (h.avatar == null) return;
 
