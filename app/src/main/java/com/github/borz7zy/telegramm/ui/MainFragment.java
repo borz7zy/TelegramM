@@ -124,6 +124,7 @@ public class MainFragment extends Fragment {
         }
 
         applyInsets(view);
+        setupInsetListeners();
 
         AppManager.getInstance().getThemeEngine().getCurrentTheme().observe(getViewLifecycleOwner(), theme->{
             root.setBackgroundColor(theme.surfaceColor);
@@ -240,15 +241,17 @@ public class MainFragment extends Fragment {
             header.setPadding(0, bars.top, 0, header.getPaddingBottom());
             bottomNavView.setPadding(0, bottomNavView.getPaddingTop(), 0, bars.bottom);
 
-            header.addOnLayoutChangeListener((v1, l, t, r, b, ol, ot, orr, ob) -> {
-                mainViewModel.getTopInset().setValue(v1.getHeight());
-            });
-
-            bottomNavView.addOnLayoutChangeListener((v1, l, t, r, b, ol, ot, orr, ob) -> {
-                mainViewModel.getBottomInset().setValue(v1.getHeight());
-            });
-
             return insets;
+        });
+    }
+
+    private void setupInsetListeners() {
+        header.addOnLayoutChangeListener((v1, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+            mainViewModel.getTopInset().setValue(v1.getHeight());
+        });
+
+        bottomNavView.addOnLayoutChangeListener((v1, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+            mainViewModel.getBottomInset().setValue(v1.getHeight());
         });
     }
 }
