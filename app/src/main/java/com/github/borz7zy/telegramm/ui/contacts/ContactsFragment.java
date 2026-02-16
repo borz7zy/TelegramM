@@ -9,6 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.github.borz7zy.telegramm.AppManager;
@@ -16,6 +17,7 @@ import com.github.borz7zy.telegramm.R;
 import com.github.borz7zy.telegramm.core.accounts.AccountManager;
 import com.github.borz7zy.telegramm.core.accounts.AccountSession;
 import com.github.borz7zy.telegramm.core.accounts.AccountStorage;
+import com.github.borz7zy.telegramm.ui.MainViewModel;
 import com.github.borz7zy.telegramm.ui.base.BaseTelegramFragment;
 import com.github.borz7zy.telegramm.ui.model.ContactItem;
 import com.github.borz7zy.telegramm.ui.widget.SpringRecyclerView;
@@ -41,6 +43,8 @@ public class ContactsFragment extends BaseTelegramFragment implements Client.Res
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private AccountSession currentSession;
 
+    private MainViewModel mainViewModel;
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -51,14 +55,42 @@ public class ContactsFragment extends BaseTelegramFragment implements Client.Res
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        mainViewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
+
         recyclerView = view.findViewById(R.id.recycler_contacts);
         setupRecyclerView();
+
+        applyInsetsPadding();
 
         AppManager.getInstance().getThemeEngine().getCurrentTheme().observe(getViewLifecycleOwner(), theme->{
             view.setBackgroundColor(theme.surfaceColor);
 
             if(adapter != null){
                 adapter.setTheme(theme);
+            }
+        });
+    }
+
+    private void applyInsetsPadding() {
+        mainViewModel.getTopInset().observe(getViewLifecycleOwner(), topInset -> {
+            if (recyclerView != null && topInset != null) {
+                recyclerView.setPadding(
+                        recyclerView.getPaddingLeft(),
+                        topInset,
+                        recyclerView.getPaddingRight(),
+                        recyclerView.getPaddingBottom()
+                );
+            }
+        });
+
+        mainViewModel.getBottomInset().observe(getViewLifecycleOwner(), bottomInset -> {
+            if (recyclerView != null && bottomInset != null) {
+                recyclerView.setPadding(
+                        recyclerView.getPaddingLeft(),
+                        recyclerView.getPaddingTop(),
+                        recyclerView.getPaddingRight(),
+                        bottomInset
+                );
             }
         });
     }
