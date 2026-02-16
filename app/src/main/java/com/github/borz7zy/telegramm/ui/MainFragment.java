@@ -23,6 +23,7 @@ import com.github.borz7zy.telegramm.AppManager;
 import com.github.borz7zy.telegramm.R;
 import com.github.borz7zy.telegramm.ui.contacts.ContactsFragment;
 import com.github.borz7zy.telegramm.ui.dialogs.DialogsFragment;
+import com.github.borz7zy.telegramm.ui.settings.SettingsFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import eightbitlab.com.blurview.BlurTarget;
@@ -41,6 +42,7 @@ public class MainFragment extends Fragment {
     private MainViewModel mainViewModel;
     private Fragment dialogsFragment;
     private Fragment contactsFragment;
+    private Fragment settingsFragment;
     private Fragment currentFragment;
 
     @Override
@@ -70,6 +72,7 @@ public class MainFragment extends Fragment {
 
         dialogsFragment = getChildFragmentManager().findFragmentByTag("dialogs");
         contactsFragment = getChildFragmentManager().findFragmentByTag("contacts");
+        settingsFragment = getChildFragmentManager().findFragmentByTag("settings");
 
         bottomNav.setOnItemSelectedListener(item->{
             mainViewModel.setCurrentTab(item.getItemId());
@@ -138,6 +141,10 @@ public class MainFragment extends Fragment {
             if (contactsFragment == null)
                 contactsFragment = new ContactsFragment();
             target = contactsFragment;
+        }else if (id == R.id.nav_settings){
+            if(settingsFragment == null)
+                settingsFragment = new SettingsFragment();
+            target = settingsFragment;
         }
 
         if (target == null || target == currentFragment)
@@ -151,7 +158,15 @@ public class MainFragment extends Fragment {
         if (target.isAdded())
             transaction.show(target);
         else {
-            String tag = (target instanceof DialogsFragment) ? "dialogs" : "contacts";
+//            String tag = (target instanceof DialogsFragment) ? "dialogs" : "contacts";
+            String tag = "dialogs";
+            if(target instanceof DialogsFragment){
+                tag = "dialogs";
+            }else if (target instanceof ContactsFragment){
+                tag = "contacts";
+            }else if (target instanceof SettingsFragment){
+                tag = "settings";
+            }
             transaction.add(R.id.fragment_container, target, tag);
         }
 

@@ -78,6 +78,8 @@ dependencies {
     implementation 'com.github.Dimezis:BlurView:version-3.2.0'
 
     implementation 'com.github.bumptech.glide:glide:4.16.0'
+    implementation libs.legacy.support.v4
+    implementation libs.fragment.ktx
     annotationProcessor 'com.github.bumptech.glide:compiler:4.16.0'
 
     implementation project(':SharedUtils')

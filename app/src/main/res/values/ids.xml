@@ -1,4 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <item name="tag_layout_mode" type="id"/>
+
+    <!-- S E T T I N G S -->
+    <item name="root_linear_settings" type="id"/>
+
+    <item name="chat_settings" type="id"/>
+    <item name="confidentiality_settings" type="id"/>
+    <item name="notifications_settings" type="id"/>
+    <item name="datastorage_settings" type="id"/>
+    <item name="energy_settings" type="id"/>
+    <item name="folders_settings" type="id"/>
+    <item name="devices_settings" type="id"/>
+    <item name="lang_settings" type="id"/>
 </resources>
