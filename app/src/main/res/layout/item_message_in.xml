@@ -9,6 +9,32 @@
     android:paddingTop="4dp"
     android:paddingBottom="4dp">
 
+    <TextView
+        android:id="@+id/username_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:textColor="@color/secondaryContainerColor"
+        android:textSize="12sp"
+        android:alpha="0.65"
+        app:layout_constraintBottom_toTopOf="@+id/group_tag_tv"
+        app:layout_constraintStart_toStartOf="@+id/bubble"
+        tools:visibility="visible"
+        tools:text="Юрий Г." />
+
+    <TextView
+        android:id="@+id/group_tag_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:textColor="@color/secondaryContainerColor"
+        android:textSize="12sp"
+        android:alpha="0.65"
+        app:layout_constraintBottom_toTopOf="@+id/bubble"
+        app:layout_constraintStart_toStartOf="@+id/bubble"
+        tools:visibility="visible"
+        tools:text="Admin" />
+
     <androidx.cardview.widget.CardView
         android:id="@+id/card_avatar"
         android:layout_width="40dp"
