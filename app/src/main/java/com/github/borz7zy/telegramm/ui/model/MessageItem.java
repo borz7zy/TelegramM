@@ -17,10 +17,11 @@ public final class MessageItem {
     public final List<PhotoData> photos;
     public final long mediaAlbumId;
     public final UiContent ui;
+    public final int senderAvatarFileId;
 
     public MessageItem(long id, long chatId, boolean outgoing,
                        String time, List<PhotoData> photos,
-                       long mediaAlbumId, UiContent ui) {
+                       long mediaAlbumId, UiContent ui, int senderAvatarFileId) {
         this.id = id;
         this.chatId = chatId;
         this.outgoing = outgoing;
@@ -28,6 +29,7 @@ public final class MessageItem {
         this.photos = photos != null ? photos : Collections.emptyList();
         this.mediaAlbumId = mediaAlbumId;
         this.ui = ui != null ? ui : new UiContent.Text("");
+        this.senderAvatarFileId = senderAvatarFileId;
     }
 
     public MessageItem withAddedPhoto(PhotoData newPhoto, String newText) {
@@ -48,7 +50,7 @@ public final class MessageItem {
                 id, chatId, outgoing,
                 time, newPhotos,
                 mediaAlbumId,
-                newUi
+                newUi, senderAvatarFileId
         );
     }
 
@@ -57,7 +59,7 @@ public final class MessageItem {
                 id, chatId, outgoing,
                 time, photos,
                 mediaAlbumId,
-                newUi
+                newUi, senderAvatarFileId
         );
     }
 

@@ -3,6 +3,7 @@ package com.github.borz7zy.telegramm.ui.chat;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
+import android.util.LruCache;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -25,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ChatViewModel extends ViewModel implements Client.ResultHandler {
 
@@ -45,8 +48,11 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
     private final Map<Long, TdApi.Message> rawMessages = new ConcurrentHashMap<>();
     private final Map<Long, Long> albumGroups = new ConcurrentHashMap<>();
     private final Map<Long, String> userNameCache = new ConcurrentHashMap<>();
+    private final LruCache<Long, TdApi.User> fullUserCache = new LruCache<>(2048);
 
     private final Set<Integer> requestedFiles = ConcurrentHashMap.newKeySet();
+
+    private final ExecutorService updateExecutor = Executors.newSingleThreadExecutor();
 
     private AccountSession session;
     private long chatId;
@@ -363,7 +369,15 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
 
     private MessageItem toItem(TdApi.Message m) {
         if (uiMapper == null) {
-            return new MessageItem(m.id, m.chatId, m.isOutgoing, "", null, m.mediaAlbumId, new UiContent.Unknown());
+            return new MessageItem(
+                    m.id,
+                    m.chatId,
+                    m.isOutgoing,
+                    "",
+                    null,
+                    m.mediaAlbumId,
+                    new UiContent.Unknown(),
+                    extractSenderAvatarFileId(m));
         }
 
         UiContent ui = uiMapper.map(m);
@@ -378,8 +392,25 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
         return new MessageItem(
                 m.id, m.chatId, m.isOutgoing,
                 time, photos, m.mediaAlbumId,
-                ui
+                ui, extractSenderAvatarFileId(m)
         );
+    }
+
+    private int extractSenderAvatarFileId(TdApi.Message m) {
+        if (m.isOutgoing) return 0;
+
+        long senderUserId = 0;
+        if (m.senderId instanceof TdApi.MessageSenderUser) {
+            senderUserId = ((TdApi.MessageSenderUser) m.senderId).userId;
+        }
+
+        if (senderUserId != 0) {
+            TdApi.User user = fullUserCache.get(senderUserId);
+            if (user != null && user.profilePhoto != null && user.profilePhoto.small != null) {
+                return user.profilePhoto.small.id;
+            }
+        }
+        return 0;
     }
 
     private String formatTime(int unixSeconds) {
@@ -388,13 +419,15 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
     }
 
     private void onUserLoaded(TdApi.User user) {
+        fullUserCache.put(user.id, user);
+
         String fullName = (user.firstName + " " + user.lastName).trim();
         String oldName = userNameCache.get(user.id);
 
         if (oldName == null || !oldName.equals(fullName)) {
             userNameCache.put(user.id, fullName);
 
-            new Thread(() -> {
+            updateExecutor.execute(() -> {
                 boolean needUpdate = false;
                 for (MessageItem item : byId.values()) {
                     if (item.chatId == user.id) {
@@ -408,7 +441,7 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
                 if (needUpdate) {
                     scheduleUiUpdate(false, false);
                 }
-            }).start();
+            });
         }
     }
 
@@ -510,7 +543,7 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
             updateScheduled = false;
         }
 
-        new Thread(() -> {
+        updateExecutor.execute(()->{
             ArrayList<MessageItem> list = new ArrayList<>(byId.values());
             Collections.sort(list, (m1, m2) -> Long.compare(m1.id, m2.id));
 
@@ -524,7 +557,7 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
             if (doScroll) {
                 uiEvents.postValue(new UiEvent.ScrollToBottom());
             }
-        }).start();
+        });
     }
 
     @Override
@@ -535,6 +568,7 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
             session.send(new TdApi.CloseChat(chatId), null);
         }
         mainHandler.removeCallbacksAndMessages(null);
+        updateExecutor.shutdown();
     }
 
     public static abstract class UiEvent {

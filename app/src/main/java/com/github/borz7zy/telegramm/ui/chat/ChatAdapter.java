@@ -461,7 +461,9 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
             imageBoardTop = itemView.findViewById(R.id.image_board_top);
             imageBoardBottom = itemView.findViewById(R.id.image_board_bottom);
 
-            avatar = findImageView(itemView, "msg_avatar", "message_avatar", "avatar", "iv_avatar");
+//            avatar = findImageView(itemView, "msg_avatar", "message_avatar", "avatar", "iv_avatar");
+
+            avatar = itemView.findViewById(R.id.msg_avatar);
 
             buttonsContainer = itemView.findViewById(R.id.buttons_container);
         }
@@ -575,14 +577,8 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
     private void bindIncomingAvatar(VH h, MessageItem m) {
         if (h.avatar == null) return;
 
-        if (m.outgoing) {
-            h.avatar.setVisibility(View.GONE);
-            return;
-        }
+        int fid = getAvatarFileIdForSender(m);
 
-        h.avatar.setVisibility(View.VISIBLE);
-
-        int fid = chatAvatarFileId;
         if (fid == 0){
             h.avatar.setImageResource(R.drawable.bg_badge);
             return;
@@ -626,6 +622,10 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
                         .into(iv);
             });
         });
+    }
+
+    private int getAvatarFileIdForSender(MessageItem m) {
+        return m.senderAvatarFileId;
     }
 
 }
