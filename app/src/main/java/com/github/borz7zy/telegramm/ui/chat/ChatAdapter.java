@@ -43,6 +43,7 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
     public static final int PAYLOAD_MEDIA = 2;
     public static final int PAYLOAD_STATUS = 4;
     public static final int PAYLOAD_BUTTONS = 8;
+    public static final int PAYLOAD_USER_INFO = 16;
 
     private static final int MAX_PHOTO_POOL = 10;
 
@@ -168,6 +169,25 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         }
 
         h.time.setText(m.time);
+
+        if (h.userName != null) {
+            if (!TextUtils.isEmpty(m.senderName) && !m.senderName.equals("null")) {
+                h.userName.setText(m.senderName);
+                h.userName.setVisibility(View.VISIBLE);
+            } else {
+                h.userName.setVisibility(View.GONE);
+            }
+        }
+
+        if (h.groupChatUserTag != null) {
+            if (!TextUtils.isEmpty(m.gcTag) && !m.gcTag.equals("null")) {
+                h.groupChatUserTag.setText(m.gcTag);
+                h.groupChatUserTag.setVisibility(View.VISIBLE);
+            } else {
+                h.groupChatUserTag.setVisibility(View.GONE);
+            }
+        }
+
         bindImages(h.imageBoardTop, m.photos);
         bindIncomingAvatar(h, m);
         bindButtons(h, m);
@@ -240,6 +260,26 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
 
         VH h = (VH) holder;
 
+        if((mask & PAYLOAD_USER_INFO) != 0){
+            if (h.userName != null) {
+                if (!TextUtils.isEmpty(item.senderName) && !item.senderName.equals("null")) {
+                    h.userName.setText(item.senderName);
+                    h.userName.setVisibility(View.VISIBLE);
+                } else {
+                    h.userName.setVisibility(View.GONE);
+                }
+            }
+            if (h.groupChatUserTag != null) {
+                if (!TextUtils.isEmpty(item.gcTag) && !item.gcTag.equals("null")) {
+                    h.groupChatUserTag.setText(item.gcTag);
+                    h.groupChatUserTag.setVisibility(View.VISIBLE);
+                } else {
+                    h.groupChatUserTag.setVisibility(View.GONE);
+                }
+            }
+            bindIncomingAvatar(h, item);
+        }
+
         if ((mask & PAYLOAD_TEXT) != 0) {
             String text = "";
             if (item.ui instanceof UiContent.Text t) text = t.text;
@@ -259,7 +299,7 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         }
 
         if ((mask & PAYLOAD_STATUS) != 0) {
-            // TODO: check marks, statuses
+            // unused?
         }
 
         if ((mask & PAYLOAD_BUTTONS) != 0) {
@@ -447,6 +487,8 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
     }
 
     static class VH extends RecyclerView.ViewHolder {
+        final TextView userName;
+        final TextView groupChatUserTag;
         final TextView text;
         final TextView time;
         final JustifiedLayout imageBoardTop;
@@ -456,12 +498,16 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
 
         VH(@NonNull View itemView) {
             super(itemView);
+
+            userName = itemView.findViewById(R.id.username_tv);
+            groupChatUserTag = itemView.findViewById(R.id.group_tag_tv);
+
             text = itemView.findViewById(R.id.tv_text);
+
             time = itemView.findViewById(R.id.tv_time);
+
             imageBoardTop = itemView.findViewById(R.id.image_board_top);
             imageBoardBottom = itemView.findViewById(R.id.image_board_bottom);
-
-//            avatar = findImageView(itemView, "msg_avatar", "message_avatar", "avatar", "iv_avatar");
 
             avatar = itemView.findViewById(R.id.msg_avatar);
 
@@ -495,6 +541,9 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
             if (!TextUtils.equals(oldItem.time, newItem.time)) return false;
             if (!Objects.equals(oldItem.ui, newItem.ui)) return false;
             if (!Objects.equals(oldItem.photos, newItem.photos)) return false;
+            if (!TextUtils.equals(oldItem.senderName, newItem.senderName)) return false;
+            if (!TextUtils.equals(oldItem.gcTag, newItem.gcTag)) return false;
+            if (oldItem.senderAvatarFileId != newItem.senderAvatarFileId) return false;
             if (!buttonsEqual(oldItem.ui, newItem.ui)) return false;
             return true;
         }
@@ -514,6 +563,14 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
 
             if (!Objects.equals(oldItem.photos, newItem.photos)) {
                 mask |= PAYLOAD_MEDIA;
+            }
+
+            boolean nameDiff = !TextUtils.equals(oldItem.senderName, newItem.senderName);
+            boolean tagDiff = !TextUtils.equals(oldItem.gcTag, newItem.gcTag);
+            boolean avaDiff = oldItem.senderAvatarFileId != newItem.senderAvatarFileId;
+
+            if (nameDiff || tagDiff || avaDiff) {
+                mask |= PAYLOAD_USER_INFO;
             }
 
             return mask == 0 ? null : mask;

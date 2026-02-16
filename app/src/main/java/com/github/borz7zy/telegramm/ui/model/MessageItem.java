@@ -1,6 +1,7 @@
 package com.github.borz7zy.telegramm.ui.model;
 
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.github.borz7zy.telegramm.ui.chat.UiContent;
 
@@ -18,10 +19,13 @@ public final class MessageItem {
     public final long mediaAlbumId;
     public final UiContent ui;
     public final int senderAvatarFileId;
+    public final String senderName;
+    public final String gcTag;
 
     public MessageItem(long id, long chatId, boolean outgoing,
                        String time, List<PhotoData> photos,
-                       long mediaAlbumId, UiContent ui, int senderAvatarFileId) {
+                       long mediaAlbumId, UiContent ui, int senderAvatarFileId,
+                       String senderName, String gcTag) {
         this.id = id;
         this.chatId = chatId;
         this.outgoing = outgoing;
@@ -30,6 +34,8 @@ public final class MessageItem {
         this.mediaAlbumId = mediaAlbumId;
         this.ui = ui != null ? ui : new UiContent.Text("");
         this.senderAvatarFileId = senderAvatarFileId;
+        this.senderName = senderName;
+        this.gcTag = gcTag;
     }
 
     public MessageItem withAddedPhoto(PhotoData newPhoto, String newText) {
@@ -50,7 +56,8 @@ public final class MessageItem {
                 id, chatId, outgoing,
                 time, newPhotos,
                 mediaAlbumId,
-                newUi, senderAvatarFileId
+                newUi, senderAvatarFileId,
+                senderName, gcTag
         );
     }
 
@@ -59,7 +66,8 @@ public final class MessageItem {
                 id, chatId, outgoing,
                 time, photos,
                 mediaAlbumId,
-                newUi, senderAvatarFileId
+                newUi, senderAvatarFileId,
+                senderName, gcTag
         );
     }
 
@@ -74,7 +82,10 @@ public final class MessageItem {
                 mediaAlbumId == that.mediaAlbumId &&
                 Objects.equals(time, that.time) &&
                 Objects.equals(ui, that.ui) &&
-                Objects.equals(photos, that.photos);
+                Objects.equals(photos, that.photos) &&
+                senderAvatarFileId == that.senderAvatarFileId &&
+                senderName.equals(that.senderName) &&
+                gcTag.equals(that.gcTag);
     }
 
     @Override

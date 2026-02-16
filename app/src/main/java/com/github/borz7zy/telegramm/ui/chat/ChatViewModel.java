@@ -49,7 +49,10 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
     private final Map<Long, Long> albumGroups = new ConcurrentHashMap<>();
     private final Map<Long, String> userNameCache = new ConcurrentHashMap<>();
     private final LruCache<Long, TdApi.User> fullUserCache = new LruCache<>(2048);
+    private final LruCache<Long, String> chatMembersTags = new LruCache<>(2048);
 
+    private final Set<Long> pendingMemberRequests = ConcurrentHashMap.newKeySet();
+    private final Set<Long> pendingUserRequests = ConcurrentHashMap.newKeySet();
     private final Set<Integer> requestedFiles = ConcurrentHashMap.newKeySet();
 
     private final ExecutorService updateExecutor = Executors.newSingleThreadExecutor();
@@ -377,7 +380,9 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
                     null,
                     m.mediaAlbumId,
                     new UiContent.Unknown(),
-                    extractSenderAvatarFileId(m));
+                    extractSenderAvatarFileId(m),
+                    extractSenderName(m),
+                    extractGcTag(m));
         }
 
         UiContent ui = uiMapper.map(m);
@@ -392,7 +397,9 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
         return new MessageItem(
                 m.id, m.chatId, m.isOutgoing,
                 time, photos, m.mediaAlbumId,
-                ui, extractSenderAvatarFileId(m)
+                ui, extractSenderAvatarFileId(m),
+                extractSenderName(m),
+                extractGcTag(m)
         );
     }
 
@@ -413,6 +420,104 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
         return 0;
     }
 
+    private String extractSenderName(TdApi.Message m) {
+        if (m.senderId instanceof TdApi.MessageSenderUser) {
+            long userId = ((TdApi.MessageSenderUser) m.senderId).userId;
+            TdApi.User user = fullUserCache.get(userId);
+            if (user != null) {
+                String first = user.firstName != null ? user.firstName : "";
+                String last = user.lastName != null ? user.lastName : "";
+                return (first + " " + last).trim();
+            } else {
+                if (!pendingUserRequests.contains(userId)) {
+                    pendingUserRequests.add(userId);
+                    session.send(new TdApi.GetUser(userId), result -> {
+                        pendingUserRequests.remove(userId);
+                        if (result instanceof TdApi.User) {
+                            onUserLoaded((TdApi.User) result);
+                        }
+                    });
+                }
+                return null; // loading...
+            }
+        }
+        if (m.senderId instanceof TdApi.MessageSenderChat) {
+            return null; // channel
+        }
+        return null; // unknown
+    }
+
+
+    private String extractGcTag(TdApi.Message m) {
+        if (m.senderId instanceof TdApi.MessageSenderUser) {
+            long userId = ((TdApi.MessageSenderUser) m.senderId).userId;
+
+            String cachedTag = chatMembersTags.get(userId);
+            if (cachedTag != null) {
+                return cachedTag.isEmpty() ? null : cachedTag;
+            }
+
+            if (!pendingMemberRequests.contains(userId)) {
+                pendingMemberRequests.add(userId);
+
+                session.send(new TdApi.GetChatMember(chatId, new TdApi.MessageSenderUser(userId)), result -> {
+                    pendingMemberRequests.remove(userId);
+
+                    if (result instanceof TdApi.ChatMember) {
+                        TdApi.ChatMember member = (TdApi.ChatMember) result;
+                        String tag = getTagFromStatus(member.status);
+
+                        chatMembersTags.put(userId, tag == null ? "" : tag);
+
+                        if (tag != null) {
+                            triggerUpdateForUser(userId);
+                        }
+                    } else {
+                        chatMembersTags.put(userId, "");
+                    }
+                });
+            }
+            return null;
+        }
+        return null;
+    }
+
+    private String getTagFromStatus(TdApi.ChatMemberStatus status) {
+        switch (status.getConstructor()) {
+            case TdApi.ChatMemberStatusCreator.CONSTRUCTOR:
+                TdApi.ChatMemberStatusCreator creator = (TdApi.ChatMemberStatusCreator) status;
+                return !TextUtils.isEmpty(creator.customTitle) ? creator.customTitle : "Owner";
+
+            case TdApi.ChatMemberStatusAdministrator.CONSTRUCTOR:
+                TdApi.ChatMemberStatusAdministrator admin = (TdApi.ChatMemberStatusAdministrator) status;
+                return !TextUtils.isEmpty(admin.customTitle) ? admin.customTitle : "Admin";
+
+            case TdApi.ChatMemberStatusRestricted.CONSTRUCTOR:
+                return null;
+
+            default:
+                return null;
+        }
+    }
+
+    private void triggerUpdateForUser(long userId) {
+        updateExecutor.execute(() -> {
+            boolean needUpdate = false;
+            for (MessageItem item : byId.values()) {
+                TdApi.Message raw = rawMessages.get(item.id);
+                if (raw != null && raw.senderId instanceof TdApi.MessageSenderUser) {
+                    if (((TdApi.MessageSenderUser) raw.senderId).userId == userId) {
+                        byId.put(item.id, toItem(raw));
+                        needUpdate = true;
+                    }
+                }
+            }
+            if (needUpdate) {
+                scheduleUiUpdate(false, false);
+            }
+        });
+    }
+
     private String formatTime(int unixSeconds) {
         long ms = unixSeconds * 1000L;
         return new java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(new java.util.Date(ms));
@@ -424,25 +529,12 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
         String fullName = (user.firstName + " " + user.lastName).trim();
         String oldName = userNameCache.get(user.id);
 
-        if (oldName == null || !oldName.equals(fullName)) {
+        boolean nameChanged = oldName == null || !oldName.equals(fullName);
+        if (nameChanged) {
             userNameCache.put(user.id, fullName);
-
-            updateExecutor.execute(() -> {
-                boolean needUpdate = false;
-                for (MessageItem item : byId.values()) {
-                    if (item.chatId == user.id) {
-                        TdApi.Message raw = rawMessages.get(item.id);
-                        if (raw != null) {
-                            byId.put(item.id, toItem(raw));
-                            needUpdate = true;
-                        }
-                    }
-                }
-                if (needUpdate) {
-                    scheduleUiUpdate(false, false);
-                }
-            });
         }
+
+        triggerUpdateForUser(user.id);
     }
 
     private void handleTyping(TdApi.UpdateChatAction uca) {
