@@ -38,6 +38,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsAnimationCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.fragment.app.DialogFragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.paging.PagingData;
 import androidx.recyclerview.widget.ConcatAdapter;
@@ -47,7 +48,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.github.borz7zy.telegramm.R;
-import com.github.borz7zy.telegramm.ui.base.BaseTelegramDialogFragment;
 import com.github.borz7zy.telegramm.ui.model.MessageItem;
 import com.github.borz7zy.telegramm.ui.widget.EdgeSwipeDismissLayout;
 import com.github.borz7zy.telegramm.ui.widget.SpringRecyclerView;
@@ -68,7 +68,7 @@ import java.util.List;
 import eightbitlab.com.blurview.BlurTarget;
 import eightbitlab.com.blurview.BlurView;
 
-public class ChatFragment extends BaseTelegramDialogFragment {
+public class ChatFragment extends DialogFragment {
 
     private static final String ARG_CHAT_ID = "chat_id";
     private static final String ARG_TITLE = "title";
@@ -245,6 +245,8 @@ public class ChatFragment extends BaseTelegramDialogFragment {
         chatId = args.getLong(ARG_CHAT_ID);
         title = args.getString(ARG_TITLE, "Chat");
 
+        viewModel.init(chatId, title);
+
         tvTitle = content.findViewById(R.id.tv_title);
         ImageView btnClose = content.findViewById(R.id.btn_close);
         tvTitle.setText(title);
@@ -385,12 +387,12 @@ public class ChatFragment extends BaseTelegramDialogFragment {
         });
     }
 
-    @Override
-    protected void onAuthorized() {
-        if (session != null) {
-            viewModel.init(chatId, title, session);
-        }
-    }
+//    @Override
+//    protected void onAuthorized() {
+//        if (session != null) {
+//            viewModel.init(chatId, title, session);
+//        }
+//    }
 
     private void captureScrollAnchor() {
         if (pendingAnchorId != -1) return;

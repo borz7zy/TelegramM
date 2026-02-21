@@ -1,7 +1,6 @@
 package com.github.borz7zy.telegramm.ui.dialogs;
 
 import android.annotation.SuppressLint;
-import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.ShapeDrawable;
@@ -28,7 +27,6 @@ import com.bumptech.glide.request.RequestOptions;
 import com.github.borz7zy.telegramm.R;
 import com.github.borz7zy.telegramm.ui.ThemeEngine;
 import com.github.borz7zy.telegramm.ui.model.DialogItem;
-import com.github.borz7zy.telegramm.utils.Logger;
 import com.github.borz7zy.telegramm.utils.TdMediaRepository;
 
 import org.drinkless.tdlib.TdApi;
@@ -70,7 +68,7 @@ public class DialogsAdapter extends RecyclerView.Adapter<DialogsAdapter.VH> {
     public void setTheme(ThemeEngine.Theme theme){
         if (theme == null) throw new IllegalArgumentException("Theme cannot be null!");
         this.theme = theme;
-        notifyDataSetChanged();
+        notifyDataSetChanged(); // TODO: optimize
     }
 
     private final ArrayList<DialogItem> items = new ArrayList<>();
@@ -216,10 +214,8 @@ public class DialogsAdapter extends RecyclerView.Adapter<DialogsAdapter.VH> {
                 if (topicToggleListener != null) topicToggleListener.onTopicToggle(item);
             });
 
-            // Поворот стрелки
             h.showTopicsBtn.setRotation(item.isExpanded ? 180f : 0f);
 
-            // Контейнер топиков
             if (item.isExpanded) {
                 h.topicsContainer.setVisibility(View.VISIBLE);
                 populateTopics(h.topicsContainer, item, nameColor, messageColor);
@@ -245,7 +241,7 @@ public class DialogsAdapter extends RecyclerView.Adapter<DialogsAdapter.VH> {
             return;
         }
 
-        LayoutInflater inflater = LayoutInflater.from(container.getContext());
+//        LayoutInflater inflater = LayoutInflater.from(container.getContext());
 
         for (TdApi.ForumTopic topic : item.topics) {
             LinearLayout topicLayout = new LinearLayout(container.getContext());

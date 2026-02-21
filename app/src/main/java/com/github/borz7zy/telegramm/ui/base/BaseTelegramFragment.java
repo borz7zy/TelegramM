@@ -15,7 +15,7 @@ import org.drinkless.tdlib.TdApi;
 
 public abstract class BaseTelegramFragment extends Fragment {
     private final Class<?> clazz = this.getClass();
-    private final String TAG = clazz.getSimpleName();
+    protected final String TAG = clazz.getSimpleName();
 
     protected AccountSession session;
     private LiveData<TdApi.AuthorizationState> authLiveData;

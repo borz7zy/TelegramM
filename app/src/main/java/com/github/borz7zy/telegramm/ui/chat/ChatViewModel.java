@@ -4,16 +4,18 @@ import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 import android.util.LruCache;
+import android.widget.Toast;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import com.github.borz7zy.telegramm.AppManager;
+import com.github.borz7zy.telegramm.core.accounts.AccountManager;
 import com.github.borz7zy.telegramm.core.accounts.AccountSession;
 import com.github.borz7zy.telegramm.core.accounts.AccountStorage;
 import com.github.borz7zy.telegramm.ui.model.MessageItem;
 import com.github.borz7zy.telegramm.ui.model.PhotoData;
-import com.github.borz7zy.telegramm.utils.Logger;
 import com.github.borz7zy.telegramm.utils.TdMediaRepository;
 
 import org.drinkless.tdlib.Client;
@@ -91,14 +93,22 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
     // --------------------
     // Initialization
     // --------------------
-    public void init(long chatId, String initialTitle, AccountSession session) {
+    public void init(long chatId, String initialTitle) {
         this.chatId = chatId;
-        this.session = session;
+
+        AccountStorage.getInstance().getCurrentActive(account -> {
+            this.session = AccountManager.getInstance().getSession(account.getAccountId()); // TODO: LiveData
+
+            if(session != null){
+                session.addUpdateHandler(this);
+            }else{
+                Toast.makeText(AppManager.getInstance().getContext(), "session is null!", Toast.LENGTH_SHORT).show();
+            }
+        });
+
         if (initialTitle != null) {
             chatTitle.setValue(initialTitle);
         }
-
-        session.addUpdateHandler(this);
 
         AccountStorage.getInstance().getCurrentActive(account -> {
             if (account == null) return;

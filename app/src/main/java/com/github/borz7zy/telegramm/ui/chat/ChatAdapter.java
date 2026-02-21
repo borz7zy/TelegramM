@@ -80,13 +80,13 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         return m.outgoing ? VT_OUT : VT_IN;
     }
 
-    public int findPositionById(long id) {
-        List<MessageItem> cur = snapshot().getItems();
-        for (int i = 0; i < cur.size(); ++i) {
-            if (cur.get(i).id == id) return i;
-        }
-        return -1;
-    }
+//    public int findPositionById(long id) {
+//        List<MessageItem> cur = snapshot().getItems();
+//        for (int i = 0; i < cur.size(); ++i) {
+//            if (cur.get(i).id == id) return i;
+//        }
+//        return -1;
+//    }
 
     @NonNull
     @Override
@@ -311,7 +311,7 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
     public void setChatAvatar(int fileId) {
         if (chatAvatarFileId == fileId) return;
         chatAvatarFileId = fileId;
-        notifyDataSetChanged();
+        notifyDataSetChanged(); // TODO: optimize
     }
 
     private void bindGiftSticker(ImageView iv, SystemMessages.PremiumGift pg) {
@@ -465,10 +465,10 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         }
     }
 
-    private int getTagId(View v) {
-        Object tag = v.getTag();
-        return (tag instanceof Integer) ? (Integer) tag : 0;
-    }
+//    private int getTagId(View v) {
+//        Object tag = v.getTag();
+//        return (tag instanceof Integer) ? (Integer) tag : 0;
+//    }
 
     private void loadGlideImage(ImageView iv, String path) {
 

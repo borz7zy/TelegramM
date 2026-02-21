@@ -1,9 +1,12 @@
 package com.github.borz7zy.telegramm.ui.chat;
 
+import android.Manifest;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.SystemClock;
+
+import androidx.annotation.RequiresPermission;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -35,6 +38,7 @@ public class VoiceWavRecorder {
         this.onLevel = onLevel;
     }
 
+    @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     public void start() {
         if (running) return;
 

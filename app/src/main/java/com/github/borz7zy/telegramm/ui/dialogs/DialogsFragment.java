@@ -109,7 +109,7 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
         itemTouchHelper = new ItemTouchHelper(new ItemTouchHelper.Callback() {
             @Override
             public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
-                int pos = viewHolder.getAdapterPosition();
+                int pos = viewHolder.getBindingAdapterPosition();
                 if (pos == RecyclerView.NO_POSITION) return 0;
 
                 DialogItem item = adapter.getItem(pos);
@@ -123,8 +123,8 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
             public boolean onMove(@NonNull RecyclerView recyclerView,
                                   @NonNull RecyclerView.ViewHolder fromVH,
                                   @NonNull RecyclerView.ViewHolder toVH) {
-                int from = fromVH.getAdapterPosition();
-                int to = toVH.getAdapterPosition();
+                int from = fromVH.getBindingAdapterPosition();
+                int to = toVH.getBindingAdapterPosition();
 
                 DialogItem target = adapter.getItem(to);
                 if (!target.isPinned) return false;
