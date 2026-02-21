@@ -5,7 +5,7 @@
     android:id="@+id/dialogs_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/transparent"
+    android:background="@color/tg_background"
     tools:context=".ui.dialogs.DialogsFragment">
 
     <eightbitlab.com.blurview.BlurTarget
