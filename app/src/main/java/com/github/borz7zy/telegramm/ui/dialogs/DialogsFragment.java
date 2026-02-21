@@ -25,6 +25,7 @@ import com.github.borz7zy.telegramm.ui.base.BaseTelegramFragment;
 import com.github.borz7zy.telegramm.ui.chat.ChatFragment;
 import com.github.borz7zy.telegramm.ui.model.DialogItem;
 import com.github.borz7zy.telegramm.ui.widget.SpringRecyclerView;
+import com.github.borz7zy.telegramm.utils.Logger;
 import com.github.borz7zy.telegramm.utils.TdMediaRepository;
 
 import org.drinkless.tdlib.Client;
@@ -93,6 +94,18 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
                     .show(getParentFragmentManager(), "chat_sheet");
         });
 
+        adapter.setOnTopicToggleListener(new DialogsAdapter.OnTopicToggleListener() {
+            @Override
+            public void onTopicToggle(DialogItem item) {
+                toggleForumTopics(item);
+            }
+
+            @Override
+            public void onTopicClick(long chatId, TdApi.ForumTopic topic) {
+                Logger.LOGD("DialogsFragment", "Open topic: " + topic.info.name);
+            }
+        });
+
         itemTouchHelper = new ItemTouchHelper(new ItemTouchHelper.Callback() {
             @Override
             public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
@@ -149,6 +162,41 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
         itemTouchHelper.attachToRecyclerView(recyclerView);
         adapter.setOnDragListener(vh -> itemTouchHelper.startDrag(vh));
     }
+
+    private void toggleForumTopics(DialogItem item) {
+        boolean newState = !item.isExpanded;
+
+        DialogItem updatedItem = item.copyWithExpanded(newState);
+        dialogs.put(item.chatId, updatedItem);
+        refreshList();
+
+        if (newState && (item.topics == null || item.topics.isEmpty())) {
+            loadTopics(item.chatId);
+        }
+    }
+
+    private void loadTopics(long chatId) {
+        currentSession.send(new TdApi.GetForumTopics(chatId, "", 0, 0, 0, 100), object -> {
+            if (object instanceof TdApi.ForumTopics) {
+                TdApi.ForumTopics result = (TdApi.ForumTopics) object;
+
+                mainHandler.post(() -> {
+                    DialogItem current = dialogs.get(chatId);
+                    if (current != null && current.isExpanded) {
+                        ArrayList<TdApi.ForumTopic> topicList = new ArrayList<>();
+                        if (result.topics != null) {
+                            Collections.addAll(topicList, result.topics);
+                        }
+
+                        DialogItem withTopics = current.copyWithTopics(topicList);
+                        dialogs.put(chatId, withTopics);
+                        refreshList();
+                    }
+                });
+            }
+        });
+    }
+
 
     private void setupInsets() {
         viewModel.getTopInset().observe(getViewLifecycleOwner(), height -> {
@@ -263,11 +311,14 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
             return;
         }
 
-        DialogItem newItem = new DialogItem(chat, order);
 
         DialogItem oldItem = dialogs.get(chat.id);
+        DialogItem newItem = new DialogItem(chat, order);
+
         if (oldItem != null) {
             newItem.isTyping = oldItem.isTyping;
+            newItem.isExpanded = oldItem.isExpanded;
+            newItem.topics = oldItem.topics;
         }
 
         dialogs.put(chat.id, newItem);

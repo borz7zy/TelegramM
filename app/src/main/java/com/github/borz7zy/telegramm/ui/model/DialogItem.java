@@ -5,7 +5,10 @@ import static com.github.borz7zy.telegramm.utils.TgUtils.getMessageText;
 
 import org.drinkless.tdlib.TdApi;
 
-public class DialogItem {
+import java.util.Collections;
+import java.util.List;
+
+public final class DialogItem {
     public final long chatId;
     public long order;
     public boolean isPinned;
@@ -17,6 +20,10 @@ public class DialogItem {
     public int avatarFileId;
     public String avatarPath;
 
+    public boolean isForum;
+    public boolean isExpanded;
+    public List<TdApi.ForumTopic> topics;
+
     public DialogItem(long chatId,
                       long order,
                       boolean isPinned,
@@ -26,7 +33,10 @@ public class DialogItem {
                       int unread,
                       boolean isTyping,
                       int avatarFileId,
-                      String avatarPath) {
+                      String avatarPath,
+                      boolean isForum,
+                      boolean isExpanded,
+                      List<TdApi.ForumTopic> topics) {
         this.chatId = chatId;
         this.order = order;
         this.isPinned = isPinned;
@@ -37,11 +47,16 @@ public class DialogItem {
         this.isTyping = isTyping;
         this.avatarFileId = avatarFileId;
         this.avatarPath = avatarPath;
+        this.isForum = isForum;
+        this.isExpanded = isExpanded;
+        this.topics = topics != null ? topics : Collections.emptyList();
     }
 
     public DialogItem(TdApi.Chat chat, long order) {
         this.chatId = chat.id;
         this.order = order;
+        this.isExpanded = false;
+        this.topics = Collections.emptyList();
         updateFromChat(chat);
     }
 
@@ -49,6 +64,7 @@ public class DialogItem {
         this.name = chat.title;
         this.unread = chat.unreadCount;
         this.isPinned = extractPinned(chat);
+        this.isForum = chat.viewAsTopics;
 
         if (chat.lastMessage != null) {
             this.text = getMessageText(chat.lastMessage);
@@ -88,10 +104,22 @@ public class DialogItem {
     }
 
     public DialogItem copyWithOrderPinned(long newOrder, boolean pinned) {
-        return new DialogItem(chatId, newOrder, pinned, name, time, text, unread, isTyping, avatarFileId, avatarPath);
+        return new DialogItem(chatId, newOrder, pinned, name, time, text, unread, isTyping,
+                avatarFileId, avatarPath, isForum, isExpanded, topics);
     }
 
     public DialogItem copyWithTyping(boolean typing) {
-        return new DialogItem(chatId, order, isPinned, name, time, text, unread, typing, avatarFileId, avatarPath);
+        return new DialogItem(chatId, order, isPinned, name, time, text, unread, typing,
+                avatarFileId, avatarPath, isForum, isExpanded, topics);
+    }
+
+    public DialogItem copyWithExpanded(boolean expanded) {
+        return new DialogItem(chatId, order, isPinned, name, time, text, unread, isTyping,
+                avatarFileId, avatarPath, isForum, expanded, topics);
+    }
+
+    public DialogItem copyWithTopics(List<TdApi.ForumTopic> newTopics) {
+        return new DialogItem(chatId, order, isPinned, name, time, text, unread, isTyping,
+                avatarFileId, avatarPath, isForum, isExpanded, newTopics);
     }
 }

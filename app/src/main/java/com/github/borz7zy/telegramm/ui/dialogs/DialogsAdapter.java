@@ -2,15 +2,19 @@ package com.github.borz7zy.telegramm.ui.dialogs;
 
 import android.annotation.SuppressLint;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.ShapeDrawable;
 import android.graphics.drawable.shapes.OvalShape;
 import android.text.TextUtils;
+import android.util.TypedValue;
 import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -27,8 +31,11 @@ import com.github.borz7zy.telegramm.ui.model.DialogItem;
 import com.github.borz7zy.telegramm.utils.Logger;
 import com.github.borz7zy.telegramm.utils.TdMediaRepository;
 
+import org.drinkless.tdlib.TdApi;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class DialogsAdapter extends RecyclerView.Adapter<DialogsAdapter.VH> {
 
@@ -42,12 +49,19 @@ public class DialogsAdapter extends RecyclerView.Adapter<DialogsAdapter.VH> {
         void onStartDrag(RecyclerView.ViewHolder vh);
     }
 
+    public interface OnTopicToggleListener {
+        void onTopicToggle(DialogItem item);
+        void onTopicClick(long chatId, TdApi.ForumTopic topic);
+    }
+
     private OnDialogClickListener clickListener;
     private OnStartDragListener dragListener;
+    private OnTopicToggleListener topicToggleListener;
 
     public void setOnDialogClickListener(OnDialogClickListener l) {
         this.clickListener = l;
     }
+    public void setOnTopicToggleListener(OnTopicToggleListener l) { this.topicToggleListener = l; }
 
     public void setOnDragListener(OnStartDragListener l){
         dragListener = l;
@@ -110,7 +124,10 @@ public class DialogsAdapter extends RecyclerView.Adapter<DialogsAdapter.VH> {
                         && a.unread == b.unread
                         && a.isTyping == b.isTyping
                         && a.avatarFileId == b.avatarFileId
-                        && TextUtils.equals(a.avatarPath, b.avatarPath);
+                        && TextUtils.equals(a.avatarPath, b.avatarPath)
+                        && a.isForum == b.isForum
+                        && a.isExpanded == b.isExpanded
+                        && (Objects.equals(a.topics, b.topics) || (a.topics != null && a.topics.equals(b.topics)));
             }
         });
 
@@ -192,6 +209,84 @@ public class DialogsAdapter extends RecyclerView.Adapter<DialogsAdapter.VH> {
         }
 
         bindAvatar(h.avatar, item.chatId, item.avatarFileId, item.avatarPath, badgeColor);
+
+        if (item.isForum) {
+            h.showTopicsBtn.setVisibility(View.VISIBLE);
+            h.showTopicsBtn.setOnClickListener(v -> {
+                if (topicToggleListener != null) topicToggleListener.onTopicToggle(item);
+            });
+
+            // Поворот стрелки
+            h.showTopicsBtn.setRotation(item.isExpanded ? 180f : 0f);
+
+            // Контейнер топиков
+            if (item.isExpanded) {
+                h.topicsContainer.setVisibility(View.VISIBLE);
+                populateTopics(h.topicsContainer, item, nameColor, messageColor);
+            } else {
+                h.topicsContainer.setVisibility(View.GONE);
+            }
+        } else {
+            h.showTopicsBtn.setVisibility(View.GONE);
+            h.topicsContainer.setVisibility(View.GONE);
+        }
+    }
+
+    private void populateTopics(LinearLayout container, DialogItem item, int titleColor, int msgColor) {
+        container.removeAllViews();
+
+        if (item.topics == null || item.topics.isEmpty()) {
+            TextView loading = new TextView(container.getContext());
+            loading.setText("");
+            loading.setPadding(40, 10, 10, 10);
+            loading.setTextColor(msgColor);
+            loading.setTextSize(12);
+            container.addView(loading);
+            return;
+        }
+
+        LayoutInflater inflater = LayoutInflater.from(container.getContext());
+
+        for (TdApi.ForumTopic topic : item.topics) {
+            LinearLayout topicLayout = new LinearLayout(container.getContext());
+            topicLayout.setOrientation(LinearLayout.VERTICAL);
+            topicLayout.setPadding(50, 16, 16, 16);
+            topicLayout.setBackgroundResource(R.drawable.bg_badge);
+            topicLayout.setBackgroundTintList(ContextCompat.getColorStateList(container.getContext(), android.R.color.transparent));
+
+            TextView title = new TextView(container.getContext());
+            String topicName = topic.info.name;
+            if (TextUtils.isEmpty(topicName)) topicName = "General"; // TODO
+
+            title.setText("# " + topicName);
+            title.setTextColor(titleColor);
+            title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+            title.setTypeface(null, Typeface.BOLD);
+
+            TextView lastMsg = new TextView(container.getContext());
+            String msgText = "";
+            if (topic.lastMessage != null && topic.lastMessage.content instanceof TdApi.MessageText) {
+                msgText = ((TdApi.MessageText) topic.lastMessage.content).text.text;
+            } else {
+                msgText = "Media"; // TODO
+            }
+            lastMsg.setText(msgText);
+            lastMsg.setTextColor(msgColor);
+            lastMsg.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+            lastMsg.setMaxLines(1);
+            lastMsg.setEllipsize(TextUtils.TruncateAt.END);
+
+            topicLayout.addView(title);
+            topicLayout.addView(lastMsg);
+
+            topicLayout.setOnClickListener(v -> {
+                if (topicToggleListener != null) {
+                    topicToggleListener.onTopicClick(item.chatId, topic);
+                }
+            });
+
+            container.addView(topicLayout);
+        }
     }
 
     private void bindAvatar(ImageView iv, long chatId, int fileId, String pathFromModel, int badgeColor) {
@@ -241,6 +336,8 @@ public class DialogsAdapter extends RecyclerView.Adapter<DialogsAdapter.VH> {
     static class VH extends RecyclerView.ViewHolder {
         final TextView name, time, message, unread;
         final ImageView avatar;
+        final ImageButton showTopicsBtn;
+        final LinearLayout topicsContainer;
 
         VH(@NonNull View itemView) {
             super(itemView);
@@ -251,6 +348,9 @@ public class DialogsAdapter extends RecyclerView.Adapter<DialogsAdapter.VH> {
 
             avatar = findImageView(itemView,
                     "dialog_avatar", "avatar", "iv_avatar", "img_avatar", "image_avatar");
+
+            showTopicsBtn = itemView.findViewById(R.id.btn_show_topics);
+            topicsContainer = itemView.findViewById(R.id.topics_container);
         }
     }
 
