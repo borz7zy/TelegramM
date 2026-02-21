@@ -2,6 +2,9 @@
 <resources>
     <item name="tag_layout_mode" type="id"/>
 
+    <!-- ChatAdapter -->
+    <item name="tag_holder" type="id"/>
+
     <!-- S E T T I N G S -->
     <item name="root_linear_settings" type="id"/>
 

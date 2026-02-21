@@ -2,13 +2,27 @@ package com.github.borz7zy.telegramm.ui.chat;
 
 import androidx.annotation.NonNull;
 
+import org.drinkless.tdlib.TdApi;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 public abstract class UiContent {
 
-    public enum Kind { TEXT, MEDIA, SYSTEM, UNKNOWN }
+    public enum Kind {
+        TEXT,
+        MEDIA,
+        SYSTEM,
+        UNKNOWN,
+        STICKER
+    }
+
+    public enum StickerType {
+        STATIC,
+        ANIMATED_TGS,
+        VIDEO_WEBM
+    }
 
     public final List<List<UiButton>> buttons = new ArrayList<>();
 
@@ -79,7 +93,9 @@ public abstract class UiContent {
         }
 
         @NonNull @Override
-        public Kind kind() { return Kind.MEDIA; }
+        public Kind kind() {
+            return Kind.MEDIA;
+        }
 
         @Override
         public boolean equals(Object o) {
@@ -88,7 +104,9 @@ public abstract class UiContent {
             return Objects.equals(caption, that.caption);
         }
 
-        @Override public int hashCode() { return Objects.hash(caption); }
+        @Override public int hashCode() {
+            return Objects.hash(caption);
+        }
     }
 
     public static final class System extends UiContent {
@@ -113,6 +131,27 @@ public abstract class UiContent {
 
         @Override public int hashCode() {
             return Objects.hash(text);
+        }
+    }
+
+    public static final class Sticker extends UiContent {
+        public final int fileId;
+        public final int width;
+        public final int height;
+        public final StickerType type;
+
+        public Sticker(int fileId, int w, int h, StickerType type) {
+            this.fileId = fileId;
+            this.width = w;
+            this.height = h;
+            this.type = type;
+        }
+
+
+        @NonNull
+        @Override
+        public Kind kind() {
+            return Kind.STICKER;
         }
     }
 }

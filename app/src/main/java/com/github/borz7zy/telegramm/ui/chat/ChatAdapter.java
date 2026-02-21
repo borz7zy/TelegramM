@@ -1,7 +1,10 @@
 package com.github.borz7zy.telegramm.ui.chat;
 
 import android.content.Context;
+import android.net.Uri;
+import android.os.Handler;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,10 +14,29 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.media3.common.MediaItem;
+import androidx.media3.common.PlaybackException;
+import androidx.media3.common.Player;
+import androidx.media3.common.util.UnstableApi;
+import androidx.media3.exoplayer.DefaultLoadControl;
+import androidx.media3.exoplayer.DefaultRenderersFactory;
+import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.exoplayer.Renderer;
+import androidx.media3.exoplayer.RenderersFactory;
+import androidx.media3.exoplayer.mediacodec.MediaCodecInfo;
+import androidx.media3.exoplayer.mediacodec.MediaCodecSelector;
+import androidx.media3.exoplayer.mediacodec.MediaCodecUtil;
+import androidx.media3.exoplayer.source.LoopingMediaSource;
+import androidx.media3.exoplayer.source.MediaSource;
+import androidx.media3.exoplayer.source.ProgressiveMediaSource;
+import androidx.media3.exoplayer.video.VideoRendererEventListener;
+import androidx.media3.ui.AspectRatioFrameLayout;
+import androidx.media3.ui.PlayerView;
 import androidx.paging.PagingDataAdapter;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.airbnb.lottie.LottieAnimationView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.github.borz7zy.telegramm.R;
@@ -25,7 +47,9 @@ import com.github.borz7zy.telegramm.ui.widget.JustifiedLayout;
 import com.github.borz7zy.telegramm.utils.RoundedOutlineProvider;
 import com.github.borz7zy.telegramm.utils.TdMediaRepository;
 
+import java.io.File;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -105,6 +129,7 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         }
     }
 
+    @UnstableApi
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         if (position < LOAD_MORE_THRESHOLD && loadMoreListener != null) {
@@ -148,6 +173,7 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         }
     }
 
+    @UnstableApi
     private void bindUserMessage(VH h, MessageItem m) {
         String text = "";
         if (m.ui instanceof UiContent.Text t) text = t.text;
@@ -180,6 +206,11 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
             }
         }
 
+        if (m.ui instanceof UiContent.Sticker sticker) {
+            bindSticker(h, sticker);
+            return;
+        }
+
         bindImages(h.imageBoardTop, m.photos);
         bindIncomingAvatar(h, m);
         bindButtons(h, m);
@@ -202,6 +233,180 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
             return;
         }
         super.onBindViewHolder(holder, position, payloads);
+    }
+
+    @Override
+    public void onViewRecycled(@NonNull RecyclerView.ViewHolder holder) {
+        super.onViewRecycled(holder);
+        if (holder instanceof VH) {
+            VH h = (VH) holder;
+            if (h.player != null) {
+                h.player.release();
+                h.player = null;
+                h.currentVideoPath = null;
+            }
+            if (h.stickerPlayerView != null) {
+                h.stickerPlayerView.setPlayer(null);
+            }
+        }
+    }
+
+    @UnstableApi
+    private void bindSticker(VH h, UiContent.Sticker sticker) {
+
+        if(sticker.type != UiContent.StickerType.VIDEO_WEBM) {
+            h.stickerView.setVisibility(View.GONE);
+        }else{
+            h.stickerPlayerView.setVisibility(View.GONE);
+        }
+
+        if (sticker.fileId == 0) return;
+
+        Context ctx = h.itemView.getContext();
+
+        String cached = TdMediaRepository.get().getCachedPath(sticker.fileId);
+
+        if (!TextUtils.isEmpty(cached)) {
+            if(sticker.type != UiContent.StickerType.VIDEO_WEBM) {
+                renderSticker(h.stickerView, cached, sticker.type);
+            }else{
+                renderSticker(h.stickerPlayerView, cached, sticker.type);
+            }
+            return;
+        }
+
+        if(sticker.type != UiContent.StickerType.VIDEO_WEBM) {
+            h.stickerView.setImageResource(R.drawable.bg_msg_bubble);
+            h.stickerView.setVisibility(View.VISIBLE);
+        }else{
+            h.stickerPlayerView.setVisibility(View.VISIBLE);
+        }
+
+        WeakReference<ImageView> weak = new WeakReference<>(h.stickerView);
+        WeakReference<PlayerView> weakPlayer = new WeakReference<>(h.stickerPlayerView);
+
+        TdMediaRepository.get().getPathOrRequest(sticker.fileId, path -> {
+            if (TextUtils.isEmpty(path)) return;
+
+            if(sticker.type != UiContent.StickerType.VIDEO_WEBM){
+                ImageView iv = weak.get();
+                if (iv == null) return;
+                iv.post(() -> renderSticker(iv, path, sticker.type));
+            }else{
+                PlayerView pv = weakPlayer.get();
+                if(pv == null) return;
+                pv.post(()->renderSticker(pv, path, sticker.type));
+            }
+        });
+    }
+
+    @UnstableApi
+    private void renderSticker(Object obj, String path, UiContent.Sticker.StickerType type) {
+
+        if (type == UiContent.StickerType.STATIC) {
+            ImageView iv = (ImageView)obj;
+            iv.setVisibility(View.VISIBLE);
+
+            Glide.with(iv)
+                    .load(path)
+                    .dontAnimate()
+                    .into(iv);
+
+            return;
+        }
+
+        if (type == UiContent.StickerType.ANIMATED_TGS) {
+            ImageView iv = (ImageView)obj;
+            iv.setVisibility(View.VISIBLE);
+            renderLottieSticker(iv, path);
+            return;
+        }
+
+        if (type == UiContent.StickerType.VIDEO_WEBM) {
+            PlayerView iv = (PlayerView)obj;
+            iv.setVisibility(View.VISIBLE);
+            renderVideoSticker(iv, path);
+        }
+    }
+
+    private void renderLottieSticker(ImageView iv, String path) {
+
+        if (!(iv instanceof LottieAnimationView)) {
+            return;
+        }
+
+        LottieAnimationView lav =
+                (com.airbnb.lottie.LottieAnimationView) iv;
+
+        lav.setAnimation(new File(path).getAbsolutePath());
+        lav.setRepeatCount(com.airbnb.lottie.LottieDrawable.INFINITE);
+        lav.playAnimation();
+    }
+
+    @UnstableApi
+    private void renderVideoSticker(PlayerView view, String path) {
+        VH h = (VH) view.getTag(R.id.tag_holder);
+        if (h == null) return;
+
+        if (h.player != null && TextUtils.equals(path, h.currentVideoPath)) {
+            if (!h.player.getPlayWhenReady()) {
+                h.player.setPlayWhenReady(true);
+            }
+            return;
+        }
+
+        if (h.player != null) {
+            h.player.release();
+            h.player = null;
+        }
+        h.currentVideoPath = path;
+
+        view.setUseController(false);
+        view.setShutterBackgroundColor(android.graphics.Color.TRANSPARENT);
+        view.setKeepContentOnPlayerReset(true);
+        view.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
+        view.setClickable(false);
+        view.setFocusable(false);
+
+        Context context = view.getContext();
+
+        DefaultLoadControl loadControl = new DefaultLoadControl.Builder()
+                .setBufferDurationsMs(
+                        10000,
+                        50000,
+                        1000,
+                        1000
+                ).build();
+
+        ExoPlayer player = new ExoPlayer.Builder(context)
+                .setLoadControl(loadControl)
+                .build();
+        h.player = player;
+
+        player.setTrackSelectionParameters(
+                player.getTrackSelectionParameters()
+                        .buildUpon()
+                        .setTrackTypeDisabled(androidx.media3.common.C.TRACK_TYPE_AUDIO, true)
+                        .build()
+        );
+        player.setVolume(0f);
+
+        MediaSource fileSource =
+                new ProgressiveMediaSource.Factory(
+                        new androidx.media3.datasource.DefaultDataSource.Factory(context)
+                ).createMediaSource(MediaItem.fromUri(Uri.fromFile(new File(path))));
+
+        LoopingMediaSource loopingSource =
+                new androidx.media3.exoplayer.source.LoopingMediaSource(fileSource);
+
+        player.setMediaSource(loopingSource);
+
+        player.setRepeatMode(Player.REPEAT_MODE_OFF);
+
+        player.prepare();
+        player.setPlayWhenReady(true);
+
+        view.setPlayer(player);
     }
 
     private void bindButtons(VH h, MessageItem item) {
@@ -480,11 +685,17 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         final TextView time;
         final JustifiedLayout imageBoardTop;
         final JustifiedLayout imageBoardBottom;
+        final ImageView stickerView;
+        PlayerView stickerPlayerView;
+        ExoPlayer player;
+        String currentVideoPath;
         final ImageView avatar;
         final ViewGroup buttonsContainer;
 
         VH(@NonNull View itemView) {
             super(itemView);
+
+            itemView.setTag(R.id.tag_holder, this);
 
             userName = itemView.findViewById(R.id.username_tv);
             groupChatUserTag = itemView.findViewById(R.id.group_tag_tv);
@@ -495,6 +706,10 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
 
             imageBoardTop = itemView.findViewById(R.id.image_board_top);
             imageBoardBottom = itemView.findViewById(R.id.image_board_bottom);
+
+            stickerView = itemView.findViewById(R.id.sticker_view);
+            stickerPlayerView = itemView.findViewById(R.id.sticker_player_view);
+            stickerPlayerView.setTag(R.id.tag_holder, this);
 
             avatar = itemView.findViewById(R.id.msg_avatar);
 

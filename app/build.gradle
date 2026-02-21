@@ -77,10 +77,14 @@ dependencies {
     implementation 'com.github.lincollincol:amplituda:2.2.2'
     implementation 'com.github.Dimezis:BlurView:version-3.2.0'
 
-    implementation 'com.github.bumptech.glide:glide:4.16.0'
+    implementation 'com.airbnb.android:lottie:6.7.1'
+    implementation "androidx.media3:media3-exoplayer:1.9.2"
+    implementation "androidx.media3:media3-ui:1.9.2"
+
+    implementation 'com.github.bumptech.glide:glide:5.0.5'
     implementation libs.legacy.support.v4
     implementation libs.fragment.ktx
-    annotationProcessor 'com.github.bumptech.glide:compiler:4.16.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:5.0.5'
 
     implementation project(':SharedUtils')
     implementation project(':SlidingMenu')

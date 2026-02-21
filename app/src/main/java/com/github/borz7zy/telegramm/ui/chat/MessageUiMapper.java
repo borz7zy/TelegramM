@@ -152,9 +152,27 @@ public final class MessageUiMapper {
         register(TdApi.MessageChecklist.class, (a, sid) -> new UiContent.Media("[x] Checklist premium"));
         registerStubMedia(TdApi.MessagePoll.class);
 
-        register(TdApi.MessageSticker.class, (s, sid) -> {
-            String emoji = (s.sticker != null) ? s.sticker.emoji : "";
-            return new UiContent.Text((TextUtils.isEmpty(emoji) ? "" : emoji + " ") + "sticker");
+        register(TdApi.MessageSticker.class, (m, sid) -> {
+            TdApi.Sticker s = m.sticker;
+            if (s == null || s.sticker == null) {
+                return new UiContent.Text("[broken sticker]");
+            }
+
+            int fileId = s.sticker.id;
+            int w = s.width;
+            int h = s.height;
+
+            UiContent.StickerType type;
+
+            if (s.format instanceof TdApi.StickerFormatTgs) {
+                type = UiContent.StickerType.ANIMATED_TGS;
+            } else if (s.format instanceof TdApi.StickerFormatWebm) {
+                type = UiContent.StickerType.VIDEO_WEBM;
+            } else {
+                type = UiContent.StickerType.STATIC;
+            }
+
+            return new UiContent.Sticker(fileId, w, h, type);
         });
 
         // ---------- SYSTEM EVENTS ----------
