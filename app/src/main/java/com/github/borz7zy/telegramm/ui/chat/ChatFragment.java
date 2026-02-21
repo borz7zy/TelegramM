@@ -32,6 +32,7 @@ import androidx.activity.ComponentDialog;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresPermission;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -67,6 +68,7 @@ import java.util.List;
 
 import eightbitlab.com.blurview.BlurTarget;
 import eightbitlab.com.blurview.BlurView;
+import kotlin.Unit;
 
 public class ChatFragment extends DialogFragment {
 
@@ -213,6 +215,7 @@ public class ChatFragment extends DialogFragment {
         return d;
     }
 
+    @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     @Override
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -307,7 +310,7 @@ public class ChatFragment extends DialogFragment {
                 isPaginationInProgress = false;
             }
             suppressAnchorRestore = false;
-            return kotlin.Unit.INSTANCE;
+            return Unit.INSTANCE;
         });
 
         rv.setLayoutManager(lm);
@@ -386,13 +389,6 @@ public class ChatFragment extends DialogFragment {
             }
         });
     }
-
-//    @Override
-//    protected void onAuthorized() {
-//        if (session != null) {
-//            viewModel.init(chatId, title, session);
-//        }
-//    }
 
     private void captureScrollAnchor() {
         if (pendingAnchorId != -1) return;
@@ -563,6 +559,8 @@ public class ChatFragment extends DialogFragment {
             header.setPadding(headerBaseLeft, headerBaseTop + status.top, headerBaseRight, headerBaseBottom);
             inputBar.setPadding(inputBaseLeft, inputBaseTop, inputBaseRight, inputBaseBottom + nav.bottom);
 
+            inputBar.setTranslationY(-ime.bottom);
+
             rv.setPadding(rvBaseLeft, rvBaseTop + statusTop[0], rvBaseRight,
                     rvBaseBottom + navBottom[0] + ime.bottom);
 
@@ -579,6 +577,14 @@ public class ChatFragment extends DialogFragment {
                 return insets;
             }
         });
+    }
+
+    @Override
+    public void onResume(){
+        super.onResume();
+        if(edge != null){
+            ViewCompat.requestApplyInsets(edge);
+        }
     }
 
     private void setupBlur(View view) {
@@ -628,6 +634,7 @@ public class ChatFragment extends DialogFragment {
         }
     }
 
+    @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     private void startVoiceFlow() {
         if (!hasRecordAudioPermission()) {
             requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, REQ_RECORD_AUDIO);
@@ -641,6 +648,7 @@ public class ChatFragment extends DialogFragment {
                 == PackageManager.PERMISSION_GRANTED;
     }
 
+    @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     private void startVoiceRecording() {
         if (inputMode == InputMode.VOICE) return;
         hideKeyboard();
@@ -896,6 +904,7 @@ public class ChatFragment extends DialogFragment {
         return out;
     }
 
+    @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
