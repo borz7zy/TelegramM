@@ -36,7 +36,7 @@ import android.view.accessibility.AccessibilityEvent;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.ViewCompat;
 
-import org.lineageos.eleven.R;
+import com.github.borz7zy.telegramm.R;
 
 public class SlidingUpPanelLayout extends ViewGroup {
 
