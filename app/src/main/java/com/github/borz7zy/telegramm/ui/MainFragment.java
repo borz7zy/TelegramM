@@ -52,29 +52,24 @@ public class MainFragment extends Fragment {
 
     private int[] getAnimation(Screen from, Screen to) {
         if (from == null || to == null) return null;
-        switch (from) {
-            case DIALOGS:
-                if (to == Screen.CONTACTS)
-                    return new int[]{R.anim.nav_pop_enter, R.anim.nav_pop_exit};
-                if (to == Screen.SETTINGS)
-                    return new int[]{R.anim.nav_enter, R.anim.nav_exit};
-                break;
 
-            case CONTACTS:
-                if (to == Screen.DIALOGS)
-                    return new int[]{R.anim.nav_enter, R.anim.nav_exit};
-                if (to == Screen.SETTINGS)
-                    return new int[]{R.anim.nav_enter, R.anim.nav_exit};
-                break;
+        int fromIndex = getIndex(from);
+        int toIndex = getIndex(to);
 
-            case SETTINGS:
-                if (to == Screen.DIALOGS)
-                    return new int[]{R.anim.nav_pop_enter, R.anim.nav_pop_exit};
-                if (to == Screen.CONTACTS)
-                    return new int[]{R.anim.nav_pop_enter, R.anim.nav_pop_exit};
-                break;
+        if (toIndex > fromIndex) {
+            return new int[]{R.anim.nav_enter, R.anim.nav_exit};
+        } else {
+            return new int[]{R.anim.nav_enter_left, R.anim.nav_exit};
         }
-        return null;
+    }
+
+    private int getIndex(Screen screen) {
+        switch (screen) {
+            case CONTACTS: return 0;
+            case DIALOGS: return 1;
+            case SETTINGS: return 2;
+            default: return 1;
+        }
     }
 
     @Override
@@ -184,6 +179,7 @@ public class MainFragment extends Fragment {
             return;
 
         var transaction = getChildFragmentManager().beginTransaction();
+        transaction.setReorderingAllowed(true);
 
         final Screen from = getScreen(currentFragment);
         final Screen to = getScreen(target);
@@ -211,6 +207,14 @@ public class MainFragment extends Fragment {
         }
 
         transaction.commit();
+
+        final Fragment finalTarget = target;
+        fragmentContainer.post(() -> {
+            View targetView = finalTarget.getView();
+            if (targetView != null) {
+                targetView.bringToFront();
+            }
+        });
 
         currentFragment = target;
     }
