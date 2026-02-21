@@ -80,14 +80,6 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         return m.outgoing ? VT_OUT : VT_IN;
     }
 
-//    public int findPositionById(long id) {
-//        List<MessageItem> cur = snapshot().getItems();
-//        for (int i = 0; i < cur.size(); ++i) {
-//            if (cur.get(i).id == id) return i;
-//        }
-//        return -1;
-//    }
-
     @NonNull
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -465,11 +457,6 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         }
     }
 
-//    private int getTagId(View v) {
-//        Object tag = v.getTag();
-//        return (tag instanceof Integer) ? (Integer) tag : 0;
-//    }
-
     private void loadGlideImage(ImageView iv, String path) {
 
         Glide.with(iv)
@@ -574,20 +561,6 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
             }
 
             return mask == 0 ? null : mask;
-        }
-
-        private static boolean photosEqual(List<PhotoData> a, List<PhotoData> b) {
-            if (a == b) return true;
-            if (a == null || b == null) return false;
-            if (a.size() != b.size()) return false;
-            for (int i = 0; i < a.size(); ++i) {
-                PhotoData pa = a.get(i);
-                PhotoData pb = b.get(i);
-                if (pa.fileId != pb.fileId) return false;
-                if (pa.width != pb.width || pa.height != pb.height) return false;
-                if (!TextUtils.equals(pa.localPath, pb.localPath)) return false;
-            }
-            return true;
         }
 
         private static boolean buttonsEqual(UiContent a, UiContent b) {

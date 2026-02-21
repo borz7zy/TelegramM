@@ -478,43 +478,53 @@ public class ChatFragment extends DialogFragment {
 
     private void applyChatAvatar(TdApi.ChatPhotoInfo photo) {
         if (ivChatAvatar == null) return;
-        Glide.with(ivChatAvatar).clear(ivChatAvatar);
-        ivChatAvatar.setImageResource(R.drawable.bg_badge);
 
-        if (photo == null || photo.small == null) return;
-
-        int fid = photo.small.id;
-        if (fid == 0) return;
-
-        adapter.setChatAvatar(fid);
-        final String tag = "chat:" + chatId + ":" + fid;
-        ivChatAvatar.setTag(tag);
-
-        String cached = TdMediaRepository.get().getCachedPath(fid);
-        if (!TextUtils.isEmpty(cached)) {
-            loadAvatarPath(cached);
+        if (photo == null || photo.small == null){
+            ivChatAvatar.setImageResource(R.drawable.bg_badge);
             return;
         }
 
-        WeakReference<ImageView> refInfo = new WeakReference<>(ivChatAvatar);
+        int fid = photo.small.id;
+        if (fid == 0){
+            ivChatAvatar.setImageResource(R.drawable.bg_badge);
+            return;
+        }
+
+        final String tag = "chav:" + chatId + ":" + fid;
+        if (tag.equals(ivChatAvatar.getTag())) return;
+        ivChatAvatar.setTag(tag);
+        Glide.with(ivChatAvatar).clear(ivChatAvatar);
+        ivChatAvatar.setImageResource(R.drawable.bg_badge);
+
+        String cached = TdMediaRepository.get().getCachedPath(fid);
+        if (!TextUtils.isEmpty(cached)) {
+            Glide.with(ivChatAvatar)
+                    .load(cached)
+                    .apply(RequestOptions.circleCropTransform())
+                    .placeholder(R.drawable.bg_badge)
+                    .error(R.drawable.bg_badge)
+                    .into(ivChatAvatar);
+            return;
+        }
+
+        WeakReference<ImageView> weakAvatar = new WeakReference<>(ivChatAvatar);
         TdMediaRepository.get().getPathOrRequest(fid, p -> {
-            ImageView iv = refInfo.get();
+            ImageView iv = weakAvatar.get();
             if (iv == null) return;
+
             Object cur = iv.getTag();
             if (!(cur instanceof String) || !tag.equals(cur)) return;
             if (TextUtils.isEmpty(p)) return;
-            iv.post(() -> loadAvatarPath(p));
-        });
-    }
 
-    private void loadAvatarPath(String path) {
-        if (!isAdded() || ivChatAvatar == null) return;
-        Glide.with(ivChatAvatar)
-                .load(path)
-                .apply(RequestOptions.circleCropTransform())
-                .placeholder(R.drawable.bg_badge)
-                .error(R.drawable.bg_badge)
-                .into(ivChatAvatar);
+            iv.post(() -> {
+                Glide.with(iv)
+                        .load(p)
+                        .apply(RequestOptions.circleCropTransform())
+                        .placeholder(R.drawable.bg_badge)
+                        .error(R.drawable.bg_badge)
+                        .into(iv);
+            });
+        });
     }
 
     private void applyInsets(View root, View content) {

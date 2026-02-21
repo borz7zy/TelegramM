@@ -3,6 +3,7 @@ package com.github.borz7zy.telegramm.ui.chat;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.LruCache;
 import android.widget.Toast;
 
@@ -16,6 +17,7 @@ import com.github.borz7zy.telegramm.core.accounts.AccountSession;
 import com.github.borz7zy.telegramm.core.accounts.AccountStorage;
 import com.github.borz7zy.telegramm.ui.model.MessageItem;
 import com.github.borz7zy.telegramm.ui.model.PhotoData;
+import com.github.borz7zy.telegramm.utils.Logger;
 import com.github.borz7zy.telegramm.utils.TdMediaRepository;
 
 import org.drinkless.tdlib.Client;
@@ -101,6 +103,23 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
 
             if(session != null){
                 session.addUpdateHandler(this);
+
+                session.send(new TdApi.GetChat(chatId), obj->{
+                    if(obj instanceof TdApi.Chat){
+                        TdApi.Chat chat = (TdApi.Chat)obj;
+                        Log.d("ChatViewModel", "GetChat success. Title: " + chat.title);
+
+                        chatTitle.postValue(chat.title);
+                        chatAvatar.postValue(chat.photo);
+                    }else if(obj instanceof TdApi.Error){
+                        TdApi.Error err = (TdApi.Error)obj;
+                        Logger.LOGE("ChatViewModel", "GetChat ERROR: " + err.code + " - " + err.message);
+                    }else{
+                        Logger.LOGW("ChatViewModel", "GetChat Unknown result: " + obj.toString());
+                    }
+                });
+
+                session.send(new TdApi.OpenChat(chatId));
             }else{
                 Toast.makeText(AppManager.getInstance().getContext(), "session is null!", Toast.LENGTH_SHORT).show();
             }
