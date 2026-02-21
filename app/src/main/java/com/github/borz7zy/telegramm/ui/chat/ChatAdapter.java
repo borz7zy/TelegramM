@@ -14,10 +14,12 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
 import androidx.media3.common.util.UnstableApi;
+import androidx.media3.datasource.DefaultDataSource;
 import androidx.media3.exoplayer.DefaultLoadControl;
 import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.ExoPlayer;
@@ -386,18 +388,18 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         player.setTrackSelectionParameters(
                 player.getTrackSelectionParameters()
                         .buildUpon()
-                        .setTrackTypeDisabled(androidx.media3.common.C.TRACK_TYPE_AUDIO, true)
+                        .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, true)
                         .build()
         );
         player.setVolume(0f);
 
         MediaSource fileSource =
                 new ProgressiveMediaSource.Factory(
-                        new androidx.media3.datasource.DefaultDataSource.Factory(context)
+                        new DefaultDataSource.Factory(context)
                 ).createMediaSource(MediaItem.fromUri(Uri.fromFile(new File(path))));
 
         LoopingMediaSource loopingSource =
-                new androidx.media3.exoplayer.source.LoopingMediaSource(fileSource);
+                new LoopingMediaSource(fileSource);
 
         player.setMediaSource(loopingSource);
 
