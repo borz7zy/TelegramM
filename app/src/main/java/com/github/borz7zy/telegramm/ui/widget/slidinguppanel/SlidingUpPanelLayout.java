@@ -477,6 +477,7 @@ public class SlidingUpPanelLayout extends ViewGroup {
         }
     }
 
+    @SuppressLint("AccessibilityWindowStateChangedEvent")
     void dispatchOnPanelExpanded(View panel) {
         if (mPanelSlideListener != null) {
             mPanelSlideListener.onPanelExpanded(panel);
@@ -484,6 +485,7 @@ public class SlidingUpPanelLayout extends ViewGroup {
         sendAccessibilityEvent(AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
     }
 
+    @SuppressLint("AccessibilityWindowStateChangedEvent")
     void dispatchOnPanelCollapsed(View panel) {
         if (mPanelSlideListener != null) {
             mPanelSlideListener.onPanelCollapsed(panel);
@@ -491,6 +493,7 @@ public class SlidingUpPanelLayout extends ViewGroup {
         sendAccessibilityEvent(AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
     }
 
+    @SuppressLint("AccessibilityWindowStateChangedEvent")
     void dispatchOnPanelAnchored(View panel) {
         if (mPanelSlideListener != null) {
             mPanelSlideListener.onPanelAnchored(panel);
@@ -498,6 +501,7 @@ public class SlidingUpPanelLayout extends ViewGroup {
         sendAccessibilityEvent(AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
     }
 
+    @SuppressLint("AccessibilityWindowStateChangedEvent")
     void dispatchOnPanelHidden(View panel) {
         if (mPanelSlideListener != null) {
             mPanelSlideListener.onPanelHidden(panel);
