@@ -100,7 +100,7 @@ class AccountSession(private val context: Context, private val account: AccountE
 
     fun send(
         function: TdApi.Function<*>,
-        handler: ResultHandler
+        handler: ResultHandler?
     ) {
         ensureClient()
         client!!.send(function, handler)
