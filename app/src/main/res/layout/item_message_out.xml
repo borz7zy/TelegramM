@@ -59,6 +59,7 @@
                 android:layout_width="200dp"
                 android:layout_height="200dp"
                 android:visibility="gone"
+                android:background="@android:color/transparent"
                 android:scaleType="fitCenter"/>
 
             <androidx.media3.ui.PlayerView
