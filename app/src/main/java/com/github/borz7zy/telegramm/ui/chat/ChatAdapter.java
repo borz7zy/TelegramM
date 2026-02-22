@@ -326,14 +326,26 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
                 Object tag = iv.getTag();
                 if(!Objects.equals(tag, reqKey)) return;
                 if (TextUtils.isEmpty(path)) return;
-                iv.post(() -> renderSticker(iv, path, sticker.type));
+                iv.post(() -> {
+                    ViewGroup.LayoutParams layoutParams = iv.getLayoutParams();
+                    layoutParams.width = sticker.width;
+                    layoutParams.height = sticker.height;
+                    iv.setLayoutParams(layoutParams);
+                    renderSticker(iv, path, sticker.type);
+                });
             }else{
                 PlayerView pv = weakPlayer.get();
                 if(pv == null) return;
                 Object tag = pv.getTag();
                 if(!Objects.equals(tag, reqKey)) return;
                 if (TextUtils.isEmpty(path)) return;
-                pv.post(()->renderSticker(pv, path, sticker.type));
+                pv.post(()-> {
+                    ViewGroup.LayoutParams layoutParams = pv.getLayoutParams();
+                    layoutParams.width = sticker.width;
+                    layoutParams.height = sticker.height;
+                    pv.setLayoutParams(layoutParams);
+                    renderSticker(pv, path, sticker.type);
+                });
             }
         });
     }
