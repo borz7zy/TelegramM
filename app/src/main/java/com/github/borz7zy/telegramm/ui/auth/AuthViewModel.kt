@@ -2,21 +2,16 @@ package com.github.borz7zy.telegramm.ui.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.borz7zy.telegramm.AppManager
-import com.github.borz7zy.telegramm.core.accounts.AccountEntity
 import com.github.borz7zy.telegramm.core.accounts.AccountManager
 import com.github.borz7zy.telegramm.core.accounts.AccountSession
-import com.github.borz7zy.telegramm.core.accounts.AccountSingleCallback
 import com.github.borz7zy.telegramm.core.accounts.AccountStorage
-import com.github.borz7zy.telegramm.utils.Logger
+import com.github.borz7zy.telegramm.core.accounts.requireCurrentAccount
+import com.github.borz7zy.telegramm.core.accounts.sendAwait
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import org.drinkless.tdlib.Client
 import org.drinkless.tdlib.TdApi
 
 class AuthViewModel : ViewModel() {
-
-    // ---------- UI STATE ----------
 
     sealed class UiState {
         object Phone : UiState()
@@ -25,119 +20,133 @@ class AuthViewModel : ViewModel() {
         object Loading : UiState()
     }
 
-    private val _uiState = MutableStateFlow<UiState>(UiState.Phone)
-    val uiState: StateFlow<UiState> = _uiState.asStateFlow()
-
-    private val _events = MutableSharedFlow<Event>()
-    val events: SharedFlow<Event> = _events.asSharedFlow()
-
     sealed class Event {
         object NavigateToMain : Event()
         data class ShowError(val message: String) : Event()
         data class ShowToast(val message: String) : Event()
     }
 
-    private var session: AccountSession? = null
+    private val _uiState = MutableStateFlow<UiState>(UiState.Loading)
+    val uiState: StateFlow<UiState> = _uiState
+
+    private val _events = MutableSharedFlow<Event>()
+    val events: SharedFlow<Event> = _events
+
     private var lastStableState: UiState = UiState.Phone
+    private lateinit var session: AccountSession
 
-    private fun requireSession(): AccountSession =
-        requireNotNull(session) { "AccountSession not initialized" }
-
-    fun setSession(session: AccountSession?) {
-        this.session = session
+    init {
+        viewModelScope.launch {
+            session = resolveSession()
+            observeAuthState()
+        }
     }
 
-    // ---------- AUTH STATE FROM TDLib ----------
+    private suspend fun resolveSession(): AccountSession =
+        AccountManager.getInstance()
+            .getOrCreateSession(
+                AccountStorage.getInstance()
+                    .requireCurrentAccount()
+            )
 
-    fun onAuthStateChanged(state: TdApi.AuthorizationState) {
-        when (state) {
-            is TdApi.AuthorizationStateWaitPhoneNumber -> {
-                updateState(UiState.Phone)
-            }
+    private suspend fun observeAuthState() {
+        session.authStateFlow
+            .collect { state ->
+                when (state) {
+                    is TdApi.AuthorizationStateWaitPhoneNumber ->
+                        updateState(UiState.Phone)
 
-            is TdApi.AuthorizationStateWaitCode -> {
-                updateState(UiState.Code)
-            }
+                    is TdApi.AuthorizationStateWaitCode ->
+                        updateState(UiState.Code)
 
-            is TdApi.AuthorizationStateWaitPassword -> {
-                updateState(UiState.Password(state.passwordHint))
-            }
+                    is TdApi.AuthorizationStateWaitPassword ->
+                        updateState(
+                            UiState.Password(state.passwordHint)
+                        )
 
-            is TdApi.AuthorizationStateReady -> {
-                viewModelScope.launch {
-                    _events.emit(Event.NavigateToMain)
+                    is TdApi.AuthorizationStateReady ->
+                        _events.emit(Event.NavigateToMain)
+
+                    else -> Unit
                 }
             }
+    }
 
-            is TdApi.AuthorizationStateLoggingOut -> {
-                _uiState.value = UiState.Loading
-            }
-
+    fun onMainAction(phone: String, code: String, password: String) {
+        when (_uiState.value) {
+            is UiState.Phone -> sendPhone(phone)
+            is UiState.Code -> sendCode(code)
+            is UiState.Password -> sendPassword(password)
             else -> Unit
         }
     }
 
-    // ---------- ACTIONS ----------
+    fun onSecondaryAction() {
+        when (_uiState.value) {
+            is UiState.Code -> updateState(UiState.Phone)
+            is UiState.Password -> recoverPassword()
+            else -> Unit
+        }
+    }
 
-    fun sendPhone(phone: String) {
+    private fun sendPhone(phone: String) {
         if (phone.isBlank()) {
             emitError("Enter phone number")
             return
         }
 
-        setLoading()
-        val req = TdApi.SetAuthenticationPhoneNumber().apply {
-            phoneNumber = phone
-        }
-
-        sendSafely(req)
+        launchTdRequest(
+            TdApi.SetAuthenticationPhoneNumber(
+                phone,
+                null)
+        )
     }
 
-    fun sendCode(code: String) {
+    private fun sendCode(code: String) {
         if (code.isBlank()) {
             emitError("Enter verification code")
             return
         }
 
-        setLoading()
-        sendSafely(TdApi.CheckAuthenticationCode(code))
+        launchTdRequest(
+            TdApi.CheckAuthenticationCode(code)
+        )
     }
 
-    fun sendPassword(password: String) {
+    private fun sendPassword(password: String) {
         if (password.isBlank()) {
             emitError("Enter password")
             return
         }
 
-        setLoading()
-        sendSafely(TdApi.CheckAuthenticationPassword(password))
+        launchTdRequest(
+            TdApi.CheckAuthenticationPassword(password)
+        )
     }
 
-    private fun sendSafely(function: TdApi.Function<*>) {
-        val currentSession = session
-        if (currentSession == null) {
-            viewModelScope.launch {
-                _events.emit(Event.ShowError("Session not ready yet"))
-            }
-            return
+    private fun recoverPassword() {
+        viewModelScope.launch {
+            val result = session.sendAwait(
+                TdApi.RequestAuthenticationPasswordRecovery()
+            )
+
+            if (result is TdApi.Error)
+                emitError(result.message)
+            else
+                _events.emit(Event.ShowToast("Recovery email sent"))
         }
-        currentSession.send(function, errorHandler)
     }
 
-    fun onWrongNumber() {
-        updateState(UiState.Phone)
-    }
+    private fun launchTdRequest(function: TdApi.Function<*>) {
+        lastStableState = _uiState.value
+        _uiState.value = UiState.Loading
 
-    fun onForgotPassword() {
-        requireSession().send(
-            TdApi.RequestAuthenticationPasswordRecovery()
-        ) { result ->
+        viewModelScope.launch {
+            val result = session.sendAwait(function)
+
             if (result is TdApi.Error) {
-                emitError("Recovery error: ${result.message}")
-            } else {
-                viewModelScope.launch {
-                    _events.emit(Event.ShowToast("Recovery email sent"))
-                }
+                emitError(result.message)
+                _uiState.value = lastStableState
             }
         }
     }
@@ -147,23 +156,9 @@ class AuthViewModel : ViewModel() {
         _uiState.value = state
     }
 
-    private fun setLoading() {
-        lastStableState = _uiState.value
-        _uiState.value = UiState.Loading
-    }
-
     private fun emitError(message: String) {
         viewModelScope.launch {
             _events.emit(Event.ShowError(message))
-        }
-    }
-
-    private val errorHandler = Client.ResultHandler { result ->
-        if (result is TdApi.Error) {
-            viewModelScope.launch {
-                _events.emit(Event.ShowError(result.message))
-            }
-            _uiState.value = lastStableState
         }
     }
 }

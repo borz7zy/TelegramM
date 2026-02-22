@@ -71,6 +71,8 @@ dependencies {
     implementation libs.fragment
     implementation libs.preference
 
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.10.0'
+
     implementation 'androidx.core:core:1.17.0'
     implementation 'androidx.dynamicanimation:dynamicanimation:1.0.0'
     implementation 'com.github.massoudss:waveformSeekBar:5.0.2'

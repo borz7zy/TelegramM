@@ -9,13 +9,12 @@ import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.github.borz7zy.telegramm.R
 import com.github.borz7zy.telegramm.databinding.FragmentAuthBinding
 import com.github.borz7zy.telegramm.ui.base.BaseTelegramFragment
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import org.drinkless.tdlib.TdApi
 
 class AuthFragment : BaseTelegramFragment() {
 
@@ -25,7 +24,8 @@ class AuthFragment : BaseTelegramFragment() {
     private val viewModel: AuthViewModel by viewModels()
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentAuthBinding.inflate(inflater, container, false)
@@ -34,9 +34,10 @@ class AuthFragment : BaseTelegramFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        viewModel.setSession(session)
 
-        binding.phoneEdit.addTextChangedListener(PhoneNumberFormattingTextWatcher())
+        binding.phoneEdit.addTextChangedListener(
+            PhoneNumberFormattingTextWatcher()
+        )
 
         setupListeners()
         observeState()
@@ -45,61 +46,73 @@ class AuthFragment : BaseTelegramFragment() {
 
     private fun setupListeners() {
         binding.mainBtn.setOnClickListener {
-            when (val state = viewModel.uiState.value) {
-                is AuthViewModel.UiState.Phone ->
-                    viewModel.sendPhone(binding.phoneEdit.text.toString())
-
-                is AuthViewModel.UiState.Code ->
-                    viewModel.sendCode(binding.codeEdit.text.toString())
-
-                is AuthViewModel.UiState.Password ->
-                    viewModel.sendPassword(binding.passwordEdit.text.toString())
-
-                else -> Unit
-            }
+            viewModel.onMainAction(
+                phone = binding.phoneEdit.text.toString(),
+                code = binding.codeEdit.text.toString(),
+                password = binding.passwordEdit.text.toString()
+            )
         }
 
         binding.secondaryActionBtn.setOnClickListener {
-            when (viewModel.uiState.value) {
-                is AuthViewModel.UiState.Code -> viewModel.onWrongNumber()
-                is AuthViewModel.UiState.Password -> viewModel.onForgotPassword()
-                else -> Unit
-            }
+            viewModel.onSecondaryAction()
         }
     }
 
     private fun observeState() {
-        lifecycleScope.launch {
-            viewModel.uiState.collectLatest { render(it) }
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(
+                androidx.lifecycle.Lifecycle.State.STARTED
+            ) {
+                viewModel.uiState.collect { render(it) }
+            }
         }
     }
 
     private fun observeEvents() {
-        lifecycleScope.launch {
-            viewModel.events.collectLatest { event ->
-                when (event) {
-                    is AuthViewModel.Event.NavigateToMain ->
-                        findNavController().navigate(R.id.frag_auth_to_main)
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(
+                androidx.lifecycle.Lifecycle.State.STARTED
+            ) {
+                viewModel.events.collect { event ->
+                    when (event) {
+                        is AuthViewModel.Event.NavigateToMain ->
+                            findNavController()
+                                .navigate(R.id.frag_auth_to_main)
 
-                    is AuthViewModel.Event.ShowError ->
-                        Toast.makeText(requireContext(), event.message, Toast.LENGTH_SHORT).show()
+                        is AuthViewModel.Event.ShowError ->
+                            Toast.makeText(
+                                requireContext(),
+                                event.message,
+                                Toast.LENGTH_SHORT
+                            ).show()
 
-                    is AuthViewModel.Event.ShowToast ->
-                        Toast.makeText(requireContext(), event.message, Toast.LENGTH_SHORT).show()
+                        is AuthViewModel.Event.ShowToast ->
+                            Toast.makeText(
+                                requireContext(),
+                                event.message,
+                                Toast.LENGTH_SHORT
+                            ).show()
+                    }
                 }
             }
         }
     }
 
     private fun render(state: AuthViewModel.UiState) {
-        binding.progressBar.isVisible = state is AuthViewModel.UiState.Loading
-        binding.mainBtn.isEnabled = state !is AuthViewModel.UiState.Loading
+        binding.progressBar.isVisible =
+            state is AuthViewModel.UiState.Loading
+        binding.mainBtn.isEnabled =
+            state !is AuthViewModel.UiState.Loading
 
-        binding.phoneInputLayout.isVisible = state is AuthViewModel.UiState.Phone
-        binding.codeInputLayout.isVisible = state is AuthViewModel.UiState.Code
-        binding.passwordInputLayout.isVisible = state is AuthViewModel.UiState.Password
+        binding.phoneInputLayout.isVisible =
+            state is AuthViewModel.UiState.Phone
+        binding.codeInputLayout.isVisible =
+            state is AuthViewModel.UiState.Code
+        binding.passwordInputLayout.isVisible =
+            state is AuthViewModel.UiState.Password
 
         when (state) {
+
             is AuthViewModel.UiState.Phone -> {
                 binding.titleText.text = "Your Phone"
                 binding.mainBtn.text = "Send Code"
@@ -119,7 +132,8 @@ class AuthFragment : BaseTelegramFragment() {
                 binding.titleText.text = "Enter Password"
                 binding.mainBtn.text = "Unlock"
                 binding.passwordInputLayout.helperText =
-                    state.hint?.takeIf { it.isNotBlank() }?.let { "Hint: $it" }
+                    state.hint?.let { "Hint: $it" }
+
                 binding.secondaryActionBtn.apply {
                     isVisible = true
                     text = "Forgot password?"
@@ -130,16 +144,8 @@ class AuthFragment : BaseTelegramFragment() {
         }
     }
 
-    override fun onAuthStateChanged(state: TdApi.AuthorizationState?) {
-        state?.let { viewModel.onAuthStateChanged(it) }
-    }
-
     override fun onDestroyView() {
         _binding = null
         super.onDestroyView()
-    }
-
-    companion object {
-        private const val TAG = "AuthFragment"
     }
 }

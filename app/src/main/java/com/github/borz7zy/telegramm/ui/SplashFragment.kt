@@ -15,7 +15,6 @@ import com.github.borz7zy.telegramm.R
 import com.github.borz7zy.telegramm.core.accounts.AccountEntity
 import com.github.borz7zy.telegramm.core.accounts.AccountManager
 import com.github.borz7zy.telegramm.core.accounts.AccountStorage
-import com.github.borz7zy.telegramm.core.accounts.authStateFlow
 import com.github.borz7zy.telegramm.ui.base.BaseTelegramFragment
 import com.github.borz7zy.telegramm.utils.Logger
 import kotlinx.coroutines.Dispatchers
@@ -88,7 +87,7 @@ class SplashFragment : BaseTelegramFragment() {
             .getOrCreateSession(account)
 
         return session
-            .authStateFlow()
+            .authStateFlow
             .filterNotNull()
             .first { state ->
                 state !is TdApi.AuthorizationStateWaitTdlibParameters

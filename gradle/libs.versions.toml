@@ -19,6 +19,7 @@ kotlin = "2.2.0"
 coreKtx = "1.17.0"
 legacySupportV4 = "1.0.0"
 fragmentKtx = "1.8.9"
+lifecycleRuntimeKtx = "2.10.0"
 
 [libraries]
 appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
@@ -39,6 +40,7 @@ espresso-core = { group = "androidx.test.espresso", name = "espresso-core", vers
 core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 legacy-support-v4 = { group = "androidx.legacy", name = "legacy-support-v4", version.ref = "legacySupportV4" }
 fragment-ktx = { group = "androidx.fragment", name = "fragment-ktx", version.ref = "fragmentKtx" }
+lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

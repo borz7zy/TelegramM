@@ -1,202 +1,206 @@
-package com.github.borz7zy.telegramm.core.accounts;
+package com.github.borz7zy.telegramm.core.accounts
 
-import android.content.Context;
-import android.os.Build;
-import android.util.Log;
+import android.content.Context
+import android.os.Build
+import android.util.Log
+import androidx.lifecycle.MutableLiveData
+import com.github.borz7zy.telegramm.AppManager
+import com.github.borz7zy.telegramm.R
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import org.drinkless.tdlib.Client
+import org.drinkless.tdlib.Client.ResultHandler
+import org.drinkless.tdlib.TdApi
+import org.drinkless.tdlib.TdApi.AuthorizationState
+import org.drinkless.tdlib.TdApi.GetAuthorizationState
+import org.drinkless.tdlib.TdApi.GetMe
+import org.drinkless.tdlib.TdApi.Ok
+import org.drinkless.tdlib.TdApi.SetTdlibParameters
+import org.drinkless.tdlib.TdApi.UpdateAuthorizationState
+import java.io.File
+import java.util.Locale
+import java.util.concurrent.CopyOnWriteArrayList
 
-import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MutableLiveData;
+class AccountSession(private val context: Context, private val account: AccountEntity) {
+    private var client: Client? = null
+    private var tdlibParametersSent = false
+    private var meRequested = false
 
-import com.github.borz7zy.telegramm.AppManager;
-import com.github.borz7zy.telegramm.R;
+    private var lastAuthState: AuthorizationState? = null
 
-import org.drinkless.tdlib.Client;
-import org.drinkless.tdlib.TdApi;
-
-import java.io.File;
-import java.util.Locale;
-
-public class AccountSession {
-    private final AccountEntity account;
-    private final Context context;
-    private Client client;
-    private boolean tdlibParametersSent = false;
-
-    private TdApi.AuthorizationState lastAuthState;
-    private final MutableLiveData<TdApi.AuthorizationState> authStateLiveData =
-            new MutableLiveData<>();
-
-    private final java.util.concurrent.CopyOnWriteArrayList<Client.ResultHandler> updateHandlers =
-            new java.util.concurrent.CopyOnWriteArrayList<>();
-
-    private boolean meRequested = false;
-
-    public AccountSession(Context context, AccountEntity account){
-        this.context = context;
-        this.account = account;
-    }
-
-    private synchronized void ensureClient(){
-        if(client != null) return;
-
-        client = Client.create(this::onUpdate, null, null);
-        client.send(new TdApi.GetAuthorizationState(), this::onUpdate);
-    }
-
-    public LiveData<TdApi.AuthorizationState> observeAuthState(){
-
-        ensureClient();
-
-        if(lastAuthState != null){
-            authStateLiveData.postValue(lastAuthState);
+    private val _authStateFlow = MutableStateFlow<AuthorizationState?>(null)
+    val authStateFlow: StateFlow<AuthorizationState?>
+        get() {
+            ensureClient()
+            return _authStateFlow
         }
 
-        return authStateLiveData;
+    val authStateLiveData =
+        MutableLiveData<AuthorizationState>()
+
+    private val updateHandlers = CopyOnWriteArrayList<ResultHandler>()
+
+    @Synchronized
+    private fun ensureClient() {
+        if (client != null) return
+
+        client = Client.create(
+            { update -> onUpdate(update) },
+            null,
+            null
+        )
+
+        client!!.send(
+            GetAuthorizationState()
+        ) { update -> onUpdate(update) }
     }
 
-    private void onUpdate(Object update){
+    private fun emitAuthState(state: AuthorizationState?) {
+        lastAuthState = state
+        _authStateFlow.value = state
 
-        if(update instanceof TdApi.UpdateAuthorizationState){
+        if (state != null) {
+            authStateLiveData.postValue(state)
+        }
+    }
 
-            TdApi.AuthorizationState state =
-                    ((TdApi.UpdateAuthorizationState)update).authorizationState;
+    private fun onUpdate(update: Any?) {
+        if (update is UpdateAuthorizationState) {
+            val state = update.authorizationState
+            emitAuthState(state)
 
-            lastAuthState = state;
-            authStateLiveData.postValue(state);
+            when (state.constructor) {
+                TdApi.AuthorizationStateWaitTdlibParameters.CONSTRUCTOR -> {
+                    if (!tdlibParametersSent) {
+                        sendTdlibParameters()
+                    }
+                }
 
-            switch(state.getConstructor()){
-
-                case TdApi.AuthorizationStateWaitTdlibParameters.CONSTRUCTOR:
-                    sendTdlibParameters();
-                    break;
-
-                case TdApi.AuthorizationStateReady.CONSTRUCTOR:
-                    loadMeOnce();
-                    break;
+                TdApi.AuthorizationStateReady.CONSTRUCTOR -> {
+                    loadMeOnce()
+                }
             }
         }
 
-        for (Client.ResultHandler handler : updateHandlers) {
-            handler.onResult((TdApi.Object) update);
+        if (update is TdApi.Object) {
+            for (handler in updateHandlers) {
+                handler.onResult(update)
+            }
         }
     }
 
-    private void loadMeOnce(){
+    fun send(function: TdApi.Function<*>) {
+        ensureClient()
+        client!!.send(function) { result ->
+            if (result is TdApi.Error) {
+                Log.e("AccountSession", result.message)
+            }
+        }
+    }
 
-        if(meRequested) return;
-        meRequested = true;
+    fun send(
+        function: TdApi.Function<*>,
+        handler: ResultHandler
+    ) {
+        ensureClient()
+        client!!.send(function, handler)
+    }
 
-        client.send(new TdApi.GetMe(), result -> {
+    fun sendAwait(
+        function: TdApi.Function<*>?,
+        handler: ResultHandler?
+    ) {
+        ensureClient()
+        client!!.send(function, handler)
+    }
 
-            if(result instanceof TdApi.User user){
+    private fun loadMeOnce() {
+        if (meRequested) return
+        meRequested = true
 
+        client!!.send(GetMe(), ResultHandler { result: TdApi.Object? ->
+            if (result is TdApi.User) {
                 AppManager.getInstance()
-                        .getExecutorDb()
-                        .execute(() -> {
-
-                            account.setAccountTgId(user.id);
-                            account.setAccountName(
-                                    user.firstName + " " + user.lastName);
-
-                            account.setAccountUsername(user.phoneNumber);
-
-                            AppManager.getInstance()
-                                    .getAppDatabase()
-                                    .accountDao()
-                                    .update(account);
-                        });
+                    .getExecutorDb()
+                    .execute(Runnable {
+                        account.setAccountTgId(result.id)
+                        account.setAccountName(
+                            result.firstName + " " + result.lastName
+                        )
+                        account.setAccountUsername(result.phoneNumber)
+                        AppManager.getInstance()
+                            .getAppDatabase()
+                            .accountDao()
+                            .update(account)
+                    })
             }
-        });
+        })
     }
 
-    private void processAuthState(TdApi.AuthorizationState state) {
-        lastAuthState = state;
-        authStateLiveData.postValue(state);
-
-        if (state instanceof TdApi.AuthorizationStateWaitTdlibParameters) {
-            if (!tdlibParametersSent) {
-                sendTdlibParameters();
-            }
-        }
-    }
-
-    private void sendTdlibParameters() {
-        String dbPath = account.getAccountDbFolder();
+    private fun sendTdlibParameters() {
+        var dbPath = account.getAccountDbFolder()
         if (dbPath == null || dbPath.isEmpty()) {
-            File rootDir = new File(context.getFilesDir(), "user_" + account.getAccountId());
-            if (!rootDir.exists()) rootDir.mkdirs();
-            dbPath = rootDir.getAbsolutePath();
+            val rootDir = File(
+                context.getFilesDir(),
+                "user_" + account.getAccountId()
+            )
+            if (!rootDir.exists()) rootDir.mkdirs()
+            dbPath = rootDir.getAbsolutePath()
         }
 
-        TdApi.SetTdlibParameters request = new TdApi.SetTdlibParameters();
+        val request =
+            SetTdlibParameters()
 
-        request.databaseDirectory = dbPath;
-        request.filesDirectory = dbPath + "/files";
+        request.databaseDirectory = dbPath
+        request.filesDirectory = dbPath + "/files"
 
-        request.useMessageDatabase = true;
-        request.useSecretChats = true;
-        request.useFileDatabase = true;
-        request.useChatInfoDatabase = true;
+        request.useMessageDatabase = true
+        request.useSecretChats = true
+        request.useFileDatabase = true
+        request.useChatInfoDatabase = true
 
         try {
-            request.apiId = Integer.parseInt(context.getString(R.string.api_id));
-            request.apiHash = context.getString(R.string.api_hash);
-        } catch (NumberFormatException e) {
-            Log.e("AccountSession", "Error parsing api_id & api_hash. Check local.properties.");
-            return;
+            request.apiId = context.getString(R.string.api_id).toInt()
+            request.apiHash =
+                context.getString(R.string.api_hash)
+        } catch (e: NumberFormatException) {
+            Log.e(
+                "AccountSession",
+                "Error parsing api_id/api_hash"
+            )
+            return
         }
 
-        request.systemLanguageCode = Locale.getDefault().getLanguage();
-        request.deviceModel = Build.MODEL;
-        request.systemVersion = Build.VERSION.RELEASE;
-        request.applicationVersion = "1.0";
+        request.systemLanguageCode =
+            Locale.getDefault().getLanguage()
+        request.deviceModel = Build.MODEL
+        request.systemVersion = Build.VERSION.RELEASE
+        request.applicationVersion = "1.0"
 
-        request.useTestDc = true; // TODO
+        request.useTestDc = true
 
-        client.send(request, result -> {
-            if (result instanceof TdApi.Ok) {
-                tdlibParametersSent = true;
-            } else if (result instanceof TdApi.Error) {
-                Log.e("AccountSession", "Error installing parameters: " + ((TdApi.Error) result).message + " : " + ((TdApi.Error) result).toString());
+        client!!.send(request, ResultHandler { result: TdApi.Object? ->
+            if (result is Ok) {
+                tdlibParametersSent = true
+            } else if (result is TdApi.Error) {
+                Log.e(
+                    "AccountSession",
+                    "TDLib params error: " + result.message
+                )
             }
-        });
+        })
     }
 
-    public void send(TdApi.Function<?> function) {
-
-        ensureClient();
-
-        client.send(function, result -> {
-
-            if(result instanceof TdApi.Error){
-                // TODO
-            }
-
-        });
+    fun addUpdateHandler(handler: ResultHandler) {
+        updateHandlers.add(handler)
     }
 
-    public void send(TdApi.Function<?> function,
-                     Client.ResultHandler handler) {
-
-        ensureClient();
-
-        client.send(function, handler);
+    fun removeUpdateHandler(handler: ResultHandler) {
+        updateHandlers.remove(handler)
     }
 
-    public void addUpdateHandler(Client.ResultHandler handler) {
-        updateHandlers.add(handler);
-    }
-
-    public void removeUpdateHandler(Client.ResultHandler handler) {
-        updateHandlers.remove(handler);
-    }
-
-    // --------------------
-    // Getters/Setters
-    // --------------------
-
-    public Client getClient(){
-        ensureClient();
-        return client;
+    fun getClient(): Client {
+        ensureClient()
+        return client!!
     }
 }

@@ -59,7 +59,7 @@ public abstract class BaseTelegramFragment extends Fragment {
             authLiveData.removeObservers(getViewLifecycleOwner());
         }
 
-        authLiveData = session.observeAuthState();
+        authLiveData = session.getAuthStateLiveData();
 
         authLiveData.observe(getViewLifecycleOwner(), state -> {
 

@@ -6,118 +6,11 @@
     app:startDestination="@id/splashFragment">
 
     <fragment
-        android:id="@+id/authPhoneFragment"
-        android:name="com.github.borz7zy.telegramm.ui.auth.AuthPhoneFragment"
-        android:label="fragment_auth_phone"
-        tools:layout="@layout/fragment_auth_phone" >
-
-        <action
-            android:id="@+id/frag_phone_to_code"
-            app:destination="@id/authCodeFragment"
-            app:enterAnim="@anim/nav_enter"
-            app:exitAnim="@anim/nav_exit"
-            app:popEnterAnim="@anim/nav_pop_enter"
-            app:popExitAnim="@anim/nav_pop_exit"
-
-            app:popUpTo="@id/authPhoneFragment"
-            app:popUpToInclusive="true" />
-
-        <action
-            android:id="@+id/frag_phone_to_password"
-            app:destination="@id/authPasswordFragment"
-            app:popUpTo="@id/authPhoneFragment"
-            app:popUpToInclusive="true" />
-        <action
-            android:id="@+id/frag_phone_to_main"
-            app:destination="@id/mainFragment"
-            app:enterAnim="@anim/nav_enter"
-            app:exitAnim="@anim/nav_exit"
-            app:popEnterAnim="@android:anim/fade_in"
-            app:popExitAnim="@android:anim/fade_out"
-            app:popUpTo="@id/authPhoneFragment"
-            app:popUpToInclusive="true" />
-
-    </fragment>
-
-    <fragment
-        android:id="@+id/authCodeFragment"
-        android:name="com.github.borz7zy.telegramm.ui.auth.AuthCodeFragment"
-        android:label="fragment_auth_code"
-        tools:layout="@layout/fragment_auth_code" >
-        <action
-            android:id="@+id/frag_code_to_password"
-            app:destination="@id/authPasswordFragment"
-            app:enterAnim="@anim/nav_enter"
-            app:exitAnim="@anim/nav_exit"
-            app:popEnterAnim="@anim/nav_pop_enter"
-            app:popExitAnim="@anim/nav_pop_exit"
-            app:popUpTo="@id/authCodeFragment"
-            app:popUpToInclusive="true" />
-        <action
-            android:id="@+id/frag_code_to_main"
-            app:destination="@id/mainFragment"
-            app:enterAnim="@anim/nav_enter"
-            app:exitAnim="@anim/nav_exit"
-            app:popEnterAnim="@android:anim/fade_in"
-            app:popExitAnim="@android:anim/fade_out"
-            app:popUpTo="@id/authCodeFragment"
-            app:popUpToInclusive="true" />
-    </fragment>
-
-    <fragment
-        android:id="@+id/authPasswordFragment"
-        android:name="com.github.borz7zy.telegramm.ui.auth.AuthPasswordFragment"
-        android:label="fragment_auth_password"
-        tools:layout="@layout/fragment_auth_password" >
-        <action
-            android:id="@+id/frag_pass_to_main"
-            app:destination="@id/mainFragment"
-            app:enterAnim="@anim/nav_enter"
-            app:exitAnim="@anim/nav_exit"
-            app:popEnterAnim="@android:anim/fade_in"
-            app:popExitAnim="@android:anim/fade_out"
-            app:popUpTo="@id/authPasswordFragment"
-            app:popUpToInclusive="true" />
-    </fragment>
-
-    <fragment
         android:id="@+id/splashFragment"
         android:name="com.github.borz7zy.telegramm.ui.SplashFragment"
         android:label="fragment_splash"
         tools:layout="@layout/fragment_splash" >
 
-        <action
-            android:id="@+id/action_splashFragment_to_authPhoneFragment"
-            app:destination="@id/authPhoneFragment"
-            app:enterAnim="@android:anim/fade_in"
-            app:exitAnim="@android:anim/fade_out"
-            app:popEnterAnim="@anim/nav_pop_enter"
-            app:popExitAnim="@anim/nav_pop_exit"
-
-            app:popUpTo="@id/splashFragment"
-            app:popUpToInclusive="true" />
-
-        <action
-            android:id="@+id/action_splashFragment_to_authCodeFragment"
-            app:destination="@id/authCodeFragment"
-            app:enterAnim="@android:anim/fade_in"
-            app:exitAnim="@android:anim/fade_out"
-            app:popEnterAnim="@anim/nav_pop_enter"
-            app:popExitAnim="@anim/nav_pop_exit"
-
-            app:popUpTo="@id/splashFragment"
-            app:popUpToInclusive="true" />
-
-        <action
-            android:id="@+id/action_splashFragment_to_authPasswordFragment"
-            app:destination="@id/authPasswordFragment"
-            app:enterAnim="@android:anim/fade_in"
-            app:exitAnim="@android:anim/fade_out"
-            app:popEnterAnim="@anim/nav_pop_enter"
-            app:popExitAnim="@anim/nav_pop_exit"
-
-            app:popUpTo="@id/splashFragment"
-            app:popUpToInclusive="true" />
         <action
             android:id="@+id/frag_splash_to_main"
             app:destination="@id/mainFragment"
@@ -125,6 +18,11 @@
             app:exitAnim="@anim/nav_exit"
             app:popEnterAnim="@android:anim/fade_in"
             app:popExitAnim="@android:anim/fade_out"
+            app:popUpTo="@id/splashFragment"
+            app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/frag_splash_to_auth"
+            app:destination="@id/authFragment"
             app:popUpTo="@id/splashFragment"
             app:popUpToInclusive="true" />
 
@@ -179,4 +77,14 @@
         android:name="com.github.borz7zy.telegramm.ui.settings.SettingsFragment"
         android:label="fragment_settings"
         tools:layout="@layout/fragment_settings" />
+    <fragment
+        android:id="@+id/authFragment"
+        android:name="com.github.borz7zy.telegramm.ui.auth.AuthFragment"
+        android:label="AuthFragment" >
+        <action
+            android:id="@+id/frag_auth_to_main"
+            app:destination="@id/mainFragment"
+            app:popUpTo="@id/authFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
 </navigation>
