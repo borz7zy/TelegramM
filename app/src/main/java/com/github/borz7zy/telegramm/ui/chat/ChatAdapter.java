@@ -277,8 +277,6 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
 
         if (sticker.fileId == 0) return;
 
-        Context ctx = h.itemView.getContext();
-
         String cached = TdMediaRepository.get().getCachedPath(sticker.fileId);
 
         if (!TextUtils.isEmpty(cached)) {
@@ -290,26 +288,51 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
             return;
         }
 
+        String contentKey = "sticker_" + sticker.fileId;
+        Object currentKey = h.stickerView.getTag();
+        Object currentPlayerKey = h.stickerPlayerView.getTag();
+
+        if(Objects.equals(contentKey, currentKey) || Objects.equals(contentKey, currentPlayerKey)){
+            return;
+        }
+
+        h.stickerView.setTag(contentKey);
+        h.stickerPlayerView.setTag(contentKey);
+
         if(sticker.type != UiContent.StickerType.VIDEO_WEBM) {
             h.stickerView.setImageResource(R.drawable.bg_msg_bubble);
             h.stickerView.setVisibility(View.VISIBLE);
         }else{
             h.stickerPlayerView.setVisibility(View.VISIBLE);
         }
+        long requestId = REQUEST_ID_GEN.incrementAndGet();
+        h.mediaRequestId = requestId;
 
         WeakReference<ImageView> weak = new WeakReference<>(h.stickerView);
         WeakReference<PlayerView> weakPlayer = new WeakReference<>(h.stickerPlayerView);
 
-        TdMediaRepository.get().getPathOrRequest(sticker.fileId, path -> {
-            if (TextUtils.isEmpty(path)) return;
+        final long expectedId = requestId;
+        final String reqKey = contentKey;
+        final int reqFid = sticker.fileId;
+
+        TdMediaRepository.get().getPathOrRequest(reqFid, path -> {
+            if(h.mediaRequestId != expectedId){
+                return;
+            }
 
             if(sticker.type != UiContent.StickerType.VIDEO_WEBM){
                 ImageView iv = weak.get();
                 if (iv == null) return;
+                Object tag = iv.getTag();
+                if(!Objects.equals(tag, reqKey)) return;
+                if (TextUtils.isEmpty(path)) return;
                 iv.post(() -> renderSticker(iv, path, sticker.type));
             }else{
                 PlayerView pv = weakPlayer.get();
                 if(pv == null) return;
+                Object tag = pv.getTag();
+                if(!Objects.equals(tag, reqKey)) return;
+                if (TextUtils.isEmpty(path)) return;
                 pv.post(()->renderSticker(pv, path, sticker.type));
             }
         });
