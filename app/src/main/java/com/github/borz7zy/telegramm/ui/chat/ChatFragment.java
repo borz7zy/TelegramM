@@ -120,7 +120,8 @@ public class ChatFragment extends DialogFragment {
     private long pendingAnchorId = -1;
     private int pendingAnchorOffset = 0;
     private boolean isPaginationInProgress = false;
-    private boolean suppressAnchorRestore = false;
+    private boolean isUserAtBottom = true;
+    private boolean forceScrollToBottomNext = false;
 
     public static ChatFragment newInstance(long chatId, String title) {
         ChatFragment f = new ChatFragment();
@@ -292,7 +293,6 @@ public class ChatFragment extends DialogFragment {
             if (!topLoading.isVisible()) {
                 captureScrollAnchor();
             }
-            suppressAnchorRestore = true;
             viewModel.loadMore();
         });
 
@@ -305,11 +305,10 @@ public class ChatFragment extends DialogFragment {
         );
 
         adapter.addOnPagesUpdatedListener(() -> {
-            if (!suppressAnchorRestore && isPaginationInProgress) {
+            if (isPaginationInProgress) {
                 handlePaginationRestore();
                 isPaginationInProgress = false;
             }
-            suppressAnchorRestore = false;
             return Unit.INSTANCE;
         });
 
@@ -319,12 +318,24 @@ public class ChatFragment extends DialogFragment {
         rv.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                int lastVisible = lm.findLastCompletelyVisibleItemPosition();
+                int total = concat.getItemCount() - 1;
+
+                isUserAtBottom = (lastVisible >= total - 1);
+
                 if (!isPaginationInProgress && !topLoading.isVisible()) {
                     int firstVisible = lm.findFirstVisibleItemPosition();
-                    if (firstVisible != RecyclerView.NO_POSITION && firstVisible <= 2) {
+                    if (firstVisible != RecyclerView.NO_POSITION && firstVisible <= 3) {
                         captureScrollAnchor();
                         viewModel.loadMore();
                     }
+                }
+            }
+
+            @Override
+            public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+                if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
+                    forceScrollToBottomNext = false;
                 }
             }
         });
@@ -360,21 +371,17 @@ public class ChatFragment extends DialogFragment {
             if (event instanceof ChatViewModel.UiEvent.ScrollToBottom) {
                 if (adapter.getItemCount() == 0) return;
 
-                int lastVisible = lm.findLastCompletelyVisibleItemPosition();
-                int totalItems = adapter.getItemCount() - 1;
-                int realLastPosition = totalItems + (topLoading.isVisible() ? 1 : 0);
+                int realLastPosition = adapter.getItemCount() - 1 + (topLoading.isVisible() ? 1 : 0);
 
-                if (lastVisible >= realLastPosition) {
+                if (forceScrollToBottomNext) {
+                    forceScrollToBottomNext = false;
+                    rv.post(() -> rv.smoothScrollToPosition(realLastPosition));
                     return;
                 }
 
-                if (lastVisible >= realLastPosition - 1) {
-                    return;
+                if (isUserAtBottom) {
+                    rv.post(() -> rv.smoothScrollToPosition(realLastPosition));
                 }
-
-                rv.post(() -> {
-                    rv.smoothScrollToPosition(realLastPosition);
-                });
             }
             else if (event instanceof ChatViewModel.UiEvent.OpenUrl) {
                 String url = ((ChatViewModel.UiEvent.OpenUrl) event).url;
@@ -396,43 +403,36 @@ public class ChatFragment extends DialogFragment {
         int firstPos = lm.findFirstVisibleItemPosition();
         if (firstPos == RecyclerView.NO_POSITION) return;
 
-        boolean isLoaderVisible = topLoading.isVisible();
+        int adapterIndex = firstPos - (topLoading.isVisible() ? 1 : 0);
+        if (adapterIndex < 0) return;
 
-        int checkPos = (isLoaderVisible && firstPos == 0) ? 1 : firstPos;
-
-        View child = lm.findViewByPosition(checkPos);
-
-        int adapterIndex = checkPos - (isLoaderVisible ? 1 : 0);
-
-        if (child != null && adapterIndex >= 0 && adapterIndex < adapter.getItemCount()) {
-            List<MessageItem> items = adapter.snapshot().getItems();
-            if (adapterIndex < items.size()) {
-                MessageItem item = items.get(adapterIndex);
-                if (item != null) {
-                    pendingAnchorId = item.id;
-                    pendingAnchorOffset = child.getTop();
-                }
+        List<MessageItem> items = adapter.snapshot().getItems();
+        if (adapterIndex < items.size()) {
+            MessageItem item = items.get(adapterIndex);
+            if (item != null) {
+                pendingAnchorId = item.id;
+                View child = lm.findViewByPosition(firstPos);
+                pendingAnchorOffset = (child != null) ? child.getTop() : 0;
             }
         }
     }
 
     private void handlePaginationRestore() {
         if (pendingAnchorId == -1) return;
-        int newPosInAdapter = findAdapterPositionById(pendingAnchorId);
 
-        if (newPosInAdapter == -1) {
-            rv.scrollToPosition(0);
+        int currentFirst = lm.findFirstVisibleItemPosition();
+        if (currentFirst > 8) {
             pendingAnchorId = -1;
             return;
         }
 
-        int offsetHeader = topLoading.isVisible() ? 1 : 0;
-        int targetPosition = newPosInAdapter + offsetHeader;
-
-        if (isAtBottom()) {
+        int newPos = findAdapterPositionById(pendingAnchorId);
+        if (newPos == -1) {
             pendingAnchorId = -1;
             return;
         }
+
+        int targetPosition = newPos + (topLoading.isVisible() ? 1 : 0);
 
         lm.scrollToPositionWithOffset(targetPosition, pendingAnchorOffset);
         pendingAnchorId = -1;
@@ -451,10 +451,8 @@ public class ChatFragment extends DialogFragment {
 
     private int findAdapterPositionById(long id) {
         List<MessageItem> items = adapter.snapshot().getItems();
-        for (int i = 0; i < items.size(); ++i) {
-            if (items.get(i).id == id) {
-                return i;
-            }
+        for (int i = 0; i < items.size(); i++) {
+            if (items.get(i).id == id) return i;
         }
         return -1;
     }
@@ -628,6 +626,7 @@ public class ChatFragment extends DialogFragment {
     private void onSendClicked() {
         if (inputMode == InputMode.VOICE) finishAndSendVoice();
         else {
+            forceScrollToBottomNext = true;
             String text = et.getText().toString();
             viewModel.sendMessage(text);
             et.setText("");
@@ -725,6 +724,7 @@ public class ChatFragment extends DialogFragment {
                 convertWavToM4a(wav, m4a, 44100, 1, 64000);
                 wav.delete();
                 viewModel.sendVoice(m4a, durationSec, waveform);
+                forceScrollToBottomNext = true;
             } catch (Throwable t) {
                 t.printStackTrace();
             }

@@ -1,6 +1,7 @@
 package com.github.borz7zy.telegramm.ui.chat;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.net.Uri;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -29,6 +30,7 @@ import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.airbnb.lottie.LottieAnimationView;
+import com.airbnb.lottie.LottieDrawable;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.github.borz7zy.telegramm.R;
@@ -175,33 +177,21 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         if (m.ui instanceof UiContent.Text t) text = t.text;
         else if (m.ui instanceof UiContent.Media md) text = md.caption;
 
-        if (TextUtils.isEmpty(text)) {
-            h.text.setVisibility(View.GONE);
-        } else {
-            h.text.setVisibility(View.VISIBLE);
-            h.text.setText(text);
-        }
+        h.text.setVisibility(TextUtils.isEmpty(text) ? View.GONE : View.VISIBLE);
+        if (!TextUtils.isEmpty(text)) h.text.setText(text);
 
         h.time.setText(m.time);
 
         if (h.userName != null) {
-            if (!TextUtils.isEmpty(m.senderName) && !m.senderName.equals("null")) {
-                h.userName.setText(m.senderName);
-                h.userName.setVisibility(View.VISIBLE);
-            } else {
-                h.userName.setVisibility(View.GONE);
-            }
+            boolean hasName = !TextUtils.isEmpty(m.senderName) && !"null".equals(m.senderName);
+            h.userName.setVisibility(hasName ? View.VISIBLE : View.GONE);
+            if (hasName) h.userName.setText(m.senderName);
         }
-
         if (h.groupChatUserTag != null) {
-            if (!TextUtils.isEmpty(m.gcTag) && !m.gcTag.equals("null")) {
-                h.groupChatUserTag.setText(m.gcTag);
-                h.groupChatUserTag.setVisibility(View.VISIBLE);
-            } else {
-                h.groupChatUserTag.setVisibility(View.GONE);
-            }
+            boolean hasTag = !TextUtils.isEmpty(m.gcTag) && !"null".equals(m.gcTag);
+            h.groupChatUserTag.setVisibility(hasTag ? View.VISIBLE : View.GONE);
+            if (hasTag) h.groupChatUserTag.setText(m.gcTag);
         }
-
         if (m.ui instanceof UiContent.Sticker sticker) {
             bindSticker(h, sticker);
             return;
@@ -266,84 +256,69 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         }
     }
 
+    @Override
+    public void onViewDetachedFromWindow(@NonNull RecyclerView.ViewHolder holder) {
+        super.onViewDetachedFromWindow(holder);
+        if (holder instanceof VH h && h.player != null) {
+            h.player.pause();
+        }
+    }
+
     @UnstableApi
     private void bindSticker(VH h, UiContent.Sticker sticker) {
-
-        if(sticker.type != UiContent.StickerType.VIDEO_WEBM) {
-            h.stickerView.setVisibility(View.GONE);
-        }else{
-            h.stickerPlayerView.setVisibility(View.GONE);
-        }
-
         if (sticker.fileId == 0) return;
 
         String cached = TdMediaRepository.get().getCachedPath(sticker.fileId);
-
         if (!TextUtils.isEmpty(cached)) {
-            if(sticker.type != UiContent.StickerType.VIDEO_WEBM) {
+            if (sticker.type != UiContent.StickerType.VIDEO_WEBM) {
                 renderSticker(h.stickerView, cached, sticker.type);
-            }else{
+            } else {
                 renderSticker(h.stickerPlayerView, cached, sticker.type);
             }
             return;
         }
 
         String contentKey = "sticker_" + sticker.fileId;
-        Object currentKey = h.stickerView.getTag();
-        Object currentPlayerKey = h.stickerPlayerView.getTag();
-
-        if(Objects.equals(contentKey, currentKey) || Objects.equals(contentKey, currentPlayerKey)){
+        if (Objects.equals(contentKey, h.stickerView.getTag()) ||
+                Objects.equals(contentKey, h.stickerPlayerView.getTag())) {
             return;
         }
 
         h.stickerView.setTag(contentKey);
         h.stickerPlayerView.setTag(contentKey);
 
-        if(sticker.type != UiContent.StickerType.VIDEO_WEBM) {
+        if (sticker.type != UiContent.StickerType.VIDEO_WEBM) {
             h.stickerView.setImageResource(R.drawable.bg_msg_bubble);
             h.stickerView.setVisibility(View.VISIBLE);
-        }else{
+        } else {
             h.stickerPlayerView.setVisibility(View.VISIBLE);
         }
+
         long requestId = REQUEST_ID_GEN.incrementAndGet();
         h.mediaRequestId = requestId;
 
-        WeakReference<ImageView> weak = new WeakReference<>(h.stickerView);
+        WeakReference<ImageView> weakImg = new WeakReference<>(h.stickerView);
         WeakReference<PlayerView> weakPlayer = new WeakReference<>(h.stickerPlayerView);
 
-        final long expectedId = requestId;
-        final String reqKey = contentKey;
-        final int reqFid = sticker.fileId;
+        TdMediaRepository.get().getPathOrRequest(sticker.fileId, path -> {
+            if (h.mediaRequestId != requestId) return;
 
-        TdMediaRepository.get().getPathOrRequest(reqFid, path -> {
-            if(h.mediaRequestId != expectedId){
-                return;
-            }
-
-            if(sticker.type != UiContent.StickerType.VIDEO_WEBM){
-                ImageView iv = weak.get();
-                if (iv == null) return;
-                Object tag = iv.getTag();
-                if(!Objects.equals(tag, reqKey)) return;
-                if (TextUtils.isEmpty(path)) return;
+            if (sticker.type != UiContent.StickerType.VIDEO_WEBM) {
+                ImageView iv = weakImg.get();
+                if (iv == null || !Objects.equals(iv.getTag(), contentKey) || TextUtils.isEmpty(path)) return;
                 iv.post(() -> {
-                    ViewGroup.LayoutParams layoutParams = iv.getLayoutParams();
-                    layoutParams.width = sticker.width;
-                    layoutParams.height = sticker.height;
-                    iv.setLayoutParams(layoutParams);
+                    iv.getLayoutParams().width = sticker.width;
+                    iv.getLayoutParams().height = sticker.height;
+                    iv.setLayoutParams(iv.getLayoutParams());
                     renderSticker(iv, path, sticker.type);
                 });
-            }else{
+            } else {
                 PlayerView pv = weakPlayer.get();
-                if(pv == null) return;
-                Object tag = pv.getTag();
-                if(!Objects.equals(tag, reqKey)) return;
-                if (TextUtils.isEmpty(path)) return;
-                pv.post(()-> {
-                    ViewGroup.LayoutParams layoutParams = pv.getLayoutParams();
-                    layoutParams.width = sticker.width;
-                    layoutParams.height = sticker.height;
-                    pv.setLayoutParams(layoutParams);
+                if (pv == null || !Objects.equals(pv.getTag(), contentKey) || TextUtils.isEmpty(path)) return;
+                pv.post(() -> {
+                    pv.getLayoutParams().width = sticker.width;
+                    pv.getLayoutParams().height = sticker.height;
+                    pv.setLayoutParams(pv.getLayoutParams());
                     renderSticker(pv, path, sticker.type);
                 });
             }
@@ -351,46 +326,23 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
     }
 
     @UnstableApi
-    private void renderSticker(Object obj, String path, UiContent.Sticker.StickerType type) {
-
+    private void renderSticker(Object obj, String path, UiContent.StickerType type) {
         if (type == UiContent.StickerType.STATIC) {
-            ImageView iv = (ImageView)obj;
+            ImageView iv = (ImageView) obj;
             iv.setVisibility(View.VISIBLE);
-
-            Glide.with(iv)
-                    .load(path)
-                    .dontAnimate()
-                    .into(iv);
-
-            return;
+            Glide.with(iv).load(path).dontAnimate().into(iv);
+        } else if (type == UiContent.StickerType.ANIMATED_TGS) {
+            if (!(obj instanceof LottieAnimationView)) return;
+            LottieAnimationView lav = (LottieAnimationView) obj;
+            lav.setVisibility(View.VISIBLE);
+            lav.setAnimation(new File(path).getAbsolutePath());
+            lav.setRepeatCount(LottieDrawable.INFINITE);
+            lav.playAnimation();
+        } else if (type == UiContent.StickerType.VIDEO_WEBM) {
+            PlayerView pv = (PlayerView) obj;
+            pv.setVisibility(View.VISIBLE);
+            renderVideoSticker(pv, path);
         }
-
-        if (type == UiContent.StickerType.ANIMATED_TGS) {
-            ImageView iv = (ImageView)obj;
-            iv.setVisibility(View.VISIBLE);
-            renderLottieSticker(iv, path);
-            return;
-        }
-
-        if (type == UiContent.StickerType.VIDEO_WEBM) {
-            PlayerView iv = (PlayerView)obj;
-            iv.setVisibility(View.VISIBLE);
-            renderVideoSticker(iv, path);
-        }
-    }
-
-    private void renderLottieSticker(ImageView iv, String path) {
-
-        if (!(iv instanceof LottieAnimationView)) {
-            return;
-        }
-
-        LottieAnimationView lav =
-                (com.airbnb.lottie.LottieAnimationView) iv;
-
-        lav.setAnimation(new File(path).getAbsolutePath());
-        lav.setRepeatCount(com.airbnb.lottie.LottieDrawable.INFINITE);
-        lav.playAnimation();
     }
 
     @UnstableApi
@@ -399,9 +351,7 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         if (h == null) return;
 
         if (h.player != null && TextUtils.equals(path, h.currentVideoPath)) {
-            if (!h.player.getPlayWhenReady()) {
-                h.player.setPlayWhenReady(true);
-            }
+            if (!h.player.getPlayWhenReady()) h.player.setPlayWhenReady(true);
             return;
         }
 
@@ -412,61 +362,37 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         h.currentVideoPath = path;
 
         view.setUseController(false);
-        view.setShutterBackgroundColor(android.graphics.Color.TRANSPARENT);
+        view.setShutterBackgroundColor(Color.TRANSPARENT);
         view.setKeepContentOnPlayerReset(true);
         view.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
         view.setClickable(false);
         view.setFocusable(false);
 
-        Context context = view.getContext();
+        Context ctx = view.getContext();
 
         DefaultLoadControl loadControl = new DefaultLoadControl.Builder()
-                .setBufferDurationsMs(
-                        10000,
-                        50000,
-                        1000,
-                        1000
-                ).build();
-
-        ExoPlayer player = new ExoPlayer.Builder(context)
-                .setLoadControl(loadControl)
+                .setBufferDurationsMs(10000, 50000, 1000, 1000)
                 .build();
+
+        ExoPlayer player = new ExoPlayer.Builder(ctx).setLoadControl(loadControl).build();
         h.player = player;
 
         player.setTrackSelectionParameters(
-                player.getTrackSelectionParameters()
-                        .buildUpon()
+                player.getTrackSelectionParameters().buildUpon()
                         .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, true)
                         .build()
         );
         player.setVolume(0f);
 
-        MediaSource fileSource =
-                new ProgressiveMediaSource.Factory(
-                        new DefaultDataSource.Factory(context)
-                ).createMediaSource(MediaItem.fromUri(Uri.fromFile(new File(path))));
+        MediaSource source = new ProgressiveMediaSource.Factory(new DefaultDataSource.Factory(ctx))
+                .createMediaSource(MediaItem.fromUri(Uri.fromFile(new File(path))));
 
-        LoopingMediaSource loopingSource =
-                new LoopingMediaSource(fileSource);
-
-        player.setMediaSource(loopingSource);
-
+        player.setMediaSource(new LoopingMediaSource(source));
         player.setRepeatMode(Player.REPEAT_MODE_OFF);
-
         player.prepare();
         player.setPlayWhenReady(true);
 
         view.setPlayer(player);
-    }
-
-    @Override
-    public void onViewDetachedFromWindow(@NonNull RecyclerView.ViewHolder holder) {
-        super.onViewDetachedFromWindow(holder);
-        if (holder instanceof VH h) {
-            if (h.player != null) {
-                h.player.pause();
-            }
-        }
     }
 
     private void bindButtons(VH h, MessageItem item) {
@@ -571,181 +497,6 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         notifyDataSetChanged(); // TODO: optimize
     }
 
-    private void bindGiftSticker(ImageView iv, SystemMessages.PremiumGift pg) {
-        Glide.with(iv).clear(iv);
-        iv.setImageResource(R.drawable.bg_badge);
-
-        if (!TextUtils.isEmpty(pg.stickerPath)) {
-            Glide.with(iv)
-                    .load(pg.stickerPath)
-                    .placeholder(R.drawable.bg_badge)
-                    .error(R.drawable.bg_badge)
-                    .into(iv);
-            return;
-        }
-
-        int fid = pg.stickerFileId;
-        if (fid == 0) return;
-
-        iv.setTag(fid);
-
-        WeakReference<ImageView> weakIv = new WeakReference<>(iv);
-
-        TdMediaRepository.get().getPathOrRequest(fid, path -> {
-            ImageView view = weakIv.get();
-            if (view == null) return;
-
-            Object tag = view.getTag();
-            if (!(tag instanceof Integer) || ((Integer) tag) != fid) return;
-
-            if (TextUtils.isEmpty(path)) return;
-
-            view.post(() -> {
-                Glide.with(view)
-                        .load(path)
-                        .placeholder(R.drawable.bg_badge)
-                        .error(R.drawable.bg_badge)
-                        .into(view);
-            });
-        });
-    }
-
-    private void bindImages(VH h, JustifiedLayout layout, List<PhotoData> photos) {
-        if (photos == null || photos.isEmpty()) {
-            layout.setVisibility(View.GONE);
-            return;
-        }
-
-        layout.setVisibility(View.VISIBLE);
-
-        final int screenWidth = layout.getResources().getDisplayMetrics().widthPixels;
-        final int bubbleWidth = (int) (screenWidth * 0.80f);
-
-        ViewGroup.LayoutParams params = layout.getLayoutParams();
-        if (params.width != bubbleWidth) {
-            params.width = bubbleWidth;
-            layout.setLayoutParams(params);
-        }
-
-        final int photoCount = photos.size();
-
-        int targetHeight = (photoCount == 1) ? bubbleWidth : dp(layout, 120);
-        Object currentMode = layout.getTag(R.id.tag_layout_mode);
-
-        boolean needLayoutUpdate = (currentMode == null || !currentMode.equals(targetHeight));
-
-        if (needLayoutUpdate) {
-            layout.setTag(R.id.tag_layout_mode, targetHeight);
-
-            if (photoCount == 1) {
-                layout.setTargetRowHeightPx(bubbleWidth);
-                layout.setRowHeightBoundsPx(dp(layout, 100), dp(layout, 450));
-                layout.setJustifyLastRow(false);
-            } else {
-                layout.setTargetRowHeightPx(dp(layout, 120));
-                layout.setRowHeightBoundsPx(dp(layout, 80), dp(layout, 200));
-                layout.setJustifyLastRow(true);
-            }
-            layout.setSpacingPx(dp(layout,2));
-        }
-
-        while (layout.getChildCount() < MAX_PHOTO_POOL) {
-            ImageView iv = new ImageView(layout.getContext());
-            iv.setScaleType(ImageView.ScaleType.CENTER_CROP);
-            iv.setClipToOutline(true);
-            iv.setOutlineProvider(new RoundedOutlineProvider(dp(layout, 10)));
-            layout.addView(iv);
-        }
-
-        for (int i = 0; i < MAX_PHOTO_POOL; ++i) {
-            ImageView iv = (ImageView) layout.getChildAt(i);
-
-            if (i >= photoCount) {
-                Glide.with(iv).clear(iv);
-                iv.setImageDrawable(null);
-                iv.setTag(null);
-                iv.setVisibility(View.GONE);
-                continue;
-            }
-
-            if (iv.getVisibility() != View.VISIBLE) {
-                iv.setVisibility(View.VISIBLE);
-            }
-
-            PhotoData photo = photos.get(i);
-
-            JustifiedLayout.LayoutParams lp = (JustifiedLayout.LayoutParams) iv.getLayoutParams();
-            if (lp == null) {
-                lp = new JustifiedLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                lp.aspectRatio = photo.aspectRatio;
-                iv.setLayoutParams(lp);
-            } else if (Math.abs(lp.aspectRatio - photo.aspectRatio) > 0.001f) {
-                lp.aspectRatio = photo.aspectRatio;
-                iv.setLayoutParams(lp);
-            }
-
-            String contentKey = (photo.fileId != 0) ? "remote_" + photo.fileId : "local_" + photo.localPath;
-            Object currentKey = iv.getTag();
-
-            if (Objects.equals(contentKey, currentKey)) {
-                continue;
-            }
-
-            iv.setTag(contentKey);
-
-            String path = photo.localPath;
-            if (TextUtils.isEmpty(path) && photo.fileId != 0) {
-                path = TdMediaRepository.get().getCachedPath(photo.fileId);
-            }
-
-            if (!TextUtils.isEmpty(path)) {
-                loadGlideImage(iv, path);
-            } else if (photo.fileId != 0) {
-                iv.setImageResource(R.drawable.bg_msg_bubble);
-
-                long requestId = REQUEST_ID_GEN.incrementAndGet();
-                h.mediaRequestId = requestId;
-
-                WeakReference<ImageView> weakImg = new WeakReference<>(iv);
-
-                final long expectedId = requestId;
-                final String reqKey = contentKey;
-                final int reqFid = photo.fileId;
-
-                TdMediaRepository.get().getPathOrRequest(reqFid, pathh -> {
-
-                    if (h.mediaRequestId != expectedId) {
-                        return;
-                    }
-
-                    ImageView v = weakImg.get();
-                    if (v == null) return;
-
-                    Object tag = v.getTag();
-                    if (!Objects.equals(tag, reqKey)) return;
-
-                    if (TextUtils.isEmpty(pathh)) return;
-
-                    v.post(() -> {
-                        if (h.mediaRequestId != expectedId) return;
-                        loadGlideImage(v, pathh);
-                    });
-                });
-            }
-        }
-    }
-
-    private void loadGlideImage(ImageView iv, String path) {
-
-        Glide.with(iv)
-                .load(path)
-                .centerCrop()
-                .dontAnimate()
-                .placeholder(R.drawable.bg_msg_bubble)
-                .error(R.drawable.bg_msg_bubble)
-                .into(iv);
-    }
-
     private int dp(View v, int dp) {
         return (int) (dp * v.getResources().getDisplayMetrics().density);
     }
@@ -820,63 +571,43 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
             if (!TextUtils.equals(oldItem.senderName, newItem.senderName)) return false;
             if (!TextUtils.equals(oldItem.gcTag, newItem.gcTag)) return false;
             if (oldItem.senderAvatarFileId != newItem.senderAvatarFileId) return false;
-            if (!buttonsEqual(oldItem.ui, newItem.ui)) return false;
-            return true;
+            return buttonsEqual(oldItem.ui, newItem.ui);
         }
 
         @Override
         public Object getChangePayload(@NonNull MessageItem oldItem, @NonNull MessageItem newItem) {
             int mask = 0;
+            if (!Objects.equals(oldItem.ui, newItem.ui)) mask |= PAYLOAD_TEXT | PAYLOAD_BUTTONS;
+            if (!TextUtils.equals(oldItem.time, newItem.time)) mask |= PAYLOAD_TEXT;
+            if (!Objects.equals(oldItem.photos, newItem.photos)) mask |= PAYLOAD_MEDIA;
 
-            if (!Objects.equals(oldItem.ui, newItem.ui)) {
-                mask |= PAYLOAD_TEXT;
-                mask |= PAYLOAD_BUTTONS;
-            }
-
-            if (!TextUtils.equals(oldItem.time, newItem.time)) {
-                mask |= PAYLOAD_TEXT;
-            }
-
-            if (!Objects.equals(oldItem.photos, newItem.photos)) {
-                mask |= PAYLOAD_MEDIA;
-            }
-
-            boolean nameDiff = !TextUtils.equals(oldItem.senderName, newItem.senderName);
-            boolean tagDiff = !TextUtils.equals(oldItem.gcTag, newItem.gcTag);
-            boolean avaDiff = oldItem.senderAvatarFileId != newItem.senderAvatarFileId;
-
-            if (nameDiff || tagDiff || avaDiff) {
+            if (!TextUtils.equals(oldItem.senderName, newItem.senderName) ||
+                    !TextUtils.equals(oldItem.gcTag, newItem.gcTag) ||
+                    oldItem.senderAvatarFileId != newItem.senderAvatarFileId) {
                 mask |= PAYLOAD_USER_INFO;
             }
-
             return mask == 0 ? null : mask;
         }
 
         private static boolean buttonsEqual(UiContent a, UiContent b) {
             if (a == b) return true;
             if (a == null || b == null) return false;
-
             List<List<UiContent.UiButton>> aa = a.buttons;
             List<List<UiContent.UiButton>> bb = b.buttons;
-
-            if (aa == bb) return true;
             if (aa.size() != bb.size()) return false;
 
             for (int i = 0; i < aa.size(); ++i) {
                 List<UiContent.UiButton> ra = aa.get(i);
                 List<UiContent.UiButton> rb = bb.get(i);
                 if (ra.size() != rb.size()) return false;
-
                 for (int j = 0; j < ra.size(); ++j) {
                     UiContent.UiButton ba = ra.get(j);
                     UiContent.UiButton bb2 = rb.get(j);
-
-                    if (!TextUtils.equals(ba.text, bb2.text)) return false;
-                    if (!TextUtils.equals(ba.url, bb2.url)) return false;
-                    if (!Arrays.equals(ba.data, bb2.data)) return false;
+                    if (!TextUtils.equals(ba.text, bb2.text) ||
+                            !TextUtils.equals(ba.url, bb2.url) ||
+                            !Arrays.equals(ba.data, bb2.data)) return false;
                 }
             }
-
             return true;
         }
     };
@@ -884,15 +615,13 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
     private void bindIncomingAvatar(VH h, MessageItem m) {
         if (h.avatar == null) return;
 
-        int fid = getAvatarFileIdForSender(m);
-
-        if (fid == 0){
+        int fid = m.senderAvatarFileId;
+        if (fid == 0) {
             h.avatar.setImageResource(R.drawable.bg_badge);
             return;
         }
 
         final String tag = "msg:" + m.chatId + ":" + fid;
-
         if (tag.equals(h.avatar.getTag())) return;
 
         h.avatar.setTag(tag);
@@ -910,24 +639,143 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
             return;
         }
 
-        WeakReference<ImageView> weakAvatar = new WeakReference<>(h.avatar);
-
+        WeakReference<ImageView> weak = new WeakReference<>(h.avatar);
         TdMediaRepository.get().getPathOrRequest(fid, p -> {
-            ImageView iv = weakAvatar.get();
-            if (iv == null) return;
+            ImageView iv = weak.get();
+            if (iv == null || !tag.equals(iv.getTag()) || TextUtils.isEmpty(p)) return;
+            iv.post(() -> Glide.with(iv)
+                    .load(p)
+                    .apply(RequestOptions.circleCropTransform())
+                    .placeholder(R.drawable.bg_badge)
+                    .error(R.drawable.bg_badge)
+                    .into(iv));
+        });
+    }
 
-            Object cur = iv.getTag();
-            if (!(cur instanceof String) || !tag.equals(cur)) return;
-            if (TextUtils.isEmpty(p)) return;
+    private void bindImages(VH h, JustifiedLayout layout, List<PhotoData> photos) {
+        if (photos == null || photos.isEmpty()) {
+            layout.setVisibility(View.GONE);
+            return;
+        }
 
-            iv.post(() -> {
-                Glide.with(iv)
-                        .load(p)
-                        .apply(RequestOptions.circleCropTransform())
-                        .placeholder(R.drawable.bg_badge)
-                        .error(R.drawable.bg_badge)
-                        .into(iv);
-            });
+        layout.setVisibility(View.VISIBLE);
+
+        final int screenWidth = layout.getResources().getDisplayMetrics().widthPixels;
+        final int bubbleWidth = (int) (screenWidth * 0.80f);
+
+        ViewGroup.LayoutParams params = layout.getLayoutParams();
+        if (params.width != bubbleWidth) {
+            params.width = bubbleWidth;
+            layout.setLayoutParams(params);
+        }
+
+        final int count = photos.size();
+        int targetHeight = (count == 1) ? bubbleWidth : dp(layout, 120);
+
+        if (!Objects.equals(layout.getTag(R.id.tag_layout_mode), targetHeight)) {
+            layout.setTag(R.id.tag_layout_mode, targetHeight);
+
+            if (count == 1) {
+                layout.setTargetRowHeightPx(bubbleWidth);
+                layout.setRowHeightBoundsPx(dp(layout, 100), dp(layout, 450));
+                layout.setJustifyLastRow(false);
+            } else {
+                layout.setTargetRowHeightPx(dp(layout, 120));
+                layout.setRowHeightBoundsPx(dp(layout, 80), dp(layout, 200));
+                layout.setJustifyLastRow(true);
+            }
+            layout.setSpacingPx(dp(layout, 2));
+        }
+
+        while (layout.getChildCount() < MAX_PHOTO_POOL) {
+            ImageView iv = new ImageView(layout.getContext());
+            iv.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            iv.setClipToOutline(true);
+            iv.setOutlineProvider(new RoundedOutlineProvider(dp(layout, 10)));
+            layout.addView(iv);
+        }
+
+        for (int i = 0; i < MAX_PHOTO_POOL; ++i) {
+            ImageView iv = (ImageView) layout.getChildAt(i);
+            if (i >= count) {
+                Glide.with(iv).clear(iv);
+                iv.setImageDrawable(null);
+                iv.setTag(null);
+                iv.setVisibility(View.GONE);
+                continue;
+            }
+
+            iv.setVisibility(View.VISIBLE);
+            PhotoData photo = photos.get(i);
+
+            JustifiedLayout.LayoutParams lp = (JustifiedLayout.LayoutParams) iv.getLayoutParams();
+            if (lp == null || Math.abs(lp.aspectRatio - photo.aspectRatio) > 0.001f) {
+                if (lp == null) lp = new JustifiedLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                lp.aspectRatio = photo.aspectRatio;
+                iv.setLayoutParams(lp);
+            }
+
+            String contentKey = (photo.fileId != 0) ? "remote_" + photo.fileId : "local_" + photo.localPath;
+            if (Objects.equals(contentKey, iv.getTag())) continue;
+
+            iv.setTag(contentKey);
+
+            String path = photo.localPath;
+            if (TextUtils.isEmpty(path) && photo.fileId != 0) {
+                path = TdMediaRepository.get().getCachedPath(photo.fileId);
+            }
+
+            if (!TextUtils.isEmpty(path)) {
+                loadGlideImage(iv, path);
+            } else if (photo.fileId != 0) {
+                iv.setImageResource(R.drawable.bg_msg_bubble);
+
+                long reqId = REQUEST_ID_GEN.incrementAndGet();
+                h.mediaRequestId = reqId;
+
+                WeakReference<ImageView> weak = new WeakReference<>(iv);
+                final String reqKey = contentKey;
+
+                TdMediaRepository.get().getPathOrRequest(photo.fileId, p -> {
+                    if (h.mediaRequestId != reqId) return;
+                    ImageView v = weak.get();
+                    if (v == null || !Objects.equals(v.getTag(), reqKey) || TextUtils.isEmpty(p)) return;
+                    v.post(() -> loadGlideImage(v, p));
+                });
+            }
+        }
+    }
+
+    private void loadGlideImage(ImageView iv, String path) {
+
+        Glide.with(iv)
+                .load(path)
+                .centerCrop()
+                .dontAnimate()
+                .placeholder(R.drawable.bg_msg_bubble)
+                .error(R.drawable.bg_msg_bubble)
+                .into(iv);
+    }
+
+    private void bindGiftSticker(ImageView iv, SystemMessages.PremiumGift pg) {
+        Glide.with(iv).clear(iv);
+        iv.setImageResource(R.drawable.bg_badge);
+
+        if (!TextUtils.isEmpty(pg.stickerPath)) {
+            Glide.with(iv).load(pg.stickerPath).placeholder(R.drawable.bg_badge).error(R.drawable.bg_badge).into(iv);
+            return;
+        }
+
+        int fid = pg.stickerFileId;
+        if (fid == 0) return;
+
+        iv.setTag(fid);
+        WeakReference<ImageView> weak = new WeakReference<>(iv);
+
+        TdMediaRepository.get().getPathOrRequest(fid, path -> {
+            ImageView v = weak.get();
+            if (v == null || !(v.getTag() instanceof Integer) || ((Integer) v.getTag()) != fid || TextUtils.isEmpty(path)) return;
+            v.post(() -> Glide.with(v).load(path).placeholder(R.drawable.bg_badge).error(R.drawable.bg_badge).into(v));
         });
     }
 

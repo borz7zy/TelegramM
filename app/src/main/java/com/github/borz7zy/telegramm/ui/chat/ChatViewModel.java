@@ -221,11 +221,7 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
             TdApi.Message m = ((TdApi.UpdateNewMessage) object).message;
             if (m != null && m.chatId == chatId) {
                 processMessageAndPut(m);
-                if (m.isOutgoing) {
-                    scheduleUiUpdate(false, true);
-                } else {
-                    scheduleUiUpdate(false, false);
-                }
+                scheduleUiUpdate(false, true);
             }
         }
         else if (object instanceof TdApi.UpdateMessageSendSucceeded) {
