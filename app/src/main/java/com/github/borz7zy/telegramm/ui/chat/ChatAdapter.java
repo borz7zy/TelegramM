@@ -2,9 +2,7 @@ package com.github.borz7zy.telegramm.ui.chat;
 
 import android.content.Context;
 import android.net.Uri;
-import android.os.Handler;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,22 +14,14 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
-import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
 import androidx.media3.common.util.UnstableApi;
 import androidx.media3.datasource.DefaultDataSource;
 import androidx.media3.exoplayer.DefaultLoadControl;
-import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.ExoPlayer;
-import androidx.media3.exoplayer.Renderer;
-import androidx.media3.exoplayer.RenderersFactory;
-import androidx.media3.exoplayer.mediacodec.MediaCodecInfo;
-import androidx.media3.exoplayer.mediacodec.MediaCodecSelector;
-import androidx.media3.exoplayer.mediacodec.MediaCodecUtil;
 import androidx.media3.exoplayer.source.LoopingMediaSource;
 import androidx.media3.exoplayer.source.MediaSource;
 import androidx.media3.exoplayer.source.ProgressiveMediaSource;
-import androidx.media3.exoplayer.video.VideoRendererEventListener;
 import androidx.media3.ui.AspectRatioFrameLayout;
 import androidx.media3.ui.PlayerView;
 import androidx.paging.PagingDataAdapter;
@@ -51,10 +41,10 @@ import com.github.borz7zy.telegramm.utils.TdMediaRepository;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.ViewHolder> {
 
@@ -75,6 +65,8 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
 
     private Runnable loadMoreListener;
     private static final int LOAD_MORE_THRESHOLD = 8;
+
+    private static final AtomicLong REQUEST_ID_GEN = new AtomicLong();
 
     public interface OnBtnClickListener {
         void onBtnClick(MessageItem item, UiContent.UiButton btn);
@@ -177,6 +169,8 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
 
     @UnstableApi
     private void bindUserMessage(VH h, MessageItem m) {
+        resetMedia(h);
+
         String text = "";
         if (m.ui instanceof UiContent.Text t) text = t.text;
         else if (m.ui instanceof UiContent.Media md) text = md.caption;
@@ -213,9 +207,28 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
             return;
         }
 
-        bindImages(h.imageBoardTop, m.photos);
+        bindImages(h, h.imageBoardTop, m.photos);
         bindIncomingAvatar(h, m);
         bindButtons(h, m);
+    }
+
+    private void resetMedia(VH h) {
+        h.imageBoardTop.setVisibility(View.GONE);
+        h.imageBoardBottom.setVisibility(View.GONE);
+
+        h.stickerView.setVisibility(View.GONE);
+        Glide.with(h.stickerView).clear(h.stickerView);
+
+        h.stickerPlayerView.setVisibility(View.GONE);
+        h.stickerPlayerView.setPlayer(null);
+
+        h.mediaRequestId = REQUEST_ID_GEN.incrementAndGet();
+
+        if (h.player != null) {
+            h.player.release();
+            h.player = null;
+            h.currentVideoPath = null;
+        }
     }
 
     @Override
@@ -411,6 +424,16 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         view.setPlayer(player);
     }
 
+    @Override
+    public void onViewDetachedFromWindow(@NonNull RecyclerView.ViewHolder holder) {
+        super.onViewDetachedFromWindow(holder);
+        if (holder instanceof VH h) {
+            if (h.player != null) {
+                h.player.pause();
+            }
+        }
+    }
+
     private void bindButtons(VH h, MessageItem item) {
         if (h.buttonsContainer == null) return;
 
@@ -494,7 +517,7 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         }
 
         if ((mask & PAYLOAD_MEDIA) != 0) {
-            bindImages(h.imageBoardTop, item.photos);
+            bindImages(h, h.imageBoardTop, item.photos);
         }
 
         if ((mask & PAYLOAD_STATUS) != 0) {
@@ -552,7 +575,7 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         });
     }
 
-    private void bindImages(JustifiedLayout layout, List<PhotoData> photos) {
+    private void bindImages(VH h, JustifiedLayout layout, List<PhotoData> photos) {
         if (photos == null || photos.isEmpty()) {
             layout.setVisibility(View.GONE);
             return;
@@ -603,10 +626,10 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
             ImageView iv = (ImageView) layout.getChildAt(i);
 
             if (i >= photoCount) {
-                if (iv.getVisibility() != View.GONE) {
-                    iv.setVisibility(View.GONE);
-                    Glide.with(iv).clear(iv);
-                }
+                Glide.with(iv).clear(iv);
+                iv.setImageDrawable(null);
+                iv.setTag(null);
+                iv.setVisibility(View.GONE);
                 continue;
             }
 
@@ -645,20 +668,33 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
             } else if (photo.fileId != 0) {
                 iv.setImageResource(R.drawable.bg_msg_bubble);
 
-                WeakReference<ImageView> weakImg = new WeakReference<>(iv);
-                final int reqFid = photo.fileId;
-                final String reqKey = contentKey;
+                long requestId = REQUEST_ID_GEN.incrementAndGet();
+                h.mediaRequestId = requestId;
 
-                TdMediaRepository.get().getPathOrRequest(reqFid, p -> {
+                WeakReference<ImageView> weakImg = new WeakReference<>(iv);
+
+                final long expectedId = requestId;
+                final String reqKey = contentKey;
+                final int reqFid = photo.fileId;
+
+                TdMediaRepository.get().getPathOrRequest(reqFid, pathh -> {
+
+                    if (h.mediaRequestId != expectedId) {
+                        return;
+                    }
+
                     ImageView v = weakImg.get();
                     if (v == null) return;
 
                     Object tag = v.getTag();
                     if (!Objects.equals(tag, reqKey)) return;
 
-                    if (TextUtils.isEmpty(p)) return;
+                    if (TextUtils.isEmpty(pathh)) return;
 
-                    v.post(() -> loadGlideImage(v, p));
+                    v.post(() -> {
+                        if (h.mediaRequestId != expectedId) return;
+                        loadGlideImage(v, pathh);
+                    });
                 });
             }
         }
@@ -670,7 +706,6 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
                 .load(path)
                 .centerCrop()
                 .dontAnimate()
-                .override(iv.getWidth(), iv.getHeight())
                 .placeholder(R.drawable.bg_msg_bubble)
                 .error(R.drawable.bg_msg_bubble)
                 .into(iv);
@@ -693,6 +728,8 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         String currentVideoPath;
         final ImageView avatar;
         final ViewGroup buttonsContainer;
+
+        long mediaRequestId = 0L;
 
         VH(@NonNull View itemView) {
             super(itemView);
