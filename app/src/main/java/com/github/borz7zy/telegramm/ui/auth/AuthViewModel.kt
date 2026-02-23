@@ -27,18 +27,22 @@ class AuthViewModel : ViewModel() {
     }
 
     private val _uiState = MutableStateFlow<UiState>(UiState.Loading)
-    val uiState: StateFlow<UiState> = _uiState
+    val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
     private val _events = MutableSharedFlow<Event>()
-    val events: SharedFlow<Event> = _events
+    val events: SharedFlow<Event> = _events.asSharedFlow()
 
     private var lastStableState: UiState = UiState.Phone
     private lateinit var session: AccountSession
 
     init {
         viewModelScope.launch {
-            session = resolveSession()
-            observeAuthState()
+            try{
+                session = resolveSession()
+                observeAuthState()
+            }catch (e: Exception){
+                _events.emit(Event.ShowError("Failed to init session: ${e.message}"))
+            }
         }
     }
 
@@ -67,7 +71,7 @@ class AuthViewModel : ViewModel() {
                     is TdApi.AuthorizationStateReady ->
                         _events.emit(Event.NavigateToMain)
 
-                    else -> Unit
+                    else -> {}
                 }
             }
     }

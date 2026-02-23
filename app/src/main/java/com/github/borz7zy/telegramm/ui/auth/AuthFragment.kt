@@ -99,9 +99,17 @@ class AuthFragment : BaseTelegramFragment() {
     }
 
     private fun render(state: AuthViewModel.UiState) {
+        val isLoading = state is AuthViewModel.UiState.Loading
+
         binding.progressBar.isVisible =
             state is AuthViewModel.UiState.Loading
         binding.mainBtn.isEnabled =
+            state !is AuthViewModel.UiState.Loading
+        binding.mainBtn.isVisible =
+            state !is AuthViewModel.UiState.Loading
+        binding.titleText.isVisible =
+            state !is AuthViewModel.UiState.Loading
+        binding.authIcon.isVisible =
             state !is AuthViewModel.UiState.Loading
 
         binding.phoneInputLayout.isVisible =
@@ -110,6 +118,8 @@ class AuthFragment : BaseTelegramFragment() {
             state is AuthViewModel.UiState.Code
         binding.passwordInputLayout.isVisible =
             state is AuthViewModel.UiState.Password
+
+        if (isLoading) return
 
         when (state) {
 
