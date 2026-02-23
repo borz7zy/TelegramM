@@ -19,6 +19,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
+import androidx.recyclerview.widget.AsyncListDiffer;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -38,6 +39,7 @@ import java.util.Objects;
 public class DialogsAdapter extends RecyclerView.Adapter<DialogsAdapter.VH> {
 
     private ThemeEngine.Theme theme;
+    private final AsyncListDiffer<DialogItem> differ;
 
     public interface OnDialogClickListener {
         void onDialogClick(DialogItem item);
@@ -70,86 +72,98 @@ public class DialogsAdapter extends RecyclerView.Adapter<DialogsAdapter.VH> {
         this.theme = theme;
         notifyDataSetChanged(); // TODO: optimize
     }
-
-    private final ArrayList<DialogItem> items = new ArrayList<>();
-
     public DialogItem getItem(int position){
-        return items.get(position);
+        return differ.getCurrentList().get(position);
     }
 
     @Override
     public long getItemId(int position) {
-        return items.get(position).chatId;
+        return differ.getCurrentList().get(position).chatId;
     }
 
     @Override
     public int getItemCount(){
-        return items.size();
+        return differ.getCurrentList().size();
     }
 
     public DialogsAdapter(){
+        DiffUtil.ItemCallback<DialogItem> diffCallback =
+                new DiffUtil.ItemCallback<DialogItem>() {
+
+                    @Override
+                    public boolean areItemsTheSame(@NonNull DialogItem oldItem,
+                                                   @NonNull DialogItem newItem) {
+                        return oldItem.chatId == newItem.chatId;
+                    }
+
+                    @Override
+                    public boolean areContentsTheSame(@NonNull DialogItem oldItem,
+                                                      @NonNull DialogItem newItem) {
+
+                        return oldItem.order == newItem.order
+                                && oldItem.isPinned == newItem.isPinned
+                                && TextUtils.equals(oldItem.name, newItem.name)
+                                && TextUtils.equals(oldItem.text, newItem.text)
+                                && TextUtils.equals(oldItem.time, newItem.time)
+                                && oldItem.unread == newItem.unread
+                                && oldItem.isTyping == newItem.isTyping
+                                && oldItem.avatarFileId == newItem.avatarFileId
+                                && TextUtils.equals(oldItem.avatarPath, newItem.avatarPath)
+                                && oldItem.isForum == newItem.isForum
+                                && oldItem.isExpanded == newItem.isExpanded
+                                && Objects.equals(oldItem.topics, newItem.topics);
+                    }
+
+                    @Override
+                    public Object getChangePayload(@NonNull DialogItem oldItem,
+                                                   @NonNull DialogItem newItem) {
+
+                        // TODO: implement granular payload
+                        return null;
+                    }
+                };
+
+        differ = new AsyncListDiffer<>(this, diffCallback);
         setHasStableIds(true);
     }
 
-    // DiffUtil
-    public void submitList(List<DialogItem> newList){
-        final ArrayList<DialogItem> old = new ArrayList<>(items);
-
-        DiffUtil.DiffResult diff = DiffUtil.calculateDiff(new DiffUtil.Callback(){
-            @Override
-            public int getOldListSize(){
-                return old.size();
-            }
-
-            @Override
-            public int getNewListSize(){
-                return newList.size();
-            }
-
-            @Override
-            public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
-                return old.get(oldItemPosition).chatId == newList.get(newItemPosition).chatId;
-            }
-
-            @Override
-            public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
-                DialogItem a = old.get(oldItemPosition), b = newList.get(newItemPosition);
-                return a.order == b.order
-                        && a.isPinned == b.isPinned
-                        && TextUtils.equals(a.name, b.name)
-                        && TextUtils.equals(a.text, b.text)
-                        && TextUtils.equals(a.time, b.time)
-                        && a.unread == b.unread
-                        && a.isTyping == b.isTyping
-                        && a.avatarFileId == b.avatarFileId
-                        && TextUtils.equals(a.avatarPath, b.avatarPath)
-                        && a.isForum == b.isForum
-                        && a.isExpanded == b.isExpanded
-                        && (Objects.equals(a.topics, b.topics) || (a.topics != null && a.topics.equals(b.topics)));
-            }
-        });
-
-        items.clear();
-        items.addAll(newList);
-        diff.dispatchUpdatesTo(this);
+    public void submitList(List<DialogItem> newList) {
+        differ.submitList(newList);
     }
 
-    public boolean movePinned(int from, int to){
-        if (from < 0 || to < 0 || from >= items.size() || to >= items.size()) return false;
-        if (!items.get(from).isPinned || !items.get(to).isPinned) return false;
+    public boolean movePinned(int from, int to) {
 
-        DialogItem moved = items.remove(from);
-        items.add(to, moved);
-        notifyItemMoved(from, to);
+        List<DialogItem> current = differ.getCurrentList();
+
+        if (from < 0 || to < 0 || from >= current.size() || to >= current.size())
+            return false;
+
+        if (!current.get(from).isPinned || !current.get(to).isPinned)
+            return false;
+
+        ArrayList<DialogItem> newList = new ArrayList<>(current);
+
+        DialogItem moved = newList.remove(from);
+        newList.add(to, moved);
+
+        differ.submitList(newList);
+
         return true;
     }
 
     public ArrayList<Long> getPinnedIdsInUiOrder() {
+
         ArrayList<Long> res = new ArrayList<>();
-        for (DialogItem it : items) {
-            if (it.isPinned) res.add(it.chatId);
-            else break;
+
+        List<DialogItem> current = differ.getCurrentList();
+
+        for (DialogItem it : current) {
+            if (it.isPinned)
+                res.add(it.chatId);
+            else
+                break;
         }
+
         return res;
     }
 
@@ -163,7 +177,7 @@ public class DialogsAdapter extends RecyclerView.Adapter<DialogsAdapter.VH> {
     @SuppressLint("ResourceAsColor")
     @Override
     public void onBindViewHolder(@NonNull VH h, int position) {
-        DialogItem item = getItem(position);
+        DialogItem item = differ.getCurrentList().get(position);
 
         h.itemView.setOnClickListener(v -> {
             if (clickListener != null) clickListener.onDialogClick(item);
