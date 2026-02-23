@@ -101,6 +101,11 @@ class AuthFragment : BaseTelegramFragment() {
     private fun render(state: AuthViewModel.UiState) {
         val isLoading = state is AuthViewModel.UiState.Loading
 
+        binding.rootContainer.animate()
+            .alpha(if (isLoading) 0f else 1f)
+            .setDuration(150)
+            .start()
+
         binding.progressBar.isVisible =
             state is AuthViewModel.UiState.Loading
         binding.mainBtn.isEnabled =
