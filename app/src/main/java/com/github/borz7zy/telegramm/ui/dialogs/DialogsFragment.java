@@ -55,6 +55,10 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
     private int currentBottom = 0;
     private MainViewModel viewModel;
 
+    private boolean isLoadingMore = false;
+    private boolean endReached = false;
+    private Runnable rebuildRunnable;
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_dialogs, container, false);
@@ -88,6 +92,23 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
         adapter = new DialogsAdapter();
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);
+
+        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView rv, int dx, int dy) {
+                if (dy <= 0) return;
+
+                LinearLayoutManager lm = (LinearLayoutManager) rv.getLayoutManager();
+                if (lm == null) return;
+
+                int total = lm.getItemCount();
+                int lastVisible = lm.findLastVisibleItemPosition();
+
+                if (!isLoadingMore && !endReached && total > 0 && lastVisible >= total - 4) {
+                    loadMoreChats();
+                }
+            }
+        });
 
         adapter.setOnDialogClickListener(item -> {
             ChatFragment.newInstance(item.chatId, item.name)
@@ -271,26 +292,27 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
 
             if (currentSession != null) {
                 currentSession.addUpdateHandler(this);
-                loadChats();
+
+                loadMoreChats();
             }
         });
     }
 
-    private void loadChats() {
-        currentSession.send(new TdApi.LoadChats(new TdApi.ChatListMain(), 100), object -> {
-            fetchChats();
-        });
-    }
+    private void loadMoreChats() {
+        if (currentSession == null || isLoadingMore || endReached) return;
 
-    private void fetchChats() {
-        currentSession.send(new TdApi.GetChats(new TdApi.ChatListMain(), 100), object -> {
-            if (object instanceof TdApi.Chats) {
-                long[] ids = ((TdApi.Chats) object).chatIds;
-                for (long id : ids) {
-                    currentSession.send(new TdApi.GetChat(id), this);
-                }
-            }
-        });
+        isLoadingMore = true;
+
+        currentSession.send(
+                new TdApi.LoadChats(new TdApi.ChatListMain(), 5),
+                object -> mainHandler.post(() -> {
+                    isLoadingMore = false;
+
+                    if (object instanceof TdApi.Error) {
+                        return;
+                    }
+                })
+        );
     }
 
     private void updateRecyclerPadding() {
@@ -365,7 +387,12 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
             return;
         }
 
-        mainHandler.post(() -> {
+        if (rebuildRunnable != null) {
+            mainHandler.removeCallbacks(rebuildRunnable);
+        }
+
+        rebuildRunnable = () -> {
+
             ArrayList<DialogItem> list = new ArrayList<>(dialogs.values());
 
             final Map<Long, Integer> pinnedIndex = new HashMap<>();
@@ -387,11 +414,14 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
                         return Integer.compare(ia, ib);
                     }
                 }
+
                 return Long.compare(b.order, a.order);
             });
 
             adapter.submitList(list);
-        });
+        };
+
+        mainHandler.postDelayed(rebuildRunnable, 100);
     }
 
     private void updatePinnedOrderOnServer(ArrayList<Long> pinnedIds) {
