@@ -6,8 +6,12 @@ import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import com.github.borz7zy.telegramm.AppManager
 import com.github.borz7zy.telegramm.R
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import org.drinkless.tdlib.Client
 import org.drinkless.tdlib.Client.ResultHandler
 import org.drinkless.tdlib.TdApi
@@ -19,10 +23,19 @@ import org.drinkless.tdlib.TdApi.SetTdlibParameters
 import org.drinkless.tdlib.TdApi.UpdateAuthorizationState
 import java.io.File
 import java.util.Locale
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
 class AccountSession(private val context: Context, private val account: AccountEntity) {
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    @Volatile
     private var client: Client? = null
+    @OptIn(ExperimentalAtomicApi::class)
+    private val isInitializing = AtomicBoolean(false)
+    private val pendingActions = ConcurrentLinkedQueue<() -> Unit>()
+
     private var tdlibParametersSent = false
     private var meRequested = false
 
@@ -35,24 +48,38 @@ class AccountSession(private val context: Context, private val account: AccountE
             return _authStateFlow
         }
 
-    val authStateLiveData =
-        MutableLiveData<AuthorizationState>()
+    val authStateLiveData = MutableLiveData<AuthorizationState>()
 
     private val updateHandlers = CopyOnWriteArrayList<ResultHandler>()
 
-    @Synchronized
+    @OptIn(ExperimentalAtomicApi::class)
     private fun ensureClient() {
         if (client != null) return
 
-        client = Client.create(
-            { update -> onUpdate(update) },
-            null,
-            null
-        )
+        if (isInitializing.get()) return
 
-        client!!.send(
-            GetAuthorizationState()
-        ) { update -> onUpdate(update) }
+        if (isInitializing.compareAndSet(false, true)) {
+            scope.launch {
+                try {
+                    val newClient = Client.create(
+                        { update -> onUpdate(update) },
+                        null,
+                        null
+                    )
+
+                    newClient.send(GetAuthorizationState()) { update -> onUpdate(update) }
+
+                    client = newClient
+
+                    while (!pendingActions.isEmpty()) {
+                        pendingActions.poll()?.invoke()
+                    }
+                } catch (e: Exception) {
+                    Log.e("AccountSession", "Error init TdLib: ${e.message}")
+                    isInitializing.set(false)
+                }
+            }
+        }
     }
 
     private fun emitAuthState(state: AuthorizationState?) {
@@ -90,11 +117,22 @@ class AccountSession(private val context: Context, private val account: AccountE
     }
 
     fun send(function: TdApi.Function<*>) {
-        ensureClient()
-        client!!.send(function) { result ->
-            if (result is TdApi.Error) {
-                Log.e("AccountSession", result.message)
+        val currentClient = client
+        if (currentClient != null) {
+            currentClient.send(function) { result ->
+                if (result is TdApi.Error) {
+                    Log.e("AccountSession", "Error: ${result.message}")
+                }
             }
+        } else {
+            pendingActions.add {
+                client?.send(function) { result ->
+                    if (result is TdApi.Error) {
+                        Log.e("AccountSession", "Error: ${result.message}")
+                    }
+                }
+            }
+            ensureClient()
         }
     }
 
@@ -102,16 +140,31 @@ class AccountSession(private val context: Context, private val account: AccountE
         function: TdApi.Function<*>,
         handler: ResultHandler?
     ) {
-        ensureClient()
-        client!!.send(function, handler)
+        val currentClient = client
+        if (currentClient != null) {
+            currentClient.send(function, handler)
+        } else {
+            pendingActions.add {
+                client?.send(function, handler)
+            }
+            ensureClient()
+        }
     }
+
 
     fun sendAwait(
         function: TdApi.Function<*>?,
         handler: ResultHandler?
     ) {
-        ensureClient()
-        client!!.send(function, handler)
+        val currentClient = client
+        if (currentClient != null) {
+            currentClient.send(function, handler)
+        } else {
+            pendingActions.add {
+                client?.send(function, handler)
+            }
+            ensureClient()
+        }
     }
 
     private fun loadMeOnce() {
@@ -199,8 +252,8 @@ class AccountSession(private val context: Context, private val account: AccountE
         updateHandlers.remove(handler)
     }
 
-    fun getClient(): Client {
+    fun getClient(): Client? {
         ensureClient()
-        return client!!
+        return client
     }
 }
