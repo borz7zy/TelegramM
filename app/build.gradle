@@ -39,11 +39,23 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
-
+    signingConfigs {
+        defaultSignKey {
+            storeFile file("../keystore/public.keystore")
+            storePassword "123456"
+            keyAlias "tgm-public-key"
+            keyPassword "123456"
+        }
+    }
     buildTypes {
         release {
             minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig = signingConfigs.getByName("defaultSignKey")
+        }
+        debug {
+            signingConfig = signingConfigs.getByName("defaultSignKey")
         }
     }
     compileOptions {
