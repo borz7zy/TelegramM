@@ -245,7 +245,10 @@ public class MainFragment extends Fragment {
             header.setPadding(0, bars.top, 0, header.getPaddingBottom());
             bottomNavView.setPadding(0, bottomNavView.getPaddingTop(), 0, bars.bottom);
 
-            return insets;
+            return new WindowInsetsCompat.Builder(insets)
+                    .setInsets(WindowInsetsCompat.Type.systemBars(),
+                            Insets.of(bars.left, bars.top, bars.right, 0))
+                    .build();
         });
     }
 
