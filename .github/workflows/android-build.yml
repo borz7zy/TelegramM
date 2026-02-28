@@ -32,28 +32,7 @@ jobs:
           if (-Not $env:API_ID) { Write-Error "API_ID secret not set"; exit 1 }
           if (-Not $env:API_HASH) { Write-Error "API_HASH secret not set"; exit 1 }
 
-          $sdkDir = $env:ANDROID_HOME
-
-          if (-Not $sdkDir) {
-            $sdkDir = $env:ANDROID_SDK_ROOT
-          }
-
-          if (-Not $sdkDir) {
-            $defaultPath = "$env:LOCALAPPDATA\Android\Sdk"
-            if (Test-Path $defaultPath) {
-              $sdkDir = $defaultPath
-            }
-          }
-
-          if (-Not $sdkDir) {
-            Write-Error "Android SDK not found. Set ANDROID_HOME on runner."
-            exit 1
-          }
-
-          Write-Host "Using SDK at: $sdkDir"
-
           @"
-          sdk.dir=$sdkDir
           api_id=$env:API_ID
           api_hash=$env:API_HASH
           "@ | Out-File -Encoding ascii local.properties
