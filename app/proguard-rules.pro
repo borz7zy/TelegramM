@@ -22,4 +22,5 @@
 
 # TDLib
 -keep class org.drinkless.tdlib.** { *; }
+-keep class org.drinkless.tdlib.TdApi$* { *; }
 -dontwarn org.drinkless.tdlib.**
