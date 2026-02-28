@@ -49,47 +49,47 @@ jobs:
           path: app/build/outputs/apk/**/release/*.apk
           if-no-files-found: warn
 
-      - name: Send Debug APK to Telegram Topic
-        shell: powershell
+  telegram:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo for git log
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download Debug Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: debug-apk
+          path: apk
+
+      - name: Send to Telegram
         env:
           TG_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TG_TOPIC_ID: ${{ secrets.TELEGRAM_TOPIC_ID }}
         run: |
-          if ("${{ github.event_name }}" -eq "push") {
-            $range = "${{ github.event.before }}..${{ github.sha }}"
-            $commitMessages = git log $range --pretty=format:"- %s"
-          } else {
-            $commitMessages = git log -n 10 --pretty=format:"- %s"
-          }
+          APK_PATH=$(find apk -name "*.apk" | head -n 1)
 
-          if (-not $commitMessages) {
-            $commitMessages = "- No commit messages found"
-          }
-
-          $branch = "${{ github.ref_name }}"
-          $caption = "New Android Build`n`nBranch: $branch`n`nCommits:`n$commitMessages"
-
-          if ($caption.Length -gt 1000) {
-            $caption = $caption.Substring(0, 1000) + "`n... (truncated)"
-          }
-
-          $apkPath = Get-ChildItem `
-            -Path "app/build/outputs/apk" `
-            -Filter "*.apk" `
-            -Recurse |
-            Where-Object { $_.FullName -match "\\debug\\" } |
-            Select-Object -ExpandProperty FullName -First 1
-
-          if (-Not $apkPath) {
-            Write-Error "APK file not found!"
+          if [ -z "$APK_PATH" ]; then
+            echo "APK not found"
             exit 1
-          }
+          fi
 
-          curl.exe -v `
-            -F "chat_id=$env:TG_CHAT_ID" `
-            -F "message_thread_id=$env:TG_TOPIC_ID" `
-            -F "document=@$apkPath" `
-            -F "caption=$caption" `
-            -F "parse_mode=Markdown" `
-            "https://api.telegram.org/bot$env:TG_TOKEN/sendDocument"
+          BRANCH="${GITHUB_REF_NAME}"
+          
+          COMMIT_MESSAGES=$(git log -n 10 --pretty=format:"- %s")
+
+          CAPTION="New Android Build from branch: *$BRANCH*. Commits:%0A$COMMIT_MESSAGES"
+          
+          if [ ${#CAPTION} -gt 1000 ]; then
+             CAPTION="${CAPTION:0:1000}... (truncated)"
+          fi
+          
+          curl -v -F "chat_id=$TG_CHAT_ID" \
+          -F "message_thread_id=$TG_TOPIC_ID" \
+          -F "document=@$APK_PATH" \
+          -F "caption=$CAPTION" \
+          "https://api.telegram.org/bot$TG_TOKEN/sendDocument"
