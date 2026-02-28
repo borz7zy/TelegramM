@@ -31,6 +31,8 @@ android {
                 localProps.getProperty("api_id", "")
         resValue "string", "api_hash",
                 localProps.getProperty("api_hash", "")
+        def testDc = localProps.getProperty("test_dc", "false").toBoolean()
+        resValue "bool", "test_dc", testDc.toString()
         resValue "string", "version_code",
                 gradleProps.getProperty("app.versionCode", "1")
         resValue "string", "version_name",

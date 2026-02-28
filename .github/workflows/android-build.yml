@@ -23,6 +23,27 @@ jobs:
           java-version: 17
           cache: gradle
 
+      - name: Generate local.properties
+        shell: powershell
+        env:
+          API_ID: ${{ secrets.API_ID }}
+          API_HASH: ${{ secrets.API_HASH }}
+        run: |
+          if (-Not $env:API_ID) { Write-Error "API_ID secret not set"; exit 1 }
+          if (-Not $env:API_HASH) { Write-Error "API_HASH secret not set"; exit 1 }
+
+          $sdkDir = $env:ANDROID_HOME
+          if (-Not $sdkDir) {
+            Write-Error "ANDROID_HOME not set on runner"
+            exit 1
+          }
+
+          @"
+          sdk.dir=$sdkDir
+          api_id=$env:API_ID
+          api_hash=$env:API_HASH
+          "@ | Out-File -Encoding utf8 local.properties
+
       - name: Check gradlew
         shell: powershell
         run: |

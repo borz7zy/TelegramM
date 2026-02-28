@@ -230,7 +230,7 @@ class AccountSession(private val context: Context, private val account: AccountE
         request.systemVersion = Build.VERSION.RELEASE
         request.applicationVersion = "1.0"
 
-        request.useTestDc = true
+        request.useTestDc = context.resources.getBoolean(R.bool.test_dc)
 
         client!!.send(request, ResultHandler { result: TdApi.Object? ->
             if (result is Ok) {
