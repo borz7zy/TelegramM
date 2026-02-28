@@ -82,6 +82,8 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
     private boolean pendingPagination = false;
     private boolean pendingScrollToBottom = false;
 
+    private volatile boolean isCleared = false;
+
     // --------------------
     // Getters
     // --------------------
@@ -637,7 +639,10 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
     // --------------------
 
     private void scheduleUiUpdate(boolean isPagination, boolean scrollToBottom) {
+        if (isCleared) return;
         synchronized (batchLock) {
+            if (isCleared) return;
+
             if (isPagination) pendingPagination = true;
             if (scrollToBottom && !isPagination) pendingScrollToBottom = true;
 
@@ -649,16 +654,21 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
     }
 
     private void performBufferedUpdate() {
+        if (isCleared) return;
+
         boolean doScroll;
         boolean doPagination;
 
         synchronized (batchLock) {
+            if (isCleared) return;
             doScroll = pendingScrollToBottom;
             doPagination = pendingPagination;
             pendingScrollToBottom = false;
             pendingPagination = false;
             updateScheduled = false;
         }
+
+        if (isCleared || updateExecutor.isShutdown()) return;
 
         updateExecutor.execute(()->{
             ArrayList<MessageItem> list = new ArrayList<>(byId.values());
@@ -680,6 +690,7 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
     @Override
     protected void onCleared() {
         super.onCleared();
+        isCleared = true;
         if (session != null) {
             session.removeUpdateHandler(this);
             session.send(new TdApi.CloseChat(chatId), null);
