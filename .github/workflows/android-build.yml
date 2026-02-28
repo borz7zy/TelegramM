@@ -1,0 +1,48 @@
+name: Android Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+
+      - name: Check gradlew
+        shell: powershell
+        run: |
+          if (-Not (Test-Path "gradlew.bat")) {
+            Write-Error "gradlew.bat not found!"
+            exit 1
+          }
+
+      - name: Build Debug and Release
+        shell: powershell
+        run: .\gradlew.bat clean assembleDebug assembleRelease
+
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-apk
+          path: app/build/outputs/apk/**/debug/*.apk
+          if-no-files-found: error
+
+      - name: Upload Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: app/build/outputs/apk/**/release/*.apk
+          if-no-files-found: warn
