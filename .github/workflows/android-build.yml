@@ -13,6 +13,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -46,3 +48,44 @@ jobs:
           name: release-apk
           path: app/build/outputs/apk/**/release/*.apk
           if-no-files-found: warn
+
+      - name: Send Debug APK to Telegram Topic
+        shell: powershell
+        env:
+          TG_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TG_TOPIC_ID: ${{ secrets.TELEGRAM_TOPIC_ID }}
+        run: |
+          if ("${{ github.event_name }}" -eq "push") {
+            $range = "${{ github.event.before }}..${{ github.sha }}"
+            $commitMessages = git log $range --pretty=format:"- %s"
+          } else {
+            $commitMessages = git log -n 10 --pretty=format:"- %s"
+          }
+
+          if (-not $commitMessages) {
+            $commitMessages = "- No commit messages found"
+          }
+
+          $branch = "${{ github.ref_name }}"
+          $caption = "New Android Build`n`nBranch: $branch`n`nCommits:`n$commitMessages"
+
+          if ($caption.Length -gt 1000) {
+            $caption = $caption.Substring(0, 1000) + "`n... (truncated)"
+          }
+
+          $apkPath = Get-ChildItem -Path "app/build/outputs/apk/**/debug/*.apk" -Recurse |
+            Select-Object -ExpandProperty FullName -First 1
+
+          if (-Not $apkPath) {
+            Write-Error "APK file not found!"
+            exit 1
+          }
+
+          curl.exe -v `
+            -F "chat_id=$env:TG_CHAT_ID" `
+            -F "message_thread_id=$env:TG_TOPIC_ID" `
+            -F "document=@$apkPath" `
+            -F "caption=$caption" `
+            -F "parse_mode=Markdown" `
+            "https://api.telegram.org/bot$env:TG_TOKEN/sendDocument"
