@@ -54,42 +54,66 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo for git log
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Download Debug Artifact
+      - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          name: debug-apk
           path: apk
 
-      - name: Send to Telegram
+      - name: Upload to Yandex Disk and get public link
+        id: yandex
+        env:
+          YD_TOKEN: ${{ secrets.YANDEX_TOKEN }}
+        run: |
+          set -e
+
+          SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-7)
+          BASE_PATH="TelegramM/$SHORT_SHA"
+
+          curl -X PUT -s -H "Authorization: OAuth $YD_TOKEN" \
+            "https://cloud-api.yandex.net/v1/disk/resources?path=TelegramM" || true
+
+          curl -X PUT -H "Authorization: OAuth $YD_TOKEN" \
+            "https://cloud-api.yandex.net/v1/disk/resources?path=$BASE_PATH"
+
+          for file in $(find apk -type f -name "*.apk"); do
+            FILE_NAME=$(basename "$file")
+          
+            echo "Uploading $FILE_NAME..."
+
+            UPLOAD_URL=$(curl -s -H "Authorization: OAuth $YD_TOKEN" \
+              "https://cloud-api.yandex.net/v1/disk/resources/upload?path=$BASE_PATH/$FILE_NAME&overwrite=true" \
+              | jq -r '.href')
+
+            curl -T "$file" "$UPLOAD_URL"
+          done
+
+          curl -X PUT -H "Authorization: OAuth $YD_TOKEN" \
+            "https://cloud-api.yandex.net/v1/disk/resources/publish?path=$BASE_PATH"
+
+          PUBLIC_URL=$(curl -s -H "Authorization: OAuth $YD_TOKEN" \
+            "https://cloud-api.yandex.net/v1/disk/resources?path=$BASE_PATH" \
+            | jq -r '.public_url')
+
+          echo "PUBLIC_URL=$PUBLIC_URL" >> $GITHUB_OUTPUT
+
+      - name: Send link to Telegram
         env:
           TG_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TG_TOPIC_ID: ${{ secrets.TELEGRAM_TOPIC_ID }}
+          LINK: ${{ steps.yandex.outputs.PUBLIC_URL }}
         run: |
-          APK_PATH=$(find apk -name "*.apk" | head -n 1)
 
-          if [ -z "$APK_PATH" ]; then
-            echo "APK not found"
-            exit 1
-          fi
+          MESSAGE="*New Build Uploaded*
+          
+          Branch: ${GITHUB_REF_NAME}
+          Commit: ${GITHUB_SHA::7}
 
-          BRANCH="${GITHUB_REF_NAME}"
+          [Download from Yandex Disk]($LINK)"
           
-          COMMIT_MESSAGES=$(git log -n 10 --pretty=format:"- %s")
-
-          CAPTION="New Android Build from branch: *$BRANCH*. Commits:%0A$COMMIT_MESSAGES"
-          
-          if [ ${#CAPTION} -gt 1000 ]; then
-             CAPTION="${CAPTION:0:1000}... (truncated)"
-          fi
-          
-          curl -v -F "chat_id=$TG_CHAT_ID" \
-          -F "message_thread_id=$TG_TOPIC_ID" \
-          -F "document=@$APK_PATH" \
-          -F "caption=$CAPTION" \
-          "https://api.telegram.org/bot$TG_TOKEN/sendDocument"
+          curl -v -X POST "https://api.telegram.org/bot$TG_TOKEN/sendMessage" \
+            -d "chat_id=$TG_CHAT_ID" \
+            -d "message_thread_id=$TG_TOPIC_ID" \
+            --data-urlencode "text=$MESSAGE" \
+            -d "parse_mode=Markdown" \
+            -d "disable_web_page_preview=false"
