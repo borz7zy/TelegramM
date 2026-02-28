@@ -74,7 +74,11 @@ jobs:
             $caption = $caption.Substring(0, 1000) + "`n... (truncated)"
           }
 
-          $apkPath = Get-ChildItem -Path "app/build/outputs/apk/**/debug/*.apk" -Recurse |
+          $apkPath = Get-ChildItem `
+            -Path "app/build/outputs/apk" `
+            -Filter "*.apk" `
+            -Recurse |
+            Where-Object { $_.FullName -match "\\debug\\" } |
             Select-Object -ExpandProperty FullName -First 1
 
           if (-Not $apkPath) {
