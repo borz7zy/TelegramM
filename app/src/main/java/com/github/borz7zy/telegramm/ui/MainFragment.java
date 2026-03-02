@@ -23,7 +23,7 @@ import com.github.borz7zy.telegramm.R;
 import com.github.borz7zy.telegramm.ui.contacts.ContactsFragment;
 import com.github.borz7zy.telegramm.ui.dialogs.DialogsFragment;
 import com.github.borz7zy.telegramm.ui.settings.SettingsFragment;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.github.borz7zy.telegramm.ui.widget.LiquidTabBarView;
 
 import eightbitlab.com.blurview.BlurTarget;
 import eightbitlab.com.blurview.BlurView;
@@ -32,11 +32,12 @@ public class MainFragment extends Fragment {
 
     private final float BLUR_RADIUS = 20.f;
 
-    private BottomNavigationView bottomNav;
     private FragmentContainerView fragmentContainer;
     private BlurView header;
     private TextView headerTitle;
     private BlurView bottomNavView;
+    private BlurView hiddenPanelBottomView;
+    private LiquidTabBarView tabBar;
     private ImageView buttonSearch;
     private MainViewModel mainViewModel;
     private Fragment dialogsFragment;
@@ -88,8 +89,9 @@ public class MainFragment extends Fragment {
 
         header = view.findViewById(R.id.header_blur);
         bottomNavView = view.findViewById(R.id.bottom_blur);
+        hiddenPanelBottomView = view.findViewById(R.id.hidden_panel_blur);
 
-        bottomNav = view.findViewById(R.id.bottom_nav_view);
+        tabBar = view.findViewById(R.id.liquidTabBar);
         headerTitle = view.findViewById(R.id.header_title);
 
         buttonSearch = view.findViewById(R.id.btn_search);
@@ -102,16 +104,19 @@ public class MainFragment extends Fragment {
         contactsFragment = getChildFragmentManager().findFragmentByTag("contacts");
         settingsFragment = getChildFragmentManager().findFragmentByTag("settings");
 
-        bottomNav.setOnItemSelectedListener(item->{
-            mainViewModel.setCurrentTab(item.getItemId());
-            return true;
+        tabBar.setOnTabSelectedListener(index->{
+            mainViewModel.setCurrentTab(indexToMenuId(index));
         });
 
-        mainViewModel.getCurrentTab().observe(getViewLifecycleOwner(), this::switchToFragment);
+        mainViewModel.getCurrentTab().observe(getViewLifecycleOwner(), id->{
+            switchToFragment(id);
+            fragmentContainer.post(() ->
+                    tabBar.setSelectedIndex(menuIdToIndex(id))
+            );
+        });
 
         if(savedInstanceState == null){
             mainViewModel.setCurrentTab(R.id.nav_chats);
-            bottomNav.setSelectedItemId(R.id.nav_chats);
         }else{
             switchToFragment(mainViewModel.getCurrentTab().getValue() != null ?
                     mainViewModel.getCurrentTab().getValue() : R.id.nav_chats
@@ -154,9 +159,23 @@ public class MainFragment extends Fragment {
                     }
             );
 
-            bottomNav.setItemIconTintList(iconColor);
-            bottomNav.setItemTextColor(textColor);
         });
+    }
+
+    private int indexToMenuId(int index) {
+        switch (index) {
+            case 0: return R.id.nav_contacts;
+            case 1: return R.id.nav_chats;
+            case 2: return R.id.nav_settings;
+            default: return R.id.nav_chats;
+        }
+    }
+
+    private int menuIdToIndex(int id) {
+        if (id == R.id.nav_contacts) return 0;
+        if (id == R.id.nav_chats) return 1;
+        if (id == R.id.nav_settings) return 2;
+        return 1;
     }
 
     private void switchToFragment(int id){
@@ -236,6 +255,7 @@ public class MainFragment extends Fragment {
 
         header.setupWith(target).setFrameClearDrawable(bg).setBlurRadius(BLUR_RADIUS);
         bottomNavView.setupWith(target).setFrameClearDrawable(bg).setBlurRadius(BLUR_RADIUS);
+        hiddenPanelBottomView.setupWith(target).setFrameClearDrawable(bg).setBlurRadius(BLUR_RADIUS);
     }
 
     private void applyInsets(View view) {
