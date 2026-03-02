@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2014 The CyanogenMod Project
  * Copyright (C) 2021 The LineageOS Project
+ * Copyright (C) 2026 borz7zy
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +40,8 @@ import androidx.core.view.ViewCompat;
 import com.github.borz7zy.telegramm.R;
 
 public class SlidingUpPanelLayout extends ViewGroup {
+
+    private boolean mIsTouchEnabled = true;
 
     /**
      * Default peeking out panel height
@@ -403,6 +406,10 @@ public class SlidingUpPanelLayout extends ViewGroup {
         mIsSlidingEnabled = enabled;
     }
 
+    public void setTouchEnabled(boolean enabled) {
+        mIsTouchEnabled = enabled;
+    }
+
     public boolean isSlidingEnabled() {
         return mIsSlidingEnabled && mSlideableView != null;
     }
@@ -736,7 +743,7 @@ public class SlidingUpPanelLayout extends ViewGroup {
     public boolean onInterceptTouchEvent(MotionEvent ev) {
         final int action = ev.getActionMasked();
 
-        if (!isEnabled() || !mIsSlidingEnabled ||
+        if (!isEnabled() || !mIsSlidingEnabled || !mIsTouchEnabled ||
                 (mIsUnableToDrag && action != MotionEvent.ACTION_DOWN)) {
             mDragHelper.cancel();
             return super.onInterceptTouchEvent(ev);
@@ -778,7 +785,7 @@ public class SlidingUpPanelLayout extends ViewGroup {
 
     @Override
     public boolean onTouchEvent(MotionEvent ev) {
-        if (!isSlidingEnabled()) {
+        if (!isSlidingEnabled() || !mIsTouchEnabled) {
             return super.onTouchEvent(ev);
         }
         mDragHelper.processTouchEvent(ev);
