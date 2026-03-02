@@ -96,7 +96,7 @@
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/bottom_nav_view"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
             android:layout_alignParentBottom="true"
             android:background="@android:color/transparent"
             app:menu="@menu/nav_bar"
@@ -106,6 +106,9 @@
             app:elevation="0dp"
             app:itemTextAppearanceInactive="@style/BottomNavText.Inactive"
             app:itemTextAppearanceActive="@style/BottomNavText.Active" />
+
+        <include
+            layout="@layout/item_bottom_nav"/>
 
     </eightbitlab.com.blurview.BlurView>
 
