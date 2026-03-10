@@ -40,9 +40,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DialogsFragment extends BaseTelegramFragment implements Client.ResultHandler {
     private DialogsAdapter adapter;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
-
-    private final Map<Long, DialogItem> dialogs = new ConcurrentHashMap<>();
-
     private SpringRecyclerView recyclerView;
     private AccountSession currentSession;
 
@@ -72,20 +69,36 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
         viewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
 
         recyclerView = view.findViewById(R.id.recycler_dialogs);
-        setupRecyclerView();
-        setupInsets();
 
         ThemeEngine themeEngine = AppManager.getInstance().getThemeEngine();
         ThemeEngine.Theme currentTheme = themeEngine.getCurrentTheme().getValue();
+
+        setupRecyclerView();
+
         if (currentTheme != null) {
             adapter.setTheme(currentTheme);
             view.setBackgroundColor(currentTheme.surfaceColor);
         }
 
-        AppManager.getInstance().getThemeEngine().getCurrentTheme().observe(getViewLifecycleOwner(), theme -> {
+        setupInsets();
+
+        viewModel.getDialogList().observe(getViewLifecycleOwner(), list -> {
+            Logger.LOGD("DialogsFragment", "dialogList updated, size=" + (list == null ? "null" : list.size()));
+            adapter.submitList(list);
+        });
+
+        if (!viewModel.getDialogs().isEmpty()) {
+            refreshList();
+        }
+
+        themeEngine.getCurrentTheme().observe(getViewLifecycleOwner(), theme -> {
             adapter.setTheme(theme);
             view.setBackgroundColor(theme.surfaceColor);
         });
+
+        if (currentSession == null) {
+            initializeSession();
+        }
     }
 
     private void setupRecyclerView() {
@@ -188,7 +201,7 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
         boolean newState = !item.isExpanded;
 
         DialogItem updatedItem = item.copyWithExpanded(newState);
-        dialogs.put(item.chatId, updatedItem);
+        viewModel.getDialogs().put(item.chatId, updatedItem);
         refreshList();
 
         if (newState && (item.topics == null || item.topics.isEmpty())) {
@@ -202,7 +215,7 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
                 TdApi.ForumTopics result = (TdApi.ForumTopics) object;
 
                 mainHandler.post(() -> {
-                    DialogItem current = dialogs.get(chatId);
+                    DialogItem current = viewModel.getDialogs().get(chatId);
                     if (current != null && current.isExpanded) {
                         ArrayList<TdApi.ForumTopic> topicList = new ArrayList<>();
                         if (result.topics != null) {
@@ -210,7 +223,7 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
                         }
 
                         DialogItem withTopics = current.copyWithTopics(topicList);
-                        dialogs.put(chatId, withTopics);
+                        viewModel.getDialogs().put(chatId, withTopics);
                         refreshList();
                     }
                 });
@@ -327,14 +340,14 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
         long order = getOrder(chat);
 
         if (order == 0) {
-            if (dialogs.remove(chat.id) != null) {
+            if (viewModel.getDialogs().remove(chat.id) != null) {
                 refreshList();
             }
             return;
         }
 
 
-        DialogItem oldItem = dialogs.get(chat.id);
+        DialogItem oldItem = viewModel.getDialogs().get(chat.id);
         DialogItem newItem = new DialogItem(chat, order);
 
         if (oldItem != null) {
@@ -343,22 +356,22 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
             newItem.topics = oldItem.topics;
         }
 
-        dialogs.put(chat.id, newItem);
+        viewModel.getDialogs().put(chat.id, newItem);
         refreshList();
     }
 
     private void handleChatPosition(long chatId, TdApi.ChatPosition position) {
         if (position.order == 0) {
-            if (dialogs.remove(chatId) != null) {
+            if (viewModel.getDialogs().remove(chatId) != null) {
                 refreshList();
             }
             return;
         }
 
-        DialogItem old = dialogs.get(chatId);
+        DialogItem old = viewModel.getDialogs().get(chatId);
         if (old != null) {
             DialogItem fresh = old.copyWithOrderPinned(position.order, position.isPinned);
-            dialogs.put(chatId, fresh);
+            viewModel.getDialogs().put(chatId, fresh);
             refreshList();
         } else {
             currentSession.send(new TdApi.GetChat(chatId), this);
@@ -366,15 +379,15 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
     }
 
     private void handleTyping(long chatId) {
-        DialogItem old = dialogs.get(chatId);
+        DialogItem old = viewModel.getDialogs().get(chatId);
         if (old != null) {
-            dialogs.put(chatId, old.copyWithTyping(true));
+            viewModel.getDialogs().put(chatId, old.copyWithTyping(true));
             refreshList();
 
             mainHandler.postDelayed(() -> {
-                DialogItem cur = dialogs.get(chatId);
+                DialogItem cur = viewModel.getDialogs().get(chatId);
                 if (cur != null) {
-                    dialogs.put(chatId, cur.copyWithTyping(false));
+                    viewModel.getDialogs().put(chatId, cur.copyWithTyping(false));
                     refreshList();
                 }
             }, 3000);
@@ -393,7 +406,7 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
 
         rebuildRunnable = () -> {
 
-            ArrayList<DialogItem> list = new ArrayList<>(dialogs.values());
+            ArrayList<DialogItem> list = new ArrayList<>(viewModel.getDialogs().values());
 
             final Map<Long, Integer> pinnedIndex = new HashMap<>();
             if (pinnedOrderOverride != null) {
@@ -418,7 +431,7 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
                 return Long.compare(b.order, a.order);
             });
 
-            adapter.submitList(list);
+            viewModel.postDialogList(list);
         };
 
         mainHandler.postDelayed(rebuildRunnable, 100);

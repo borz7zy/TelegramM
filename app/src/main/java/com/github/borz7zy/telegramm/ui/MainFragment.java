@@ -104,6 +104,13 @@ public class MainFragment extends Fragment {
         contactsFragment = getChildFragmentManager().findFragmentByTag("contacts");
         settingsFragment = getChildFragmentManager().findFragmentByTag("settings");
 
+        if(savedInstanceState != null){
+            int restoredId = savedInstanceState.getInt("current_tab", R.id.nav_chats);
+            if (restoredId == R.id.nav_chats) currentFragment = dialogsFragment;
+            else if (restoredId == R.id.nav_contacts) currentFragment = contactsFragment;
+            else if (restoredId == R.id.nav_settings) currentFragment = settingsFragment;
+        }
+
         tabBar.setOnTabSelectedListener(index->{
             mainViewModel.setCurrentTab(indexToMenuId(index));
         });
@@ -115,12 +122,8 @@ public class MainFragment extends Fragment {
             );
         });
 
-        if(savedInstanceState == null){
+        if (savedInstanceState == null) {
             mainViewModel.setCurrentTab(R.id.nav_chats);
-        }else{
-            switchToFragment(mainViewModel.getCurrentTab().getValue() != null ?
-                    mainViewModel.getCurrentTab().getValue() : R.id.nav_chats
-            );
         }
 
         applyInsets(view);
@@ -162,6 +165,13 @@ public class MainFragment extends Fragment {
         });
     }
 
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        Integer tab = mainViewModel.getCurrentTab().getValue();
+        outState.putInt("current_tab", tab != null ? tab : R.id.nav_chats);
+    }
+
     private int indexToMenuId(int index) {
         switch (index) {
             case 0: return R.id.nav_contacts;
@@ -178,64 +188,59 @@ public class MainFragment extends Fragment {
         return 1;
     }
 
-    private void switchToFragment(int id){
-        Fragment target = null;
+    private void switchToFragment(int id) {
+        Fragment target;
         if (id == R.id.nav_chats) {
-            if (dialogsFragment == null)
-                dialogsFragment = new DialogsFragment();
+            if (dialogsFragment == null) dialogsFragment = new DialogsFragment();
             target = dialogsFragment;
-        }else if (id == R.id.nav_contacts) {
-            if (contactsFragment == null)
-                contactsFragment = new ContactsFragment();
+        } else if (id == R.id.nav_contacts) {
+            if (contactsFragment == null) contactsFragment = new ContactsFragment();
             target = contactsFragment;
-        }else if (id == R.id.nav_settings){
-            if(settingsFragment == null)
-                settingsFragment = new SettingsFragment();
+        } else if (id == R.id.nav_settings) {
+            if (settingsFragment == null) settingsFragment = new SettingsFragment();
             target = settingsFragment;
+        } else {
+            target = null;
         }
 
-        if (target == null || target == currentFragment)
-            return;
+        if (target == null || target == currentFragment) return;
 
         var transaction = getChildFragmentManager().beginTransaction();
         transaction.setReorderingAllowed(true);
 
         final Screen from = getScreen(currentFragment);
         final Screen to = getScreen(target);
-
         final int[] anim = getAnimation(from, to);
+        if (anim != null) transaction.setCustomAnimations(anim[0], anim[1]);
 
-        if(anim != null)
-            transaction.setCustomAnimations(anim[0], anim[1]);
-
-        if (currentFragment != null)
-            transaction.hide(currentFragment);
-
-        if (target.isAdded())
-            transaction.show(target);
-        else {
-            String tag = "dialogs";
-            if(target instanceof DialogsFragment){
-                tag = "dialogs";
-            }else if (target instanceof ContactsFragment){
-                tag = "contacts";
-            }else if (target instanceof SettingsFragment){
-                tag = "settings";
+        for (Fragment f : new Fragment[]{dialogsFragment, contactsFragment, settingsFragment}) {
+            if (f != null && f.isAdded() && f != target) {
+                transaction.hide(f);
             }
+        }
+
+        if (target.isAdded()) {
+            if (target.isHidden()) transaction.show(target);
+        } else {
+            String tag = getTagForFragment(target);
             transaction.add(R.id.fragment_container, target, tag);
         }
 
         transaction.commit();
 
-        final Fragment finalTarget = target;
         fragmentContainer.post(() -> {
-            View targetView = finalTarget.getView();
-            if (targetView != null) {
-                targetView.bringToFront();
-            }
+            View targetView = target.getView();
+            if (targetView != null) targetView.bringToFront();
         });
 
         currentFragment = target;
+    }
+
+    private String getTagForFragment(Fragment f) {
+        if (f instanceof DialogsFragment) return "dialogs";
+        if (f instanceof ContactsFragment) return "contacts";
+        if (f instanceof SettingsFragment) return "settings";
+        return "unknown";
     }
 
     private Screen getScreen(Fragment f) {
@@ -274,11 +279,11 @@ public class MainFragment extends Fragment {
 
     private void setupInsetListeners() {
         header.addOnLayoutChangeListener((v1, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
-            mainViewModel.getTopInset().setValue(v1.getHeight());
+            mainViewModel.setTopInset(v1.getHeight());
         });
 
         bottomNavView.addOnLayoutChangeListener((v1, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
-            mainViewModel.getBottomInset().setValue(v1.getHeight());
+            mainViewModel.setBottomInset(v1.getHeight());
         });
     }
 }
