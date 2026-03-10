@@ -3,6 +3,7 @@ package com.github.borz7zy.telegramm.ui.widget;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
@@ -26,15 +27,15 @@ public class LiquidTabBarView extends LinearLayout {
     private static final float MOVE_STIFFNESS = 400f;
     private static final float MOVE_DAMPING = 0.85f;
 
-    private static final float PRESS_STIFFNESS = 180f;
-    private static final float PRESS_DAMPING = 0.55f;
+    private static final float PRESS_STIFFNESS = 120f;
+    private static final float PRESS_DAMPING = 0.7f;
 
     private static final float JELLY_SENSITIVITY = 0.0004f;
     private static final float MAX_JELLY_STRETCH = 0.30f;
 
-    private Paint capsulePaint;
-    private Paint layerPaint;
-    private RectF capsuleRect;
+    private final Paint capsulePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint tintPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final RectF capsuleRect = new RectF();
 
     private SpringAnimation animX;
     private SpringAnimation animScale;
@@ -44,15 +45,18 @@ public class LiquidTabBarView extends LinearLayout {
     private float currentScale = 1f;
     private float currentAlpha = 1f;
     private float stretchFactorX = 0f;
+    private float jellyLag = 0f;
 
     private int selectedIndex = 0;
     private float tabWidth = 0f;
     private int activePointerId = -1;
     private boolean isTouchingActiveTab = false;
 
-    private float jellyLag = 0f;
-
     private OnTabSelectedListener listener;
+
+    private final Path capsulePath = new Path();
+    private float capsuleRadius = 0f;
+    private int pendingIndex = -1;
 
     public interface OnTabSelectedListener {
         void onTabSelected(int index);
@@ -77,16 +81,11 @@ public class LiquidTabBarView extends LinearLayout {
         setOrientation(HORIZONTAL);
         setClipChildren(false);
         setWillNotDraw(false);
-
         setLayerType(View.LAYER_TYPE_SOFTWARE, null);
 
-        capsulePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         capsulePaint.setColor(CAPSULE_COLOR);
 
-        layerPaint = new Paint();
-        layerPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_ATOP));
-
-        capsuleRect = new RectF();
+        tintPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
 
         setupPhysics();
     }
@@ -97,13 +96,19 @@ public class LiquidTabBarView extends LinearLayout {
         forceX.setStiffness(MOVE_STIFFNESS);
         forceX.setDampingRatio(MOVE_DAMPING);
         animX.setSpring(forceX);
-
         animX.addUpdateListener((animation, value, velocity) -> {
             cursorX = value;
-            float raw = Math.abs(velocity) * JELLY_SENSITIVITY;
+            float density = getResources().getDisplayMetrics().density;
+            float raw = Math.abs(velocity / density) * JELLY_SENSITIVITY;
             raw = (float) (1f - Math.exp(-raw * 4f));
             stretchFactorX = Math.min(raw, MAX_JELLY_STRETCH);
             invalidate();
+        });
+        animX.addEndListener((animation, canceled, value, velocity) -> {
+            if (!canceled) {
+                animScale.animateToFinalPosition(1f);
+                animAlpha.animateToFinalPosition(1f);
+            }
         });
 
         animScale = new SpringAnimation(new FloatValueHolder(1f));
@@ -112,35 +117,33 @@ public class LiquidTabBarView extends LinearLayout {
         forceScale.setDampingRatio(PRESS_DAMPING);
         animScale.setSpring(forceScale);
 
-        animScale.addUpdateListener((anim, value, vel) -> {
-            currentScale = value;
-            invalidate();
-        });
-
         animAlpha = new SpringAnimation(new FloatValueHolder(1f));
         SpringForce forceAlpha = new SpringForce();
-        forceAlpha.setStiffness(150f);
-        forceAlpha.setDampingRatio(0.9f);
+        forceAlpha.setStiffness(120f);
+        forceAlpha.setDampingRatio(0.8f);
         animAlpha.setSpring(forceAlpha);
+    }
 
-        animAlpha.addUpdateListener((anim, value, vel) -> {
-            currentAlpha = Math.max(0f, Math.min(1f, value));
-            invalidate();
-        });
+    private void animateScaleForFlight() {
+        animScale.cancel();
+        animAlpha.cancel();
+        animScale.animateToFinalPosition(1.15f);
+        animAlpha.animateToFinalPosition(0.75f);
     }
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
         super.onLayout(changed, l, t, r, b);
-        if (getChildCount() > 0) {
-            tabWidth = (float) getWidth() / getChildCount();
+        if (getChildCount() == 0) return;
 
-            if (!animX.isRunning() && activePointerId == -1) {
-                cursorX = selectedIndex * tabWidth;
-                animX.cancel();
-                animX.getSpring().setFinalPosition(cursorX);
-                cursorX = selectedIndex * tabWidth;
-            }
+        tabWidth = (float) getWidth() / getChildCount();
+
+        if (!animX.isRunning() && activePointerId == -1) {
+            float targetX = selectedIndex * tabWidth;
+            animX.cancel();
+            animX.getSpring().setFinalPosition(targetX);
+            cursorX = targetX;
+            invalidate();
         }
     }
 
@@ -161,18 +164,19 @@ public class LiquidTabBarView extends LinearLayout {
         drawCapsule(canvas);
 
         canvas.save();
-        canvas.clipRect(capsuleRect);
-
+        canvas.clipPath(capsulePath);
         drawChildrenWithColor(canvas, ACTIVE_COLOR);
-
         canvas.restore();
+
         canvas.restoreToCount(save);
     }
 
     private void drawChildrenWithColor(Canvas canvas, int color) {
+        tintPaint.setColor(color);
+        tintPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
+
         for (int i = 0; i < getChildCount(); i++) {
             View child = getChildAt(i);
-
             canvas.save();
             canvas.translate(child.getLeft(), child.getTop());
 
@@ -187,13 +191,11 @@ public class LiquidTabBarView extends LinearLayout {
     }
 
     private void drawGroup(ViewGroup group, Canvas canvas, int color) {
-
         canvas.save();
         canvas.translate(-group.getScrollX(), -group.getScrollY());
 
         for (int i = 0; i < group.getChildCount(); i++) {
             View child = group.getChildAt(i);
-
             canvas.save();
             canvas.translate(child.getLeft(), child.getTop());
 
@@ -214,28 +216,13 @@ public class LiquidTabBarView extends LinearLayout {
     }
 
     private void drawSingle(View view, Canvas canvas, int color) {
-
-        int save = canvas.saveLayer(
-                0,
-                0,
-                view.getWidth(),
-                view.getHeight(),
-                null
-        );
+        int save = canvas.saveLayer(0, 0, view.getWidth(), view.getHeight(), null);
 
         view.draw(canvas);
 
-        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        paint.setColor(color);
-        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
-
-        canvas.drawRect(
-                0,
-                0,
-                view.getWidth(),
-                view.getHeight(),
-                paint
-        );
+        tintPaint.setColor(color);
+        tintPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
+        canvas.drawRect(0, 0, view.getWidth(), view.getHeight(), tintPaint);
 
         canvas.restoreToCount(save);
     }
@@ -260,12 +247,13 @@ public class LiquidTabBarView extends LinearLayout {
         float bottom = centerY + h / 2f;
 
         capsuleRect.set(left, top, right, bottom);
+        capsuleRadius = Math.min(w, h) / 2f;
 
-        int alphaInt = (int) (255 * currentAlpha);
-        capsulePaint.setAlpha(alphaInt);
+        capsulePath.reset();
+        capsulePath.addRoundRect(capsuleRect, capsuleRadius, capsuleRadius, Path.Direction.CW);
 
-        float radius = Math.min(w, h) / 2f;
-        canvas.drawRoundRect(capsuleRect, radius, radius, capsulePaint);
+        capsulePaint.setAlpha((int) (255 * currentAlpha));
+        canvas.drawRoundRect(capsuleRect, capsuleRadius, capsuleRadius, capsulePaint);
     }
 
     @Override
@@ -274,66 +262,87 @@ public class LiquidTabBarView extends LinearLayout {
         int action = event.getActionMasked();
 
         switch (action) {
-            case MotionEvent.ACTION_DOWN:
+
+            case MotionEvent.ACTION_DOWN: {
                 activePointerId = event.getPointerId(0);
 
                 int touchedIndex = (int) (x / tabWidth);
                 touchedIndex = Math.max(0, Math.min(getChildCount() - 1, touchedIndex));
 
-                if (touchedIndex == selectedIndex) {
-                    isTouchingActiveTab = true;
-                    animScale.animateToFinalPosition(1.22f);
-                    animAlpha.animateToFinalPosition(0.5f);
-                    animScale.setStartVelocity(6f);
-                    animAlpha.setStartVelocity(-2f);
-                } else {
-                    isTouchingActiveTab = false;
-                    animScale.animateToFinalPosition(0.9f);
+                pendingIndex = touchedIndex;
+                isTouchingActiveTab = true;
+
+                animScale.cancel();
+                animAlpha.cancel();
+                animScale.animateToFinalPosition(1.18f);
+                animAlpha.animateToFinalPosition(0.6f);
+
+                if (touchedIndex != selectedIndex) {
+                    jellyLag = 0f;
+                    stretchFactorX = 0f;
+                    animX.animateToFinalPosition(touchedIndex * tabWidth);
                 }
+
                 return true;
+            }
 
-            case MotionEvent.ACTION_MOVE:
-                if (activePointerId == -1) return false;
+            case MotionEvent.ACTION_MOVE: {
+                if (activePointerId == -1 || !isTouchingActiveTab) return false;
 
-                if (isTouchingActiveTab) {
-                    float targetX = x - (tabWidth / 2f);
+                float targetX = x - (tabWidth / 2f);
+                float maxScroll = getWidth() - tabWidth;
+                targetX = Math.max(0f, Math.min(maxScroll, targetX));
 
-                    float maxScroll = getWidth() - tabWidth;
-                    targetX = Math.max(0f, Math.min(maxScroll, targetX));
+                animX.animateToFinalPosition(targetX);
 
-                    animX.animateToFinalPosition(targetX);
-                }
+                int newPending = (int) (x / tabWidth);
+                newPending = Math.max(0, Math.min(getChildCount() - 1, newPending));
+                pendingIndex = newPending;
+
                 return true;
+            }
 
             case MotionEvent.ACTION_UP:
-            case MotionEvent.ACTION_CANCEL:
+            case MotionEvent.ACTION_CANCEL: {
                 activePointerId = -1;
-                handleActionUp(event.getX());
+                handleActionUp(x);
                 return true;
+            }
         }
+
         return super.onTouchEvent(event);
     }
 
     private void handleActionUp(float upX) {
-        animScale.animateToFinalPosition(1f);
-        animAlpha.animateToFinalPosition(1f);
+        int targetIndex = (pendingIndex != -1) ? pendingIndex : (int) (upX / tabWidth);
+        targetIndex = Math.max(0, Math.min(getChildCount() - 1, targetIndex));
 
-        int targetIndex;
+        int prevSelected = selectedIndex;
+        selectedIndex = targetIndex;
+        pendingIndex = -1;
+        isTouchingActiveTab = false;
 
-        if (isTouchingActiveTab) {
-            float currentCenter = cursorX + (tabWidth / 2f);
-            targetIndex = (int) (currentCenter / tabWidth);
+        if (prevSelected != selectedIndex) {
+            jellyLag = 0f;
+            stretchFactorX = 0f;
+            animateScaleForFlight();
         } else {
-            targetIndex = (int) (upX / tabWidth);
+            animScale.animateToFinalPosition(1f);
+            animAlpha.animateToFinalPosition(1f);
         }
 
-        targetIndex = Math.max(0, Math.min(getChildCount() - 1, targetIndex));
-        setSelectedIndex(targetIndex);
+        animX.animateToFinalPosition(selectedIndex * tabWidth);
 
-        isTouchingActiveTab = false;
+        if (prevSelected != selectedIndex && listener != null) {
+            listener.onTabSelected(selectedIndex);
+        }
     }
 
     public void setSelectedIndex(int index) {
+        setSelectedIndex(index, true);
+    }
+
+    public void setSelectedIndex(int index, boolean notify) {
         if (index < 0 || index >= getChildCount()) return;
 
         int prevIndex = selectedIndex;
@@ -342,7 +351,7 @@ public class LiquidTabBarView extends LinearLayout {
         float targetX = index * tabWidth;
         animX.animateToFinalPosition(targetX);
 
-        if (prevIndex != index && listener != null) {
+        if (notify && prevIndex != index && listener != null) {
             listener.onTabSelected(index);
         }
     }
