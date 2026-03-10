@@ -84,7 +84,7 @@
             android:layout_height="wrap_content"
             android:hint="Password"
             android:visibility="gone"
-            app:passwordToggleEnabled="true"
+            app:endIconMode="password_toggle"
             tools:visibility="visible">
 
             <com.google.android.material.textfield.TextInputEditText
