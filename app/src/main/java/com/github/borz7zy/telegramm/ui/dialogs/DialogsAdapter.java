@@ -86,6 +86,17 @@ public class DialogsAdapter extends RecyclerView.Adapter<DialogsAdapter.VH> {
         return differ.getCurrentList().size();
     }
 
+    public interface OnFirstDiffDoneListener {
+        void onFirstDiffDone();
+    }
+
+    private OnFirstDiffDoneListener firstDiffListener;
+    private boolean firstDiffDone = false;
+
+    public void setOnFirstDiffDoneListener(OnFirstDiffDoneListener l) {
+        this.firstDiffListener = l;
+    }
+
     public DialogsAdapter(){
         DiffUtil.ItemCallback<DialogItem> diffCallback =
                 new DiffUtil.ItemCallback<DialogItem>() {
@@ -124,6 +135,12 @@ public class DialogsAdapter extends RecyclerView.Adapter<DialogsAdapter.VH> {
                 };
 
         differ = new AsyncListDiffer<>(this, diffCallback);
+        differ.addListListener((previousList, currentList) -> {
+            if (!firstDiffDone && !currentList.isEmpty()) {
+                firstDiffDone = true;
+                if (firstDiffListener != null) firstDiffListener.onFirstDiffDone();
+            }
+        });
         setHasStableIds(true);
     }
 
@@ -254,8 +271,6 @@ public class DialogsAdapter extends RecyclerView.Adapter<DialogsAdapter.VH> {
             container.addView(loading);
             return;
         }
-
-//        LayoutInflater inflater = LayoutInflater.from(container.getContext());
 
         for (TdApi.ForumTopic topic : item.topics) {
             LinearLayout topicLayout = new LinearLayout(container.getContext());

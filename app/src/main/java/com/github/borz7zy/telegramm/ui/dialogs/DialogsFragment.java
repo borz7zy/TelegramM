@@ -53,6 +53,7 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
     private MainViewModel viewModel;
 
     private boolean isLoadingMore = false;
+    private View progressBar;
     private boolean endReached = false;
     private Runnable rebuildRunnable;
 
@@ -69,6 +70,8 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
         viewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
 
         recyclerView = view.findViewById(R.id.recycler_dialogs);
+
+        progressBar = view.findViewById(R.id.progress_dialogs);
 
         ThemeEngine themeEngine = AppManager.getInstance().getThemeEngine();
         ThemeEngine.Theme currentTheme = themeEngine.getCurrentTheme().getValue();
@@ -87,6 +90,11 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
             adapter.submitList(list);
         });
 
+        viewModel.getDialogsLoading().observe(getViewLifecycleOwner(), isLoading -> {
+            progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);
+            recyclerView.setVisibility(isLoading ? View.INVISIBLE : View.VISIBLE);
+        });
+
         if (!viewModel.getDialogs().isEmpty()) {
             refreshList();
         }
@@ -103,6 +111,9 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
 
     private void setupRecyclerView() {
         adapter = new DialogsAdapter();
+        adapter.setOnFirstDiffDoneListener(() -> {
+            mainHandler.post(() -> viewModel.setDialogsLoading(false));
+        });
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);
 
@@ -305,6 +316,10 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
 
             if (currentSession != null) {
                 currentSession.addUpdateHandler(this);
+
+                if (viewModel.getDialogs().isEmpty()) {
+                    mainHandler.post(() -> viewModel.setDialogsLoading(true));
+                }
 
                 loadMoreChats();
             }

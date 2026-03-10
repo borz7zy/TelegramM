@@ -31,4 +31,11 @@ class MainViewModel : ViewModel() {
     fun postDialogList(list: List<DialogItem>) {
         _dialogList.value = list
     }
+
+    private val _dialogsLoading = MutableLiveData<Boolean>(true)
+    val dialogsLoading: LiveData<Boolean> get() = _dialogsLoading
+
+    fun setDialogsLoading(loading: Boolean) {
+        _dialogsLoading.value = loading
+    }
 }
