@@ -72,10 +72,10 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
     private boolean isInitialLoad = true;
     private int initialLoadRetryCount = 0;
     private int previousListSize = 0;
-    private static final int PAGE_SIZE = 70;
-    private static final int MAX_INITIAL_RETRIES = 3;
+    private static final int INITIAL_PAGE_SIZE = 100;
+    private static final int PAGE_SIZE = 50;
 
-    private static final long BATCH_DELAY_MS = 200;
+    private static final long BATCH_DELAY_MS = 300;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final Object batchLock = new Object();
     private boolean updateScheduled = false;
@@ -150,16 +150,12 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
         loading = true;
         hasMore = true;
         oldestId = 0;
-
         isInitialLoad = true;
-        initialLoadRetryCount = 0;
-        previousListSize = 0;
-
         byId.clear();
         rawMessages.clear();
         albumGroups.clear();
 
-        session.send(new TdApi.GetChatHistory(chatId, 0L, 0, PAGE_SIZE, false), this);
+        session.send(new TdApi.GetChatHistory(chatId, 0L, 0, INITIAL_PAGE_SIZE, false), this);
     }
 
     public void loadMore() {
@@ -296,11 +292,10 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
         if (count == 0) {
             hasMore = false;
             loading = false;
+            topLoading.postValue(false);
             if(isInitialLoad){
                 isInitialLoad = false;
                 scheduleUiUpdate(false, true);
-            }else {
-                topLoading.postValue(false);
             }
             return;
         }
@@ -311,26 +306,23 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
             if (oldestId == 0 || m.id < oldestId) oldestId = m.id;
         }
 
+        hasMore = count >= PAGE_SIZE && oldestId > 1;
+
         if (isInitialLoad) {
-            int currentListSize = byId.size();
-            if (count < PAGE_SIZE && initialLoadRetryCount < MAX_INITIAL_RETRIES) {
-                if (currentListSize > previousListSize) {
-                    previousListSize = currentListSize;
-                    ++initialLoadRetryCount;
-
-                    scheduleUiUpdate(false, true);
-
-                    session.send(new TdApi.GetChatHistory(chatId, oldestId, -1, PAGE_SIZE, false), this);
-                    return;
-                }
-            }
-
             isInitialLoad = false;
+            loading = false;
             scheduleUiUpdate(false, true);
-        }
 
-        if(!isInitialLoad){
-            hasMore = oldestId > 1;
+            if (count < INITIAL_PAGE_SIZE) {
+                mainHandler.postDelayed(() -> {
+                    if (isCleared) return;
+                    hasMore = true;
+                    loading = true;
+                    session.send(new TdApi.GetChatHistory(chatId, oldestId, -1, PAGE_SIZE, false), this);
+                }, 800);
+            }
+        } else {
+            loading = false;
             scheduleUiUpdate(true, false);
         }
     }

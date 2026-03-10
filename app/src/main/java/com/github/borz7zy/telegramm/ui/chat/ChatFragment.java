@@ -290,9 +290,7 @@ public class ChatFragment extends DialogFragment {
         adapter.setBtnListener((item, btn) -> viewModel.handleUiClick(item.id, btn));
 
         adapter.setLoadMoreListener(() -> {
-            if (!topLoading.isVisible()) {
-                captureScrollAnchor();
-            }
+            captureScrollAnchor();
             viewModel.loadMore();
         });
 
@@ -304,12 +302,14 @@ public class ChatFragment extends DialogFragment {
                 adapter
         );
 
-        adapter.addOnPagesUpdatedListener(() -> {
-            if (isPaginationInProgress) {
-                handlePaginationRestore();
-                isPaginationInProgress = false;
+        adapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
+            @Override
+            public void onItemRangeInserted(int positionStart, int itemCount) {
+                if (isPaginationInProgress && itemCount > 0) {
+                    isPaginationInProgress = false;
+                    rv.post(() -> handlePaginationRestore());
+                }
             }
-            return Unit.INSTANCE;
         });
 
         rv.setLayoutManager(lm);
@@ -322,14 +322,6 @@ public class ChatFragment extends DialogFragment {
                 int total = concat.getItemCount() - 1;
 
                 isUserAtBottom = (lastVisible >= total - 1);
-
-                if (!isPaginationInProgress && !topLoading.isVisible()) {
-                    int firstVisible = lm.findFirstVisibleItemPosition();
-                    if (firstVisible != RecyclerView.NO_POSITION && firstVisible <= 3) {
-                        captureScrollAnchor();
-                        viewModel.loadMore();
-                    }
-                }
             }
 
             @Override
@@ -420,12 +412,6 @@ public class ChatFragment extends DialogFragment {
     private void handlePaginationRestore() {
         if (pendingAnchorId == -1) return;
 
-        int currentFirst = lm.findFirstVisibleItemPosition();
-        if (currentFirst > 8) {
-            pendingAnchorId = -1;
-            return;
-        }
-
         int newPos = findAdapterPositionById(pendingAnchorId);
         if (newPos == -1) {
             pendingAnchorId = -1;
@@ -433,8 +419,8 @@ public class ChatFragment extends DialogFragment {
         }
 
         int targetPosition = newPos + (topLoading.isVisible() ? 1 : 0);
-
         lm.scrollToPositionWithOffset(targetPosition, pendingAnchorOffset);
+
         pendingAnchorId = -1;
         pendingAnchorOffset = 0;
     }
