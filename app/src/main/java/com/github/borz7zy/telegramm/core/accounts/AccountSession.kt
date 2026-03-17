@@ -1,9 +1,11 @@
 package com.github.borz7zy.telegramm.core.accounts
 
 import android.content.Context
+import android.content.res.Resources
 import android.os.Build
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
+import com.github.borz7zy.telegramm.App
 import com.github.borz7zy.telegramm.AppManager
 import com.github.borz7zy.telegramm.R
 import kotlinx.coroutines.CoroutineScope
@@ -224,11 +226,20 @@ class AccountSession(private val context: Context, private val account: AccountE
             return
         }
 
-        request.systemLanguageCode =
-            Locale.getDefault().getLanguage()
-        request.deviceModel = Build.MODEL
-        request.systemVersion = Build.VERSION.RELEASE
-        request.applicationVersion = "1.0"
+        request.systemLanguageCode = Resources.getSystem().configuration.getLocales().get(0).language
+
+        request.deviceModel =
+            if (Build.MODEL != null) Build.MANUFACTURER + " " + Build.MODEL else "Virtual Machine on Android"
+
+        val system =
+            if (Build.VERSION.BASE_OS.isEmpty()) "Android " else Build.VERSION.BASE_OS + " "
+        request.systemVersion = system + Build.VERSION.RELEASE + " (SDK: " +Build.VERSION.SDK_INT + ")"
+
+        request.applicationVersion =
+            App.getApplication().getString(R.string.version_name) +
+                    " (" +
+                    App.getApplication().getString(R.string.version_code) +
+                    ")"
 
         request.useTestDc = context.resources.getBoolean(R.bool.test_dc)
 
