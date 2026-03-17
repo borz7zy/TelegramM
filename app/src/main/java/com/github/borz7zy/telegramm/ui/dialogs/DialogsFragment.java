@@ -24,6 +24,7 @@ import com.github.borz7zy.telegramm.ui.ThemeEngine;
 import com.github.borz7zy.telegramm.ui.base.BaseTelegramFragment;
 import com.github.borz7zy.telegramm.ui.chat.ChatFragment;
 import com.github.borz7zy.telegramm.ui.model.DialogItem;
+import com.github.borz7zy.telegramm.ui.model.FolderItem;
 import com.github.borz7zy.telegramm.ui.widget.SpringRecyclerView;
 import com.github.borz7zy.telegramm.utils.Logger;
 import com.github.borz7zy.telegramm.utils.TdMediaRepository;
@@ -34,13 +35,18 @@ import org.drinkless.tdlib.TdApi;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class DialogsFragment extends BaseTelegramFragment implements Client.ResultHandler {
+
     private DialogsAdapter adapter;
-    private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private SpringRecyclerView recyclerView;
+    private RecyclerView foldersRecyclerView;
+    private FoldersAdapter foldersAdapter;
+    private View progressBar;
+
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private AccountSession currentSession;
 
     private ItemTouchHelper itemTouchHelper;
@@ -50,12 +56,18 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
 
     private int currentTop = 0;
     private int currentBottom = 0;
-    private MainViewModel viewModel;
 
     private boolean isLoadingMore = false;
-    private View progressBar;
     private boolean endReached = false;
     private Runnable rebuildRunnable;
+
+    private int currentFolderId = FolderItem.ID_ALL;
+
+    private int mainChatListPosition = 0;
+
+    private final List<TdApi.ChatFolderInfo> rawFolders = new ArrayList<>();
+
+    private MainViewModel viewModel;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -70,17 +82,17 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
         viewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
 
         recyclerView = view.findViewById(R.id.recycler_dialogs);
-
+        foldersRecyclerView = view.findViewById(R.id.rv_folders);
         progressBar = view.findViewById(R.id.progress_dialogs);
 
         ThemeEngine themeEngine = AppManager.getInstance().getThemeEngine();
         ThemeEngine.Theme currentTheme = themeEngine.getCurrentTheme().getValue();
 
         setupRecyclerView();
+        setupFoldersBar();
 
         if (currentTheme != null) {
-            adapter.setTheme(currentTheme);
-            view.setBackgroundColor(currentTheme.surfaceColor);
+            applyTheme(view, currentTheme);
         }
 
         setupInsets();
@@ -100,8 +112,7 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
         }
 
         themeEngine.getCurrentTheme().observe(getViewLifecycleOwner(), theme -> {
-            adapter.setTheme(theme);
-            view.setBackgroundColor(theme.surfaceColor);
+            applyTheme(view, theme);
         });
 
         if (currentSession == null) {
@@ -109,11 +120,73 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
         }
     }
 
+    private void applyTheme(View root, ThemeEngine.Theme theme) {
+        adapter.setTheme(theme);
+        foldersAdapter.setTheme(theme);
+        root.setBackgroundColor(theme.surfaceColor);
+    }
+
+    private void setupFoldersBar() {
+        foldersAdapter = new FoldersAdapter();
+
+        LinearLayoutManager lm = new LinearLayoutManager(
+                requireContext(), LinearLayoutManager.HORIZONTAL, false);
+        foldersRecyclerView.setLayoutManager(lm);
+        foldersRecyclerView.setAdapter(foldersAdapter);
+
+        foldersAdapter.setOnFolderSelectedListener(folder -> {
+            if (folder.id == currentFolderId) return;
+            selectFolder(folder.id);
+        });
+    }
+
+    private void rebuildFolderTabs() {
+        List<FolderItem> tabs = new ArrayList<>();
+
+        for (TdApi.ChatFolderInfo info : rawFolders) {
+            String title = (info.name != null && info.name.text != null)
+                    ? info.name.text.text
+                    : "Folder " + info.id;
+            tabs.add(new FolderItem(info.id, title, currentFolderId == info.id));
+        }
+
+        FolderItem allTab = new FolderItem(FolderItem.ID_ALL, "All", currentFolderId == FolderItem.ID_ALL);
+        int insertAt = Math.max(0, Math.min(mainChatListPosition, tabs.size()));
+        tabs.add(insertAt, allTab);
+
+        boolean hasFolders = rawFolders.size() > 0;
+        mainHandler.post(() -> {
+            foldersAdapter.submitList(tabs);
+            foldersRecyclerView.setVisibility(hasFolders ? View.VISIBLE : View.GONE);
+            updateRecyclerPadding();
+        });
+    }
+
+    private void selectFolder(int folderId) {
+        currentFolderId = folderId;
+
+        List<FolderItem> current = foldersAdapter.getCurrentList();
+        List<FolderItem> updated = new ArrayList<>(current.size());
+        for (FolderItem f : current) {
+            updated.add(f.withSelected(f.id == folderId));
+        }
+        foldersAdapter.submitList(updated);
+
+        viewModel.getDialogs().clear();
+        isLoadingMore = false;
+        endReached = false;
+        pinnedOrderOverride = null;
+
+        mainHandler.post(() -> viewModel.setDialogsLoading(true));
+
+        loadMoreChats();
+    }
+
     private void setupRecyclerView() {
         adapter = new DialogsAdapter();
-        adapter.setOnFirstDiffDoneListener(() -> {
-            mainHandler.post(() -> viewModel.setDialogsLoading(false));
-        });
+        adapter.setOnFirstDiffDoneListener(() ->
+                mainHandler.post(() -> viewModel.setDialogsLoading(false)));
+
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);
 
@@ -121,23 +194,18 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
             @Override
             public void onScrolled(@NonNull RecyclerView rv, int dx, int dy) {
                 if (dy <= 0) return;
-
                 LinearLayoutManager lm = (LinearLayoutManager) rv.getLayoutManager();
                 if (lm == null) return;
-
                 int total = lm.getItemCount();
                 int lastVisible = lm.findLastVisibleItemPosition();
-
                 if (!isLoadingMore && !endReached && total > 0 && lastVisible >= total - 4) {
                     loadMoreChats();
                 }
             }
         });
 
-        adapter.setOnDialogClickListener(item -> {
-            ChatFragment.newInstance(item.chatId, item.name)
-                    .show(getParentFragmentManager(), "chat_sheet");
-        });
+        adapter.setOnDialogClickListener(item ->
+            ChatFragment.newInstance(item.chatId, item.name).show(getParentFragmentManager(), "chat_sheet"));
 
         adapter.setOnTopicToggleListener(new DialogsAdapter.OnTopicToggleListener() {
             @Override
@@ -153,27 +221,20 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
 
         itemTouchHelper = new ItemTouchHelper(new ItemTouchHelper.Callback() {
             @Override
-            public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
-                int pos = viewHolder.getBindingAdapterPosition();
+            public int getMovementFlags(@NonNull RecyclerView rv, @NonNull RecyclerView.ViewHolder vh) {
+                int pos = vh.getBindingAdapterPosition();
                 if (pos == RecyclerView.NO_POSITION) return 0;
-
-                DialogItem item = adapter.getItem(pos);
-                if (!item.isPinned) return 0;
-
-                int drag = ItemTouchHelper.UP | ItemTouchHelper.DOWN;
-                return makeMovementFlags(drag, 0);
+                if (!adapter.getItem(pos).isPinned) return 0;
+                return makeMovementFlags(ItemTouchHelper.UP | ItemTouchHelper.DOWN, 0);
             }
 
             @Override
-            public boolean onMove(@NonNull RecyclerView recyclerView,
+            public boolean onMove(@NonNull RecyclerView rv,
                                   @NonNull RecyclerView.ViewHolder fromVH,
                                   @NonNull RecyclerView.ViewHolder toVH) {
                 int from = fromVH.getBindingAdapterPosition();
                 int to = toVH.getBindingAdapterPosition();
-
-                DialogItem target = adapter.getItem(to);
-                if (!target.isPinned) return false;
-
+                if (!adapter.getItem(to).isPinned) return false;
                 return adapter.movePinned(from, to);
             }
 
@@ -183,19 +244,14 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
             @Override
             public void onSelectedChanged(RecyclerView.ViewHolder viewHolder, int actionState) {
                 super.onSelectedChanged(viewHolder, actionState);
-                if (actionState == ItemTouchHelper.ACTION_STATE_DRAG) {
-                    isReordering = true;
-                }
+                if (actionState == ItemTouchHelper.ACTION_STATE_DRAG) isReordering = true;
             }
 
             @Override
-            public void clearView(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
-                super.clearView(recyclerView, viewHolder);
-
+            public void clearView(@NonNull RecyclerView rv, @NonNull RecyclerView.ViewHolder vh) {
+                super.clearView(rv, vh);
                 pinnedOrderOverride = adapter.getPinnedIdsInUiOrder();
-
                 updatePinnedOrderOnServer(pinnedOrderOverride);
-
                 isReordering = false;
                 if (pendingSubmit) {
                     pendingSubmit = false;
@@ -208,51 +264,38 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
         adapter.setOnDragListener(vh -> itemTouchHelper.startDrag(vh));
     }
 
-    private void toggleForumTopics(DialogItem item) {
-        boolean newState = !item.isExpanded;
-
-        DialogItem updatedItem = item.copyWithExpanded(newState);
-        viewModel.getDialogs().put(item.chatId, updatedItem);
-        refreshList();
-
-        if (newState && (item.topics == null || item.topics.isEmpty())) {
-            loadTopics(item.chatId);
-        }
-    }
-
-    private void loadTopics(long chatId) {
-        currentSession.send(new TdApi.GetForumTopics(chatId, "", 0, 0, 0, 100), object -> {
-            if (object instanceof TdApi.ForumTopics) {
-                TdApi.ForumTopics result = (TdApi.ForumTopics) object;
-
-                mainHandler.post(() -> {
-                    DialogItem current = viewModel.getDialogs().get(chatId);
-                    if (current != null && current.isExpanded) {
-                        ArrayList<TdApi.ForumTopic> topicList = new ArrayList<>();
-                        if (result.topics != null) {
-                            Collections.addAll(topicList, result.topics);
-                        }
-
-                        DialogItem withTopics = current.copyWithTopics(topicList);
-                        viewModel.getDialogs().put(chatId, withTopics);
-                        refreshList();
-                    }
-                });
-            }
-        });
-    }
-
-
     private void setupInsets() {
         viewModel.getTopInset().observe(getViewLifecycleOwner(), height -> {
             currentTop = height;
             updateRecyclerPadding();
+            updateFoldersBarMargin();
         });
 
         viewModel.getBottomInset().observe(getViewLifecycleOwner(), height -> {
             currentBottom = height;
             updateRecyclerPadding();
         });
+    }
+
+    private void updateFoldersBarMargin() {
+        ViewGroup.MarginLayoutParams lp =
+                (ViewGroup.MarginLayoutParams) foldersRecyclerView.getLayoutParams();
+        if (lp != null) {
+            lp.topMargin = currentTop;
+            foldersRecyclerView.setLayoutParams(lp);
+        }
+    }
+
+    private void updateRecyclerPadding() {
+        int foldersHeight = (foldersRecyclerView.getVisibility() == View.VISIBLE)
+                ? foldersRecyclerView.getHeight()
+                : 0;
+
+        if (foldersHeight == 0 && foldersRecyclerView.getVisibility() == View.VISIBLE) {
+            foldersHeight = (int) (48 * getResources().getDisplayMetrics().density);
+        }
+
+        recyclerView.setPadding(0, currentTop + foldersHeight, 0, currentBottom);
     }
 
     @Override
@@ -262,39 +305,6 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
             currentSession.removeUpdateHandler(this);
         }
         mainHandler.removeCallbacksAndMessages(null);
-    }
-
-    @Override
-    public void onResult(TdApi.Object object) {
-        if (object instanceof TdApi.Chat) {
-            updateChat((TdApi.Chat) object);
-        }
-
-        else if (object instanceof TdApi.UpdateNewChat) {
-            updateChat(((TdApi.UpdateNewChat) object).chat);
-        }
-
-        else if (object instanceof TdApi.UpdateChatPosition) {
-            TdApi.UpdateChatPosition u = (TdApi.UpdateChatPosition) object;
-            if (u.position.list instanceof TdApi.ChatListMain) {
-                handleChatPosition(u.chatId, u.position);
-            }
-        }
-
-        else if (object instanceof TdApi.UpdateChatLastMessage) {
-            TdApi.UpdateChatLastMessage u = (TdApi.UpdateChatLastMessage) object;
-//            if (u.position.list instanceof TdApi.ChatListMain) {
-                currentSession.send(new TdApi.GetChat(u.chatId), this);
-//            }
-        }
-
-        else if (object instanceof TdApi.UpdateChatReadInbox) {
-            currentSession.send(new TdApi.GetChat(((TdApi.UpdateChatReadInbox) object).chatId), this);
-        }
-
-        else if (object instanceof TdApi.UpdateChatAction) {
-            handleTyping(((TdApi.UpdateChatAction) object).chatId);
-        }
     }
 
     @Override
@@ -311,7 +321,6 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
             if (account == null) return;
 
             currentSession = AccountManager.getInstance().getSession(account.getAccountId());
-
             TdMediaRepository.get().setCurrentAccountId(account.getAccountId());
 
             if (currentSession != null) {
@@ -328,39 +337,85 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
 
     private void loadMoreChats() {
         if (currentSession == null || isLoadingMore || endReached) return;
-
         isLoadingMore = true;
 
+        TdApi.ChatList chatList = activeChatList();
+
         currentSession.send(
-                new TdApi.LoadChats(new TdApi.ChatListMain(), 5),
+                new TdApi.LoadChats(chatList, 20),
                 object -> mainHandler.post(() -> {
                     isLoadingMore = false;
-
                     if (object instanceof TdApi.Error) {
-                        return;
+                        TdApi.Error err = (TdApi.Error) object;
+                        if (err.code == 404) endReached = true;
                     }
                 })
         );
     }
 
-    private void updateRecyclerPadding() {
-        recyclerView.setPadding(0,
-                currentTop,
-                0,
-                currentBottom
-        );
+    @Override
+    public void onResult(TdApi.Object object) {
+        if (object instanceof TdApi.Chat) {
+            updateChat((TdApi.Chat) object);
+        }
+        else if (object instanceof TdApi.UpdateNewChat) {
+            updateChat(((TdApi.UpdateNewChat) object).chat);
+        }
+        else if (object instanceof TdApi.UpdateChatPosition) {
+            TdApi.UpdateChatPosition u = (TdApi.UpdateChatPosition) object;
+            if (matchesActiveList(u.position.list)) {
+                handleChatPosition(u.chatId, u.position);
+            } else {
+                if (viewModel.getDialogs().remove(u.chatId) != null) {
+                    refreshList();
+                }
+            }
+        }
+        else if (object instanceof TdApi.UpdateChatLastMessage) {
+            currentSession.send(
+                    new TdApi.GetChat(((TdApi.UpdateChatLastMessage) object).chatId), this);
+        }
+        else if (object instanceof TdApi.UpdateChatReadInbox) {
+            currentSession.send(
+                    new TdApi.GetChat(((TdApi.UpdateChatReadInbox) object).chatId), this);
+        }
+        else if (object instanceof TdApi.UpdateChatAction) {
+            handleTyping(((TdApi.UpdateChatAction) object).chatId);
+        }
+        else if (object instanceof TdApi.UpdateChatFolders) {
+            TdApi.UpdateChatFolders u = (TdApi.UpdateChatFolders) object;
+            rawFolders.clear();
+            if (u.chatFolders != null) {
+                Collections.addAll(rawFolders, u.chatFolders);
+            }
+            mainChatListPosition = u.mainChatListPosition;
+
+            boolean currentStillExists = (currentFolderId == FolderItem.ID_ALL);
+            for (TdApi.ChatFolderInfo info : rawFolders) {
+                if (info.id == currentFolderId) {
+                    currentStillExists = true;
+                    break;
+                }
+            }
+            if (!currentStillExists) {
+                currentFolderId = FolderItem.ID_ALL;
+                viewModel.getDialogs().clear();
+                isLoadingMore = false;
+                endReached = false;
+                loadMoreChats();
+            }
+
+            rebuildFolderTabs();
+        }
     }
 
     private void updateChat(TdApi.Chat chat) {
-        long order = getOrder(chat);
+        long order = getOrderForActiveList(chat);
 
         if (order == 0) {
-            if (viewModel.getDialogs().remove(chat.id) != null) {
-                refreshList();
-            }
+            if (viewModel.getDialogs().remove(chat.id) != null) refreshList();
             return;
         }
-
 
         DialogItem oldItem = viewModel.getDialogs().get(chat.id);
         DialogItem newItem = new DialogItem(chat, order);
@@ -377,16 +432,14 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
 
     private void handleChatPosition(long chatId, TdApi.ChatPosition position) {
         if (position.order == 0) {
-            if (viewModel.getDialogs().remove(chatId) != null) {
-                refreshList();
-            }
+            if (viewModel.getDialogs().remove(chatId) != null) refreshList();
             return;
         }
 
         DialogItem old = viewModel.getDialogs().get(chatId);
         if (old != null) {
-            DialogItem fresh = old.copyWithOrderPinned(position.order, position.isPinned);
-            viewModel.getDialogs().put(chatId, fresh);
+            viewModel.getDialogs().put(chatId,
+                    old.copyWithOrderPinned(position.order, position.isPinned));
             refreshList();
         } else {
             currentSession.send(new TdApi.GetChat(chatId), this);
@@ -395,18 +448,45 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
 
     private void handleTyping(long chatId) {
         DialogItem old = viewModel.getDialogs().get(chatId);
-        if (old != null) {
-            viewModel.getDialogs().put(chatId, old.copyWithTyping(true));
-            refreshList();
+        if (old == null) return;
 
-            mainHandler.postDelayed(() -> {
-                DialogItem cur = viewModel.getDialogs().get(chatId);
-                if (cur != null) {
-                    viewModel.getDialogs().put(chatId, cur.copyWithTyping(false));
+        viewModel.getDialogs().put(chatId, old.copyWithTyping(true));
+        refreshList();
+
+        mainHandler.postDelayed(() -> {
+            DialogItem cur = viewModel.getDialogs().get(chatId);
+            if (cur != null) {
+                viewModel.getDialogs().put(chatId, cur.copyWithTyping(false));
+                refreshList();
+            }
+        }, 3000);
+    }
+
+    private void toggleForumTopics(DialogItem item) {
+        boolean newState = !item.isExpanded;
+        viewModel.getDialogs().put(item.chatId, item.copyWithExpanded(newState));
+        refreshList();
+
+        if (newState && (item.topics == null || item.topics.isEmpty())) {
+            loadTopics(item.chatId);
+        }
+    }
+
+    private void loadTopics(long chatId) {
+        currentSession.send(new TdApi.GetForumTopics(chatId, "", 0, 0, 0, 100), object -> {
+            if (!(object instanceof TdApi.ForumTopics)) return;
+            TdApi.ForumTopics result = (TdApi.ForumTopics) object;
+
+            mainHandler.post(() -> {
+                DialogItem current = viewModel.getDialogs().get(chatId);
+                if (current != null && current.isExpanded) {
+                    ArrayList<TdApi.ForumTopic> topicList = new ArrayList<>();
+                    if (result.topics != null) Collections.addAll(topicList, result.topics);
+                    viewModel.getDialogs().put(chatId, current.copyWithTopics(topicList));
                     refreshList();
                 }
-            }, 3000);
-        }
+            });
+        });
     }
 
     private void refreshList() {
@@ -415,12 +495,9 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
             return;
         }
 
-        if (rebuildRunnable != null) {
-            mainHandler.removeCallbacks(rebuildRunnable);
-        }
+        if (rebuildRunnable != null) mainHandler.removeCallbacks(rebuildRunnable);
 
         rebuildRunnable = () -> {
-
             ArrayList<DialogItem> list = new ArrayList<>(viewModel.getDialogs().values());
 
             final Map<Long, Integer> pinnedIndex = new HashMap<>();
@@ -432,7 +509,6 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
 
             Collections.sort(list, (a, b) -> {
                 if (a.isPinned != b.isPinned) return a.isPinned ? -1 : 1;
-
                 if (a.isPinned) {
                     Integer ia = pinnedIndex.get(a.chatId);
                     Integer ib = pinnedIndex.get(b.chatId);
@@ -442,7 +518,6 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
                         return Integer.compare(ia, ib);
                     }
                 }
-
                 return Long.compare(b.order, a.order);
             });
 
@@ -458,16 +533,35 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
         long[] ids = new long[pinnedIds.size()];
         for (int i = 0; i < pinnedIds.size(); ++i) ids[i] = pinnedIds.get(i);
 
-        currentSession.send(new TdApi.SetPinnedChats(new TdApi.ChatListMain(), ids));
+        currentSession.send(new TdApi.SetPinnedChats(activeChatList(), ids));
     }
 
-    private long getOrder(TdApi.Chat chat) {
-        if(chat == null || chat.positions == null) return 0;
-        for(TdApi.ChatPosition pos : chat.positions){
-            if(pos.list instanceof TdApi.ChatListMain){
-                return pos.order;
-            }
+    private TdApi.ChatList activeChatList() {
+        if (currentFolderId == FolderItem.ID_ALL) {
+            return new TdApi.ChatListMain();
+        }
+        return new TdApi.ChatListFolder(currentFolderId);
+    }
+
+    private boolean matchesActiveList(TdApi.ChatList list) {
+        if (currentFolderId == FolderItem.ID_ALL) {
+            return list instanceof TdApi.ChatListMain;
+        }
+        if (list instanceof TdApi.ChatListFolder) {
+            return ((TdApi.ChatListFolder) list).chatFolderId == currentFolderId;
+        }
+        return false;
+    }
+
+    private long getOrderForActiveList(TdApi.Chat chat) {
+        if (chat == null || chat.positions == null) return 0;
+        for (TdApi.ChatPosition pos : chat.positions) {
+            if (matchesActiveList(pos.list)) return pos.order;
         }
         return 0;
+    }
+
+    private List<FolderItem> foldersAdapterCurrentList() {
+        return foldersAdapter.getCurrentList();
     }
 }
