@@ -38,6 +38,7 @@ import com.github.borz7zy.telegramm.ui.model.MessageItem;
 import com.github.borz7zy.telegramm.ui.model.PhotoData;
 import com.github.borz7zy.telegramm.ui.model.SystemMessages;
 import com.github.borz7zy.telegramm.ui.widget.JustifiedLayout;
+import com.github.borz7zy.telegramm.ui.widget.EmojiStatusView;
 import com.github.borz7zy.telegramm.utils.RoundedOutlineProvider;
 import com.github.borz7zy.telegramm.utils.TdMediaRepository;
 
@@ -192,14 +193,49 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
             h.groupChatUserTag.setVisibility(hasTag ? View.VISIBLE : View.GONE);
             if (hasTag) h.groupChatUserTag.setText(m.gcTag);
         }
+        if (h.emojiStatus != null) {
+            h.emojiStatus.setEmojiStatus(m.senderEmojiCustomEmojiId);
+        }
         if (m.ui instanceof UiContent.Sticker sticker) {
+            applyStickerBubble(h);
             bindSticker(h, sticker);
+            bindIncomingAvatar(h, m);
             return;
         }
 
+        applyDefaultBubble(h);
         bindImages(h, h.imageBoardTop, m.photos);
         bindIncomingAvatar(h, m);
         bindButtons(h, m);
+    }
+
+    private void applyStickerBubble(VH h) {
+        if (h.bubble == null) return;
+        h.bubble.setBackground(null);
+        h.bubble.setPadding(0, 0, 0, 0);
+    }
+
+    private void applyDefaultBubble(VH h) {
+        if (h.bubble == null) return;
+        if (h.bubble.getBackground() != h.bubbleBg) {
+            h.bubble.setBackground(h.bubbleBg);
+        }
+        h.bubble.setPadding(h.bubblePadL, h.bubblePadT, h.bubblePadR, h.bubblePadB);
+    }
+
+    private static int[] computeStickerSizePx(View view, int rawW, int rawH) {
+        int maxPx = (int) (180 * view.getResources().getDisplayMetrics().density);
+        if (rawW <= 0 || rawH <= 0) return new int[]{maxPx, maxPx};
+        float ratio = (float) rawW / (float) rawH;
+        int w, h;
+        if (ratio >= 1f) {
+            w = maxPx;
+            h = (int) (maxPx / ratio);
+        } else {
+            h = maxPx;
+            w = (int) (maxPx * ratio);
+        }
+        return new int[]{w, h};
     }
 
     private void resetMedia(VH h) {
@@ -268,6 +304,9 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
     private void bindSticker(VH h, UiContent.Sticker sticker) {
         if (sticker.fileId == 0) return;
 
+        int[] size = computeStickerSizePx(h.itemView, sticker.width, sticker.height);
+        applyStickerSize(h, sticker.type, size[0], size[1]);
+
         String cached = TdMediaRepository.get().getCachedPath(sticker.fileId);
         if (!TextUtils.isEmpty(cached)) {
             if (sticker.type != UiContent.StickerType.VIDEO_WEBM) {
@@ -279,16 +318,11 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         }
 
         String contentKey = "sticker_" + sticker.fileId;
-        if (Objects.equals(contentKey, h.stickerView.getTag()) ||
-                Objects.equals(contentKey, h.stickerPlayerView.getTag())) {
-            return;
-        }
-
         h.stickerView.setTag(contentKey);
         h.stickerPlayerView.setTag(contentKey);
 
         if (sticker.type != UiContent.StickerType.VIDEO_WEBM) {
-            h.stickerView.setImageResource(R.drawable.bg_msg_bubble);
+            h.stickerView.setImageDrawable(null);
             h.stickerView.setVisibility(View.VISIBLE);
         } else {
             h.stickerPlayerView.setVisibility(View.VISIBLE);
@@ -306,23 +340,27 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
             if (sticker.type != UiContent.StickerType.VIDEO_WEBM) {
                 ImageView iv = weakImg.get();
                 if (iv == null || !Objects.equals(iv.getTag(), contentKey) || TextUtils.isEmpty(path)) return;
-                iv.post(() -> {
-                    iv.getLayoutParams().width = sticker.width;
-                    iv.getLayoutParams().height = sticker.height;
-                    iv.setLayoutParams(iv.getLayoutParams());
-                    renderSticker(iv, path, sticker.type);
-                });
+                iv.post(() -> renderSticker(iv, path, sticker.type));
             } else {
                 PlayerView pv = weakPlayer.get();
                 if (pv == null || !Objects.equals(pv.getTag(), contentKey) || TextUtils.isEmpty(path)) return;
-                pv.post(() -> {
-                    pv.getLayoutParams().width = sticker.width;
-                    pv.getLayoutParams().height = sticker.height;
-                    pv.setLayoutParams(pv.getLayoutParams());
-                    renderSticker(pv, path, sticker.type);
-                });
+                pv.post(() -> renderSticker(pv, path, sticker.type));
             }
         });
+    }
+
+    private void applyStickerSize(VH h, UiContent.StickerType type, int w, int h2) {
+        if (type != UiContent.StickerType.VIDEO_WEBM) {
+            ViewGroup.LayoutParams lp = h.stickerView.getLayoutParams();
+            lp.width = w;
+            lp.height = h2;
+            h.stickerView.setLayoutParams(lp);
+        } else {
+            ViewGroup.LayoutParams lp = h.stickerPlayerView.getLayoutParams();
+            lp.width = w;
+            lp.height = h2;
+            h.stickerPlayerView.setLayoutParams(lp);
+        }
     }
 
     @UnstableApi
@@ -460,6 +498,9 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
                     h.groupChatUserTag.setVisibility(View.GONE);
                 }
             }
+            if (h.emojiStatus != null) {
+                h.emojiStatus.setEmojiStatus(item.senderEmojiCustomEmojiId);
+            }
             bindIncomingAvatar(h, item);
         }
 
@@ -504,6 +545,7 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
     static class VH extends RecyclerView.ViewHolder {
         final TextView userName;
         final TextView groupChatUserTag;
+        final EmojiStatusView emojiStatus;
         final TextView text;
         final TextView time;
         final JustifiedLayout imageBoardTop;
@@ -515,6 +557,13 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         final ImageView avatar;
         final ViewGroup buttonsContainer;
 
+        final View bubble;
+        final android.graphics.drawable.Drawable bubbleBg;
+        final int bubblePadL;
+        final int bubblePadT;
+        final int bubblePadR;
+        final int bubblePadB;
+
         long mediaRequestId = 0L;
 
         VH(@NonNull View itemView) {
@@ -524,6 +573,7 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
 
             userName = itemView.findViewById(R.id.username_tv);
             groupChatUserTag = itemView.findViewById(R.id.group_tag_tv);
+            emojiStatus = itemView.findViewById(R.id.emoji_status_view);
 
             text = itemView.findViewById(R.id.tv_text);
 
@@ -539,6 +589,18 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
             avatar = itemView.findViewById(R.id.msg_avatar);
 
             buttonsContainer = itemView.findViewById(R.id.buttons_container);
+
+            bubble = itemView.findViewById(R.id.bubble);
+            if (bubble != null) {
+                bubbleBg = bubble.getBackground();
+                bubblePadL = bubble.getPaddingLeft();
+                bubblePadT = bubble.getPaddingTop();
+                bubblePadR = bubble.getPaddingRight();
+                bubblePadB = bubble.getPaddingBottom();
+            } else {
+                bubbleBg = null;
+                bubblePadL = bubblePadT = bubblePadR = bubblePadB = 0;
+            }
         }
     }
 
@@ -571,6 +633,7 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
             if (!TextUtils.equals(oldItem.senderName, newItem.senderName)) return false;
             if (!TextUtils.equals(oldItem.gcTag, newItem.gcTag)) return false;
             if (oldItem.senderAvatarFileId != newItem.senderAvatarFileId) return false;
+            if (oldItem.senderEmojiCustomEmojiId != newItem.senderEmojiCustomEmojiId) return false;
             return buttonsEqual(oldItem.ui, newItem.ui);
         }
 
@@ -583,7 +646,8 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
 
             if (!TextUtils.equals(oldItem.senderName, newItem.senderName) ||
                     !TextUtils.equals(oldItem.gcTag, newItem.gcTag) ||
-                    oldItem.senderAvatarFileId != newItem.senderAvatarFileId) {
+                    oldItem.senderAvatarFileId != newItem.senderAvatarFileId ||
+                    oldItem.senderEmojiCustomEmojiId != newItem.senderEmojiCustomEmojiId) {
                 mask |= PAYLOAD_USER_INFO;
             }
             return mask == 0 ? null : mask;

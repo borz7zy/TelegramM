@@ -378,6 +378,8 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
 
             currentSession = AccountManager.getInstance().getSession(account.getAccountId());
             TdMediaRepository.get().setCurrentAccountId(account.getAccountId());
+            com.github.borz7zy.telegramm.utils.EmojiStatusRepository.get()
+                    .setCurrentAccountId(account.getAccountId());
 
             if (currentSession != null) {
                 currentSession.addUpdateHandler(this);

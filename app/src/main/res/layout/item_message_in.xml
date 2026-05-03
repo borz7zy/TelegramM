@@ -9,18 +9,33 @@
     android:paddingTop="4dp"
     android:paddingBottom="4dp">
 
-    <TextView
-        android:id="@+id/username_tv"
+    <LinearLayout
+        android:id="@+id/username_row"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:visibility="gone"
-        android:textColor="@color/secondaryContainerColor"
-        android:textSize="12sp"
-        android:alpha="0.65"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
         app:layout_constraintBottom_toTopOf="@+id/group_tag_tv"
-        app:layout_constraintStart_toStartOf="@+id/bubble"
-        tools:visibility="visible"
-        tools:text="Юрий Г." />
+        app:layout_constraintStart_toStartOf="@+id/bubble">
+
+        <TextView
+            android:id="@+id/username_tv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:textColor="@color/secondaryContainerColor"
+            android:textSize="12sp"
+            android:alpha="0.65"
+            tools:visibility="visible"
+            tools:text="Юрий Г." />
+
+        <com.github.borz7zy.telegramm.ui.widget.EmojiStatusView
+            android:id="@+id/emoji_status_view"
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:layout_marginStart="4dp"
+            android:visibility="gone"/>
+    </LinearLayout>
 
     <TextView
         android:id="@+id/group_tag_tv"

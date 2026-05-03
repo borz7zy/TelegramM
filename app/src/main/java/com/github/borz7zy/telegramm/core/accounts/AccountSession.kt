@@ -52,6 +52,11 @@ class AccountSession(private val context: Context, private val account: AccountE
 
     val authStateLiveData = MutableLiveData<AuthorizationState>()
 
+    val currentUserLiveData = MutableLiveData<TdApi.User?>()
+
+    @Volatile
+    private var myUserId: Long = 0
+
     private val updateHandlers = CopyOnWriteArrayList<ResultHandler>()
 
     @Volatile
@@ -118,6 +123,13 @@ class AccountSession(private val context: Context, private val account: AccountE
             lastChatFoldersUpdate = update
         }
 
+        if (update is TdApi.UpdateUser) {
+            val u = update.user
+            if (u != null && u.id == myUserId && myUserId != 0L) {
+                currentUserLiveData.postValue(u)
+            }
+        }
+
         if (update is TdApi.Object) {
             for (handler in updateHandlers) {
                 handler.onResult(update)
@@ -182,6 +194,9 @@ class AccountSession(private val context: Context, private val account: AccountE
 
         client!!.send(GetMe(), ResultHandler { result: TdApi.Object? ->
             if (result is TdApi.User) {
+                myUserId = result.id
+                currentUserLiveData.postValue(result)
+
                 AppManager.getInstance()
                     .getExecutorDb()
                     .execute(Runnable {

@@ -20,10 +20,17 @@ import android.widget.TextView;
 
 import com.github.borz7zy.telegramm.AppManager;
 import com.github.borz7zy.telegramm.R;
+import com.github.borz7zy.telegramm.core.accounts.AccountManager;
+import com.github.borz7zy.telegramm.core.accounts.AccountSession;
+import com.github.borz7zy.telegramm.core.accounts.AccountStorage;
+import com.github.borz7zy.telegramm.ui.chat.ChatViewModel;
 import com.github.borz7zy.telegramm.ui.contacts.ContactsFragment;
 import com.github.borz7zy.telegramm.ui.dialogs.DialogsFragment;
 import com.github.borz7zy.telegramm.ui.settings.SettingsFragment;
+import com.github.borz7zy.telegramm.ui.widget.EmojiStatusView;
 import com.github.borz7zy.telegramm.ui.widget.LiquidTabBarView;
+import com.github.borz7zy.telegramm.utils.EmojiStatusRepository;
+import com.github.borz7zy.telegramm.utils.TdMediaRepository;
 
 import eightbitlab.com.blurview.BlurTarget;
 import eightbitlab.com.blurview.BlurView;
@@ -35,6 +42,7 @@ public class MainFragment extends Fragment {
     private FragmentContainerView fragmentContainer;
     private BlurView header;
     private TextView headerTitle;
+    private EmojiStatusView headerEmojiStatus;
     private BlurView bottomNavView;
     private BlurView hiddenPanelBottomView;
     private LiquidTabBarView tabBar;
@@ -93,12 +101,14 @@ public class MainFragment extends Fragment {
 
         tabBar = view.findViewById(R.id.liquidTabBar);
         headerTitle = view.findViewById(R.id.header_title);
+        headerEmojiStatus = view.findViewById(R.id.header_emoji_status);
 
         buttonSearch = view.findViewById(R.id.btn_search);
 
         mainViewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
 
         setupBlur(view);
+        observeCurrentUserEmojiStatus();
 
         dialogsFragment = getChildFragmentManager().findFragmentByTag("dialogs");
         contactsFragment = getChildFragmentManager().findFragmentByTag("contacts");
@@ -248,6 +258,26 @@ public class MainFragment extends Fragment {
         if (f instanceof ContactsFragment) return Screen.CONTACTS;
         if (f instanceof SettingsFragment) return Screen.SETTINGS;
         return null;
+    }
+
+    private void observeCurrentUserEmojiStatus() {
+        AccountStorage.getInstance().getCurrentActive(account -> {
+            if (account == null) return;
+            requireActivity().runOnUiThread(() -> {
+                if (!isAdded() || getView() == null) return;
+                AccountSession session = AccountManager.getInstance().getSession(account.getAccountId());
+                if (session == null) return;
+
+                TdMediaRepository.get().setCurrentAccountId(account.getAccountId());
+                EmojiStatusRepository.get().setCurrentAccountId(account.getAccountId());
+
+                session.getCurrentUserLiveData().observe(getViewLifecycleOwner(), user -> {
+                    if (headerEmojiStatus == null) return;
+                    long id = user == null ? 0L : ChatViewModel.customEmojiIdFromStatus(user.emojiStatus);
+                    headerEmojiStatus.setEmojiStatus(id);
+                });
+            });
+        });
     }
 
     private void setupBlur(View view) {

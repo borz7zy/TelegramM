@@ -21,11 +21,13 @@ public final class MessageItem {
     public final int senderAvatarFileId;
     public final String senderName;
     public final String gcTag;
+    public final long senderEmojiCustomEmojiId;
 
     public MessageItem(long id, long chatId, boolean outgoing,
                        String time, List<PhotoData> photos,
                        long mediaAlbumId, UiContent ui, int senderAvatarFileId,
-                       String senderName, String gcTag) {
+                       String senderName, String gcTag,
+                       long senderEmojiCustomEmojiId) {
         this.id = id;
         this.chatId = chatId;
         this.outgoing = outgoing;
@@ -36,6 +38,7 @@ public final class MessageItem {
         this.senderAvatarFileId = senderAvatarFileId;
         this.senderName = senderName;
         this.gcTag = gcTag;
+        this.senderEmojiCustomEmojiId = senderEmojiCustomEmojiId;
     }
 
     public MessageItem withAddedPhoto(PhotoData newPhoto, String newText) {
@@ -57,7 +60,8 @@ public final class MessageItem {
                 time, newPhotos,
                 mediaAlbumId,
                 newUi, senderAvatarFileId,
-                senderName, gcTag
+                senderName, gcTag,
+                senderEmojiCustomEmojiId
         );
     }
 
@@ -67,7 +71,8 @@ public final class MessageItem {
                 time, photos,
                 mediaAlbumId,
                 newUi, senderAvatarFileId,
-                senderName, gcTag
+                senderName, gcTag,
+                senderEmojiCustomEmojiId
         );
     }
 
@@ -84,6 +89,7 @@ public final class MessageItem {
                 Objects.equals(ui, that.ui) &&
                 Objects.equals(photos, that.photos) &&
                 senderAvatarFileId == that.senderAvatarFileId &&
+                senderEmojiCustomEmojiId == that.senderEmojiCustomEmojiId &&
                 senderName.equals(that.senderName) &&
                 gcTag.equals(that.gcTag);
     }

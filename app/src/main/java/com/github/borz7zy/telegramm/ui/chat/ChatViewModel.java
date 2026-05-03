@@ -141,6 +141,8 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
             );
 
             TdMediaRepository.get().setCurrentAccountId(account.getAccountId());
+            com.github.borz7zy.telegramm.utils.EmojiStatusRepository.get()
+                    .setCurrentAccountId(account.getAccountId());
             requestInitialHistory();
         });
     }
@@ -405,7 +407,8 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
                     new UiContent.Unknown(),
                     extractSenderAvatarFileId(m),
                     extractSenderName(m),
-                    extractGcTag(m));
+                    extractGcTag(m),
+                    extractSenderEmojiCustomEmojiId(m));
         }
 
         UiContent ui = uiMapper.map(m);
@@ -422,8 +425,29 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
                 time, photos, m.mediaAlbumId,
                 ui, extractSenderAvatarFileId(m),
                 extractSenderName(m),
-                extractGcTag(m)
+                extractGcTag(m),
+                extractSenderEmojiCustomEmojiId(m)
         );
+    }
+
+    private long extractSenderEmojiCustomEmojiId(TdApi.Message m) {
+        if (m.isOutgoing) return 0L;
+        if (!(m.senderId instanceof TdApi.MessageSenderUser)) return 0L;
+        long userId = ((TdApi.MessageSenderUser) m.senderId).userId;
+        TdApi.User user = fullUserCache.get(userId);
+        if (user == null) return 0L;
+        return customEmojiIdFromStatus(user.emojiStatus);
+    }
+
+    public static long customEmojiIdFromStatus(@androidx.annotation.Nullable TdApi.EmojiStatus status) {
+        if (status == null || status.type == null) return 0L;
+        if (status.type instanceof TdApi.EmojiStatusTypeCustomEmoji) {
+            return ((TdApi.EmojiStatusTypeCustomEmoji) status.type).customEmojiId;
+        }
+        if (status.type instanceof TdApi.EmojiStatusTypeUpgradedGift) {
+            return ((TdApi.EmojiStatusTypeUpgradedGift) status.type).symbolCustomEmojiId;
+        }
+        return 0L;
     }
 
     private int extractSenderAvatarFileId(TdApi.Message m) {
