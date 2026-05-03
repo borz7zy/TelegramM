@@ -97,6 +97,10 @@ public class DialogsAdapter extends RecyclerView.Adapter<DialogsAdapter.VH> {
         this.firstDiffListener = l;
     }
 
+    public void resetFirstDiff() {
+        firstDiffDone = false;
+    }
+
     public DialogsAdapter(){
         DiffUtil.ItemCallback<DialogItem> diffCallback =
                 new DiffUtil.ItemCallback<DialogItem>() {

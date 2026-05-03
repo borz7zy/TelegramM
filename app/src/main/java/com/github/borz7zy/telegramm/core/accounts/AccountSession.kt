@@ -54,6 +54,9 @@ class AccountSession(private val context: Context, private val account: AccountE
 
     private val updateHandlers = CopyOnWriteArrayList<ResultHandler>()
 
+    @Volatile
+    private var lastChatFoldersUpdate: TdApi.UpdateChatFolders? = null
+
     @OptIn(ExperimentalAtomicApi::class)
     private fun ensureClient() {
         if (client != null) return
@@ -109,6 +112,10 @@ class AccountSession(private val context: Context, private val account: AccountE
                     loadMeOnce()
                 }
             }
+        }
+
+        if (update is TdApi.UpdateChatFolders) {
+            lastChatFoldersUpdate = update
         }
 
         if (update is TdApi.Object) {
@@ -257,6 +264,7 @@ class AccountSession(private val context: Context, private val account: AccountE
 
     fun addUpdateHandler(handler: ResultHandler) {
         updateHandlers.add(handler)
+        lastChatFoldersUpdate?.let { handler.onResult(it) }
     }
 
     fun removeUpdateHandler(handler: ResultHandler) {

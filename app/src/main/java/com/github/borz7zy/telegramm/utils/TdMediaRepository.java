@@ -32,12 +32,39 @@ public final class TdMediaRepository {
 
     private volatile int currentAccountId = -1;
 
+    private final Client.ResultHandler updateHandler = object -> {
+        if (object instanceof TdApi.UpdateFile) {
+            handleFileUpdate(((TdApi.UpdateFile) object).file);
+        }
+    };
+
     private TdMediaRepository() {
         this.pathCache = new LruCache<>(2048);
     }
 
     public void setCurrentAccountId(int accountId) {
+        if (this.currentAccountId == accountId) return;
+
+        if (this.currentAccountId != -1) {
+            AccountSession old = AccountManager.getInstance().getSession(this.currentAccountId);
+            if (old != null) old.removeUpdateHandler(updateHandler);
+        }
+
         this.currentAccountId = accountId;
+
+        AccountSession next = AccountManager.getInstance().getSession(accountId);
+        if (next != null) next.addUpdateHandler(updateHandler);
+    }
+
+    private void handleFileUpdate(@Nullable TdApi.File file) {
+        if (file == null || file.local == null) return;
+        if (!file.local.isDownloadingCompleted) return;
+        if (TextUtils.isEmpty(file.local.path)) return;
+
+        final int fileId = file.id;
+        final String path = file.local.path;
+
+        mainHandler.post(() -> finish(fileId, path));
     }
 
     @Nullable

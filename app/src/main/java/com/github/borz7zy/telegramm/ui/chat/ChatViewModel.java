@@ -151,6 +151,7 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
         hasMore = true;
         oldestId = 0;
         isInitialLoad = true;
+        initialLoadRetryCount = 0;
         byId.clear();
         rawMessages.clear();
         albumGroups.clear();
@@ -286,44 +287,47 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
         }
     }
 
+    private static final int MAX_INITIAL_RETRIES = 4;
+    private static final long INITIAL_RETRY_DELAY_MS = 800L;
+
     private void handleHistory(TdApi.Messages msgs) {
         int count = (msgs == null || msgs.messages == null) ? 0 : msgs.messages.length;
 
-        if (count == 0) {
-            hasMore = false;
-            loading = false;
-            topLoading.postValue(false);
-            if(isInitialLoad){
-                isInitialLoad = false;
-                scheduleUiUpdate(false, true);
-            }
-            return;
-        }
-
-        for (TdApi.Message m : msgs.messages) {
+        for (int i = 0; i < count; i++) {
+            TdApi.Message m = msgs.messages[i];
             if (m == null || m.chatId != chatId) continue;
             processMessageAndPut(m);
             if (oldestId == 0 || m.id < oldestId) oldestId = m.id;
         }
 
-        hasMore = count >= PAGE_SIZE && oldestId > 1;
-
         if (isInitialLoad) {
+            if (count > 0) {
+                scheduleUiUpdate(false, true);
+            }
+
+            boolean partial = count < INITIAL_PAGE_SIZE;
+            if (partial && initialLoadRetryCount < MAX_INITIAL_RETRIES) {
+                initialLoadRetryCount++;
+                mainHandler.postDelayed(() -> {
+                    if (isCleared || session == null) return;
+                    long from = oldestId == 0 ? 0L : oldestId;
+                    session.send(new TdApi.GetChatHistory(chatId, from, 0, INITIAL_PAGE_SIZE, false), this);
+                }, INITIAL_RETRY_DELAY_MS);
+                return;
+            }
+
             isInitialLoad = false;
             loading = false;
-            scheduleUiUpdate(false, true);
-
-            if (count < INITIAL_PAGE_SIZE) {
-                mainHandler.postDelayed(() -> {
-                    if (isCleared) return;
-                    hasMore = true;
-                    loading = true;
-                    session.send(new TdApi.GetChatHistory(chatId, oldestId, -1, PAGE_SIZE, false), this);
-                }, 800);
-            }
+            hasMore = count >= PAGE_SIZE && oldestId > 1;
+            topLoading.postValue(false);
         } else {
             loading = false;
-            scheduleUiUpdate(true, false);
+            hasMore = count >= PAGE_SIZE && oldestId > 1;
+            if (count > 0) {
+                scheduleUiUpdate(true, false);
+            } else {
+                topLoading.postValue(false);
+            }
         }
     }
 

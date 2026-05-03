@@ -172,14 +172,70 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
         }
         foldersAdapter.submitList(updated);
 
-        viewModel.getDialogs().clear();
         isLoadingMore = false;
         endReached = false;
         pinnedOrderOverride = null;
 
-        mainHandler.post(() -> viewModel.setDialogsLoading(true));
+        rebuildDialogsFromCache();
+        adapter.resetFirstDiff();
 
-        loadMoreChats();
+        if (viewModel.getDialogs().isEmpty()) {
+            adapter.submitList(Collections.emptyList());
+            mainHandler.post(() -> viewModel.setDialogsLoading(true));
+            loadMoreChats();
+        } else {
+            mainHandler.post(() -> viewModel.setDialogsLoading(false));
+            refreshList();
+        }
+    }
+
+    private void rebuildDialogsFromCache() {
+        viewModel.getDialogs().clear();
+        for (TdApi.Chat chat : viewModel.getChatCache().values()) {
+            long order = getOrderForActiveList(chat);
+            if (order != 0) {
+                viewModel.getDialogs().put(chat.id, new DialogItem(chat, order));
+            }
+        }
+    }
+
+    private void cacheChat(TdApi.Chat chat) {
+        if (chat == null) return;
+        viewModel.getChatCache().put(chat.id, chat);
+    }
+
+    private void mergePositionIntoCache(long chatId, TdApi.ChatPosition position) {
+        TdApi.Chat cached = viewModel.getChatCache().get(chatId);
+        if (cached == null) return;
+
+        synchronized (cached) {
+            ArrayList<TdApi.ChatPosition> next = new ArrayList<>();
+            boolean replaced = false;
+            if (cached.positions != null) {
+                for (TdApi.ChatPosition p : cached.positions) {
+                    if (sameChatList(p.list, position.list)) {
+                        if (position.order != 0) next.add(position);
+                        replaced = true;
+                    } else {
+                        next.add(p);
+                    }
+                }
+            }
+            if (!replaced && position.order != 0) {
+                next.add(position);
+            }
+            cached.positions = next.toArray(new TdApi.ChatPosition[0]);
+        }
+    }
+
+    private static boolean sameChatList(TdApi.ChatList a, TdApi.ChatList b) {
+        if (a == null || b == null) return false;
+        if (a.getClass() != b.getClass()) return false;
+        if (a instanceof TdApi.ChatListFolder) {
+            return ((TdApi.ChatListFolder) a).chatFolderId
+                    == ((TdApi.ChatListFolder) b).chatFolderId;
+        }
+        return true;
     }
 
     private void setupRecyclerView() {
@@ -347,7 +403,12 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
                     isLoadingMore = false;
                     if (object instanceof TdApi.Error) {
                         TdApi.Error err = (TdApi.Error) object;
-                        if (err.code == 404) endReached = true;
+                        if (err.code == 404) {
+                            endReached = true;
+                            if (viewModel.getDialogs().isEmpty()) {
+                                viewModel.setDialogsLoading(false);
+                            }
+                        }
                     }
                 })
         );
@@ -356,19 +417,20 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
     @Override
     public void onResult(TdApi.Object object) {
         if (object instanceof TdApi.Chat) {
-            updateChat((TdApi.Chat) object);
+            TdApi.Chat chat = (TdApi.Chat) object;
+            cacheChat(chat);
+            updateChat(chat);
         }
         else if (object instanceof TdApi.UpdateNewChat) {
-            updateChat(((TdApi.UpdateNewChat) object).chat);
+            TdApi.Chat chat = ((TdApi.UpdateNewChat) object).chat;
+            cacheChat(chat);
+            updateChat(chat);
         }
         else if (object instanceof TdApi.UpdateChatPosition) {
             TdApi.UpdateChatPosition u = (TdApi.UpdateChatPosition) object;
+            mergePositionIntoCache(u.chatId, u.position);
             if (matchesActiveList(u.position.list)) {
                 handleChatPosition(u.chatId, u.position);
-            } else {
-                if (viewModel.getDialogs().remove(u.chatId) != null) {
-                    refreshList();
-                }
             }
         }
         else if (object instanceof TdApi.UpdateChatLastMessage) {
@@ -399,10 +461,14 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
             }
             if (!currentStillExists) {
                 currentFolderId = FolderItem.ID_ALL;
-                viewModel.getDialogs().clear();
                 isLoadingMore = false;
                 endReached = false;
-                loadMoreChats();
+                rebuildDialogsFromCache();
+                if (viewModel.getDialogs().isEmpty()) {
+                    loadMoreChats();
+                } else {
+                    refreshList();
+                }
             }
 
             rebuildFolderTabs();
@@ -441,6 +507,12 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
             viewModel.getDialogs().put(chatId,
                     old.copyWithOrderPinned(position.order, position.isPinned));
             refreshList();
+            return;
+        }
+
+        TdApi.Chat cached = viewModel.getChatCache().get(chatId);
+        if (cached != null) {
+            updateChat(cached);
         } else {
             currentSession.send(new TdApi.GetChat(chatId), this);
         }

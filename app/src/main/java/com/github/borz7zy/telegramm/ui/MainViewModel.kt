@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.github.borz7zy.telegramm.R
 import com.github.borz7zy.telegramm.ui.model.DialogItem
+import org.drinkless.tdlib.TdApi
 import java.util.concurrent.ConcurrentHashMap
 
 class MainViewModel : ViewModel() {
@@ -24,6 +25,8 @@ class MainViewModel : ViewModel() {
     fun setBottomInset(value: Int) { _bottomInset.value = value}
 
     val dialogs = ConcurrentHashMap<Long, DialogItem>()
+
+    val chatCache = ConcurrentHashMap<Long, TdApi.Chat>()
 
     private val _dialogList = MutableLiveData<List<DialogItem>>()
     val dialogList: LiveData<List<DialogItem>> get() = _dialogList
