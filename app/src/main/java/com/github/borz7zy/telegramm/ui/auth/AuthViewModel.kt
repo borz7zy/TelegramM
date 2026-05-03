@@ -1,11 +1,11 @@
 package com.github.borz7zy.telegramm.ui.auth
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
 import com.github.borz7zy.telegramm.core.accounts.AccountManager
 import com.github.borz7zy.telegramm.core.accounts.AccountSession
 import com.github.borz7zy.telegramm.core.accounts.AccountStorage
-import com.github.borz7zy.telegramm.core.accounts.requireCurrentAccount
 import com.github.borz7zy.telegramm.core.accounts.sendAwait
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -46,12 +46,15 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    private suspend fun resolveSession(): AccountSession =
-        AccountManager.getInstance()
-            .getOrCreateSession(
-                AccountStorage.getInstance()
-                    .requireCurrentAccount()
-            )
+    private suspend fun resolveSession(): AccountSession {
+        val storage = AccountStorage.getInstance()
+        storage.ensureFirstAccountExists()
+        val account = storage.observeActiveAccount()
+            .asFlow()
+            .filterNotNull()
+            .first()
+        return AccountManager.getInstance().getOrCreateSession(account)
+    }
 
     private suspend fun observeAuthState() {
         session.authStateFlow
