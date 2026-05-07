@@ -1,8 +1,12 @@
 package com.github.borz7zy.telegramm.ui;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ValueAnimator;
 import android.content.res.ColorStateList;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.view.animation.DecelerateInterpolator;
 
 import androidx.annotation.NonNull;
 import androidx.core.graphics.Insets;
@@ -11,6 +15,7 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentContainerView;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -47,6 +52,10 @@ public class MainFragment extends Fragment {
     private BlurView hiddenPanelBottomView;
     private LiquidTabBarView tabBar;
     private ImageView buttonSearch;
+    private RecyclerView foldersBar;
+    private int foldersBarFullHeight;
+    private ValueAnimator foldersAnimator;
+    private boolean foldersBarShown = false;
     private MainViewModel mainViewModel;
     private Fragment dialogsFragment;
     private Fragment contactsFragment;
@@ -105,6 +114,9 @@ public class MainFragment extends Fragment {
 
         buttonSearch = view.findViewById(R.id.btn_search);
 
+        foldersBar = view.findViewById(R.id.rv_folders);
+        foldersBarFullHeight = (int) (48 * getResources().getDisplayMetrics().density);
+
         mainViewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
 
         setupBlur(view);
@@ -130,7 +142,11 @@ public class MainFragment extends Fragment {
             fragmentContainer.post(() ->
                     tabBar.setSelectedIndex(menuIdToIndex(id))
             );
+            updateFoldersBarVisibility();
         });
+
+        mainViewModel.getFoldersAvailable().observe(getViewLifecycleOwner(), available ->
+                updateFoldersBarVisibility());
 
         if (savedInstanceState == null) {
             mainViewModel.setCurrentTab(R.id.nav_chats);
@@ -315,5 +331,75 @@ public class MainFragment extends Fragment {
         bottomNavView.addOnLayoutChangeListener((v1, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
             mainViewModel.setBottomInset(v1.getHeight());
         });
+    }
+
+    private void updateFoldersBarVisibility() {
+        Integer tab = mainViewModel.getCurrentTab().getValue();
+        Boolean available = mainViewModel.getFoldersAvailable().getValue();
+        boolean show = (tab != null && tab == R.id.nav_chats)
+                && (available != null && available);
+        animateFoldersBar(show);
+    }
+
+    private void animateFoldersBar(boolean show) {
+        if (foldersBar == null) return;
+        if (foldersBarShown == show
+                && (show ? foldersBar.getVisibility() == View.VISIBLE
+                         : foldersBar.getVisibility() == View.GONE)
+                && foldersAnimator == null) {
+            return;
+        }
+        foldersBarShown = show;
+
+        if (foldersAnimator != null) {
+            foldersAnimator.cancel();
+            foldersAnimator = null;
+        }
+
+        int startHeight;
+        if (show && foldersBar.getVisibility() != View.VISIBLE) {
+            ViewGroup.LayoutParams lp = foldersBar.getLayoutParams();
+            lp.height = 0;
+            foldersBar.setLayoutParams(lp);
+            foldersBar.setAlpha(0f);
+            foldersBar.setVisibility(View.VISIBLE);
+            startHeight = 0;
+        } else {
+            startHeight = foldersBar.getHeight();
+        }
+
+        int targetHeight = show ? foldersBarFullHeight : 0;
+
+        if (startHeight == targetHeight) {
+            foldersBar.setAlpha(show ? 1f : 0f);
+            if (!show) foldersBar.setVisibility(View.GONE);
+            return;
+        }
+
+        ValueAnimator anim = ValueAnimator.ofInt(startHeight, targetHeight);
+        anim.setDuration(show ? 220 : 180);
+        anim.setInterpolator(new DecelerateInterpolator());
+        anim.addUpdateListener(va -> {
+            int h = (int) va.getAnimatedValue();
+            ViewGroup.LayoutParams lp = foldersBar.getLayoutParams();
+            lp.height = h;
+            foldersBar.setLayoutParams(lp);
+            float fraction = va.getAnimatedFraction();
+            foldersBar.setAlpha(show ? fraction : 1f - fraction);
+        });
+        anim.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator a) {
+                if (foldersAnimator == a) foldersAnimator = null;
+                if (!show) foldersBar.setVisibility(View.GONE);
+            }
+
+            @Override
+            public void onAnimationCancel(Animator a) {
+                if (foldersAnimator == a) foldersAnimator = null;
+            }
+        });
+        foldersAnimator = anim;
+        anim.start();
     }
 }

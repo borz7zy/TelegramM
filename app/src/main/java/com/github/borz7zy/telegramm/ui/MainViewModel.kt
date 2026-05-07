@@ -41,4 +41,10 @@ class MainViewModel : ViewModel() {
     fun setDialogsLoading(loading: Boolean) {
         _dialogsLoading.value = loading
     }
+
+    private val _foldersAvailable = MutableLiveData<Boolean>(false)
+    val foldersAvailable: LiveData<Boolean> get() = _foldersAvailable
+    fun setFoldersAvailable(value: Boolean) {
+        if (_foldersAvailable.value != value) _foldersAvailable.value = value
+    }
 }

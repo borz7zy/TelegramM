@@ -82,7 +82,7 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
         viewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
 
         recyclerView = view.findViewById(R.id.recycler_dialogs);
-        foldersRecyclerView = view.findViewById(R.id.rv_folders);
+        foldersRecyclerView = requireActivity().findViewById(R.id.rv_folders);
         progressBar = view.findViewById(R.id.progress_dialogs);
 
         ThemeEngine themeEngine = AppManager.getInstance().getThemeEngine();
@@ -157,8 +157,7 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
         boolean hasFolders = rawFolders.size() > 0;
         mainHandler.post(() -> {
             foldersAdapter.submitList(tabs);
-            foldersRecyclerView.setVisibility(hasFolders ? View.VISIBLE : View.GONE);
-            updateRecyclerPadding();
+            viewModel.setFoldersAvailable(hasFolders);
         });
     }
 
@@ -324,7 +323,6 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
         viewModel.getTopInset().observe(getViewLifecycleOwner(), height -> {
             currentTop = height;
             updateRecyclerPadding();
-            updateFoldersBarMargin();
         });
 
         viewModel.getBottomInset().observe(getViewLifecycleOwner(), height -> {
@@ -333,25 +331,8 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
         });
     }
 
-    private void updateFoldersBarMargin() {
-        ViewGroup.MarginLayoutParams lp =
-                (ViewGroup.MarginLayoutParams) foldersRecyclerView.getLayoutParams();
-        if (lp != null) {
-            lp.topMargin = currentTop;
-            foldersRecyclerView.setLayoutParams(lp);
-        }
-    }
-
     private void updateRecyclerPadding() {
-        int foldersHeight = (foldersRecyclerView.getVisibility() == View.VISIBLE)
-                ? foldersRecyclerView.getHeight()
-                : 0;
-
-        if (foldersHeight == 0 && foldersRecyclerView.getVisibility() == View.VISIBLE) {
-            foldersHeight = (int) (48 * getResources().getDisplayMetrics().density);
-        }
-
-        recyclerView.setPadding(0, currentTop + foldersHeight, 0, currentBottom);
+        recyclerView.setPadding(0, currentTop, 0, currentBottom);
     }
 
     @Override

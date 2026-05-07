@@ -29,22 +29,4 @@
         app:layout_constraintTop_toTopOf="parent"
         tools:listitem="@layout/item_dialog" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rv_folders"
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:clipToPadding="false"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp"
-        android:orientation="horizontal"
-        android:background="@color/tg_background"
-        android:elevation="4dp"
-        android:visibility="gone"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:listitem="@layout/item_folder_tab"
-        tools:visibility="visible" />
-
 </androidx.constraintlayout.widget.ConstraintLayout>
