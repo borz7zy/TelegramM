@@ -17,13 +17,11 @@ if (gradlePropsFile.exists()){
 
 android {
     namespace 'com.github.borz7zy.telegramm'
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk 36
 
     defaultConfig {
         applicationId "com.github.borz7zy.telegramm"
-        minSdk 29
+        minSdk 33
         targetSdk 36
         versionCode gradleProps.getProperty("app.versionCode").toInteger()
         versionName gradleProps.getProperty("app.version").toString()
