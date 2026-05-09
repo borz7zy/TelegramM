@@ -56,8 +56,6 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
     private static final int VT_SYSTEM = 2;
     private static final int VT_LOADING = 3;
 
-    private int chatAvatarFileId = 0;
-
     public static final int PAYLOAD_TEXT = 1;
     public static final int PAYLOAD_MEDIA = 2;
     public static final int PAYLOAD_STATUS = 4;
@@ -532,12 +530,6 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
     }
 
 
-    public void setChatAvatar(int fileId) {
-        if (chatAvatarFileId == fileId) return;
-        chatAvatarFileId = fileId;
-        notifyDataSetChanged(); // TODO: optimize
-    }
-
     private int dp(View v, int dp) {
         return (int) (dp * v.getResources().getDisplayMetrics().density);
     }
@@ -759,6 +751,10 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
             layout.addView(iv);
         }
 
+        // Bind-time request id captured once: reject only callbacks for *previous* binds,
+        // not other photos in the same album.
+        final long bindReqId = h.mediaRequestId;
+
         for (int i = 0; i < MAX_PHOTO_POOL; ++i) {
             ImageView iv = (ImageView) layout.getChildAt(i);
             if (i >= count) {
@@ -794,14 +790,11 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
             } else if (photo.fileId != 0) {
                 iv.setImageResource(R.drawable.bg_msg_bubble);
 
-                long reqId = REQUEST_ID_GEN.incrementAndGet();
-                h.mediaRequestId = reqId;
-
                 WeakReference<ImageView> weak = new WeakReference<>(iv);
                 final String reqKey = contentKey;
 
                 TdMediaRepository.get().getPathOrRequest(photo.fileId, p -> {
-                    if (h.mediaRequestId != reqId) return;
+                    if (h.mediaRequestId != bindReqId) return;
                     ImageView v = weak.get();
                     if (v == null || !Objects.equals(v.getTag(), reqKey) || TextUtils.isEmpty(p)) return;
                     v.post(() -> loadGlideImage(v, p));

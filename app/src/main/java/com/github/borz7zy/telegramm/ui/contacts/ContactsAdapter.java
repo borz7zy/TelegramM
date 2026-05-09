@@ -10,6 +10,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.AsyncListDiffer;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
@@ -19,42 +21,59 @@ import com.github.borz7zy.telegramm.ui.ThemeEngine;
 import com.github.borz7zy.telegramm.ui.model.ContactItem;
 import com.github.borz7zy.telegramm.utils.TdMediaRepository;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class ContactsAdapter extends RecyclerView.Adapter<ContactsAdapter.VH> {
 
     private ThemeEngine.Theme theme;
 
-    public void setTheme(ThemeEngine.Theme theme){
-        this.theme = theme;
-    }
-
-    public interface OnContactClickListener{
+    public interface OnContactClickListener {
         void onContactClick(ContactItem item);
     }
 
     private OnContactClickListener clickListener;
-    public void setOnContactClickListener(OnContactClickListener l){
+
+    private final AsyncListDiffer<ContactItem> differ;
+
+    public ContactsAdapter() {
+        DiffUtil.ItemCallback<ContactItem> cb = new DiffUtil.ItemCallback<ContactItem>() {
+            @Override
+            public boolean areItemsTheSame(@NonNull ContactItem a, @NonNull ContactItem b) {
+                return a.userId == b.userId;
+            }
+
+            @Override
+            public boolean areContentsTheSame(@NonNull ContactItem a, @NonNull ContactItem b) {
+                return a.equals(b);
+            }
+        };
+        differ = new AsyncListDiffer<>(this, cb);
+        setHasStableIds(true);
+    }
+
+    public void setTheme(ThemeEngine.Theme theme) {
+        if (this.theme == theme) return;
+        this.theme = theme;
+        notifyItemRangeChanged(0, getItemCount());
+    }
+
+    public void setOnContactClickListener(OnContactClickListener l) {
         this.clickListener = l;
     }
 
-    final ArrayList<ContactItem> items = new ArrayList<>();
-
-    public void submitList(List<ContactItem> newList){
-        items.clear();
-        if (newList != null) items.addAll(newList);
-        notifyDataSetChanged();
+    public void submitList(List<ContactItem> newList) {
+        differ.submitList(newList == null ? Collections.emptyList() : newList);
     }
 
     @Override
     public int getItemCount() {
-        return items.size();
+        return differ.getCurrentList().size();
     }
 
     @Override
     public long getItemId(int position) {
-        return items.get(position).userId;
+        return differ.getCurrentList().get(position).userId;
     }
 
     @NonNull
@@ -67,37 +86,41 @@ public class ContactsAdapter extends RecyclerView.Adapter<ContactsAdapter.VH> {
 
     @Override
     public void onBindViewHolder(@NonNull VH h, int position) {
-        ContactItem item = items.get(position);
+        ContactItem item = differ.getCurrentList().get(position);
 
         h.itemView.setOnClickListener(v -> {
             if (clickListener != null) clickListener.onContactClick(item);
         });
 
-        int nameColor = theme.onSurfaceColor;
-        int statusColor = theme.onSecondaryContainerColor;
-        int badgeColor = theme.primaryColor;
-
         h.contactName.setText(item.name);
-        h.contactName.setTextColor(nameColor);
+        h.contactLastOnlineTime.setText(item.lastOnline != null ? item.lastOnline : "");
 
-        h.contactLastOnlineTime.setText(item.lastOnline != null ? item.lastOnline : ""); // TODO
-        h.contactLastOnlineTime.setTextColor(statusColor);
+        // Theme is delivered asynchronously; setTheme() will trigger a rebind.
+        int badgeColor = (theme != null) ? theme.primaryColor : 0xFF888888;
+        if (theme != null) {
+            h.contactName.setTextColor(theme.onSurfaceColor);
+            h.contactLastOnlineTime.setTextColor(theme.onSecondaryContainerColor);
+        }
 
-        bindAvatar(h.avatar, item.avatarFileId, item.avatarPath, badgeColor);
+        bindAvatar(h.avatar, item.userId, item.avatarFileId, item.avatarPath, badgeColor);
     }
 
-    private void bindAvatar(ImageView iv, int fileId, String pathFromModel, int badgeColor) {
+    private void bindAvatar(ImageView iv, long userId, int fileId, String pathFromModel, int badgeColor) {
         if (iv == null) return;
 
-        Glide.with(iv.getContext()).clear(iv);
+        Glide.with(iv).clear(iv);
 
         ShapeDrawable placeholder = new ShapeDrawable(new OvalShape());
         placeholder.getPaint().setColor(badgeColor);
 
         if (fileId == 0) {
+            iv.setTag(null);
             iv.setImageDrawable(placeholder);
             return;
         }
+
+        final String tag = "contact:" + userId + ":" + fileId;
+        iv.setTag(tag);
 
         String path = !TextUtils.isEmpty(pathFromModel)
                 ? pathFromModel
@@ -114,7 +137,11 @@ public class ContactsAdapter extends RecyclerView.Adapter<ContactsAdapter.VH> {
         }
 
         TdMediaRepository.get().getPathOrRequest(fileId, p -> {
+            // Reject the callback if this view was rebound to a different contact in the meantime.
+            Object cur = iv.getTag();
+            if (!(cur instanceof String) || !tag.equals(cur)) return;
             if (TextUtils.isEmpty(p)) return;
+
             Glide.with(iv)
                     .load(p)
                     .apply(RequestOptions.circleCropTransform()
@@ -128,7 +155,7 @@ public class ContactsAdapter extends RecyclerView.Adapter<ContactsAdapter.VH> {
         final TextView contactName, contactLastOnlineTime;
         final ImageView avatar;
 
-        VH(@NonNull View itemView){
+        VH(@NonNull View itemView) {
             super(itemView);
 
             contactName = itemView.findViewById(R.id.contact_name);

@@ -211,6 +211,18 @@ public class DialogsAdapter extends RecyclerView.Adapter<DialogsAdapter.VH> {
             return true;
         });
 
+        // Theme arrives asynchronously; setTheme() will trigger a rebind once available.
+        if (theme == null) {
+            h.name.setText(item.name);
+            h.time.setText(item.time);
+            h.message.setText(item.isTyping ? "Печатает..." : item.text);
+            h.unread.setVisibility(item.unread > 0 ? View.VISIBLE : View.GONE);
+            if (item.unread > 0) h.unread.setText(String.valueOf(item.unread));
+            h.showTopicsBtn.setVisibility(View.GONE);
+            h.topicsContainer.setVisibility(View.GONE);
+            return;
+        }
+
         int nameColor = theme.onSurfaceColor;
         int messageColor = theme.onSecondaryContainerColor;
         int timeColor = theme.onSecondaryContainerColor;

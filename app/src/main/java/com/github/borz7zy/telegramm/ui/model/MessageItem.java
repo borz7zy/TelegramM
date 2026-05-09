@@ -90,8 +90,8 @@ public final class MessageItem {
                 Objects.equals(photos, that.photos) &&
                 senderAvatarFileId == that.senderAvatarFileId &&
                 senderEmojiCustomEmojiId == that.senderEmojiCustomEmojiId &&
-                senderName.equals(that.senderName) &&
-                gcTag.equals(that.gcTag);
+                Objects.equals(senderName, that.senderName) &&
+                Objects.equals(gcTag, that.gcTag);
     }
 
     @Override

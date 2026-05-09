@@ -78,8 +78,8 @@ public abstract class UiContent {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (!(o instanceof Media that)) return false;
-            return Objects.equals(text, that.caption);
+            if (!(o instanceof Unknown that)) return false;
+            return Objects.equals(text, that.text);
         }
 
         @Override public int hashCode() { return Objects.hash(text); }
@@ -152,6 +152,20 @@ public abstract class UiContent {
         @Override
         public Kind kind() {
             return Kind.STICKER;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof Sticker that)) return false;
+            return fileId == that.fileId
+                    && width == that.width
+                    && height == that.height
+                    && type == that.type;
+        }
+
+        @Override public int hashCode() {
+            return Objects.hash(fileId, width, height, type);
         }
     }
 }
