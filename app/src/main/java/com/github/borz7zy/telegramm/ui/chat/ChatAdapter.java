@@ -30,7 +30,10 @@ import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.airbnb.lottie.LottieAnimationView;
+import com.airbnb.lottie.LottieComposition;
+import com.airbnb.lottie.LottieCompositionFactory;
 import com.airbnb.lottie.LottieDrawable;
+import com.airbnb.lottie.LottieTask;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.github.borz7zy.telegramm.R;
@@ -43,11 +46,15 @@ import com.github.borz7zy.telegramm.utils.RoundedOutlineProvider;
 import com.github.borz7zy.telegramm.utils.TdMediaRepository;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.zip.GZIPInputStream;
 
 public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.ViewHolder> {
 
@@ -241,6 +248,8 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         h.imageBoardBottom.setVisibility(View.GONE);
 
         h.stickerView.setVisibility(View.GONE);
+        // Stop any TGS animation left over from the previous binding.
+        h.stickerView.cancelAnimation();
         Glide.with(h.stickerView).clear(h.stickerView);
         // Clear the contentKey tag so a stale callback can't accidentally match
         // after the holder has been rebound to a different message.
@@ -386,22 +395,65 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
 
     @UnstableApi
     private void renderSticker(Object obj, String path, UiContent.StickerType type) {
-        if (type == UiContent.StickerType.STATIC) {
-            ImageView iv = (ImageView) obj;
-            iv.setVisibility(View.VISIBLE);
-            Glide.with(iv).load(path).dontAnimate().into(iv);
-        } else if (type == UiContent.StickerType.ANIMATED_TGS) {
-            if (!(obj instanceof LottieAnimationView)) return;
-            LottieAnimationView lav = (LottieAnimationView) obj;
-            lav.setVisibility(View.VISIBLE);
-            lav.setAnimation(new File(path).getAbsolutePath());
-            lav.setRepeatCount(LottieDrawable.INFINITE);
-            lav.playAnimation();
-        } else if (type == UiContent.StickerType.VIDEO_WEBM) {
+        if (type == UiContent.StickerType.VIDEO_WEBM) {
+            if (!(obj instanceof PlayerView)) return;
             PlayerView pv = (PlayerView) obj;
             pv.setVisibility(View.VISIBLE);
             renderVideoSticker(pv, path);
+            return;
         }
+
+        if (!(obj instanceof LottieAnimationView)) return;
+        LottieAnimationView lav = (LottieAnimationView) obj;
+
+        if (type == UiContent.StickerType.STATIC) {
+            // Make sure any TGS animation from a prior binding is stopped before
+            // Glide overwrites the drawable.
+            lav.cancelAnimation();
+            lav.setVisibility(View.VISIBLE);
+            Glide.with(lav).load(path).dontAnimate().into(lav);
+        } else if (type == UiContent.StickerType.ANIMATED_TGS) {
+            renderTgsSticker(lav, path);
+        }
+    }
+
+    private void renderTgsSticker(LottieAnimationView lav, String path) {
+        // Cancel any prior Glide load + Lottie animation; .tgs is a gzipped
+        // Lottie JSON, so we feed a GZIPInputStream into LottieCompositionFactory
+        // and key the cache by the file path.
+        Glide.with(lav).clear(lav);
+        lav.cancelAnimation();
+        lav.setVisibility(View.VISIBLE);
+
+        final String cacheKey = "tgs:" + path;
+        final Object expectedTag = lav.getTag();
+        final WeakReference<LottieAnimationView> weak = new WeakReference<>(lav);
+
+        InputStream is;
+        try {
+            is = new GZIPInputStream(new FileInputStream(path));
+        } catch (IOException e) {
+            com.github.borz7zy.telegramm.utils.Logger.LOGE(
+                    "ChatAdapter", "Failed to open TGS file: " + e.getMessage());
+            return;
+        }
+
+        LottieTask<LottieComposition> task =
+                LottieCompositionFactory.fromJsonInputStream(is, cacheKey);
+
+        task.addListener(composition -> {
+            LottieAnimationView v = weak.get();
+            if (v == null) return;
+            // The holder may have been rebound while the composition was
+            // being parsed off the main thread.
+            if (!Objects.equals(expectedTag, v.getTag())) return;
+            v.setComposition(composition);
+            v.setRepeatCount(LottieDrawable.INFINITE);
+            v.playAnimation();
+        });
+        task.addFailureListener(e -> com.github.borz7zy.telegramm.utils.Logger.LOGE(
+                "ChatAdapter",
+                "Failed to parse TGS: " + (e == null ? "null" : e.getMessage())));
     }
 
     @UnstableApi
@@ -565,7 +617,7 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         final TextView time;
         final JustifiedLayout imageBoardTop;
         final JustifiedLayout imageBoardBottom;
-        final ImageView stickerView;
+        final LottieAnimationView stickerView;
         PlayerView stickerPlayerView;
         ExoPlayer player;
         String currentVideoPath;
