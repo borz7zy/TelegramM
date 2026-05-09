@@ -52,13 +52,35 @@ public class SpringRecyclerView extends RecyclerView {
 
     @Override
     public boolean onTouchEvent(MotionEvent e) {
-        if (e.getActionMasked() == MotionEvent.ACTION_DOWN) {
-            boolean isFlying = getScrollState() == SCROLL_STATE_SETTLING;
-            sonic.setWasSettling(isFlying);
+        switch (e.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN: {
+                boolean isFlying = getScrollState() == SCROLL_STATE_SETTLING;
+                sonic.setWasSettling(isFlying);
 
-            stopScroll();
-            if (springAnimY != null && springAnimY.isRunning()) springAnimY.cancel();
-            if (springAnimX != null && springAnimX.isRunning()) springAnimX.cancel();
+                stopScroll();
+                // cancel() is a no-op when the animation isn't running, so we
+                // skip the explicit isRunning() check.
+                springAnimY.cancel();
+                springAnimX.cancel();
+                break;
+            }
+            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_CANCEL: {
+                // If a spring was interrupted by the user touching the screen
+                // mid-bounce and they released without pulling, the platform
+                // never calls onRelease() on the EdgeEffect, leaving the view
+                // stranded with a non-zero translation. Restart the spring
+                // here so the view always settles back to 0.
+                if (Math.abs(getTranslationY()) > EPSILON_PX && !springAnimY.isRunning()) {
+                    springAnimY.start();
+                }
+                if (Math.abs(getTranslationX()) > EPSILON_PX && !springAnimX.isRunning()) {
+                    springAnimX.start();
+                }
+                break;
+            }
+            default:
+                break;
         }
         return super.onTouchEvent(e);
     }
@@ -89,10 +111,13 @@ public class SpringRecyclerView extends RecyclerView {
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        if (springAnimY != null) springAnimY.cancel();
-        if (springAnimX != null) springAnimX.cancel();
+        springAnimY.cancel();
+        springAnimX.cancel();
         setTranslationY(0f);
         setTranslationX(0f);
+        // Boost streak shouldn't survive a detach/reattach cycle (e.g. the
+        // RV being moved between containers).
+        sonic.reset();
     }
 
     private final class SpringEdgeEffect extends EdgeEffect {
@@ -124,23 +149,20 @@ public class SpringRecyclerView extends RecyclerView {
         }
 
         private void handlePull(float deltaDistance) {
-            active = true;
-
-            SpringAnimation anim = vertical ? springAnimY : springAnimX;
-            if (anim.isRunning()) anim.cancel();
-
             int size = vertical ? getHeight() : getWidth();
             if (size <= 0) return;
 
-            float deltaPx = sign * deltaDistance * size * PULL_FACTOR;
+            active = true;
 
+            SpringAnimation anim = vertical ? springAnimY : springAnimX;
+            anim.cancel();
+
+            float deltaPx = sign * deltaDistance * size * PULL_FACTOR;
             float max = size * MAX_OVERSCROLL_FRACTION;
             if (vertical) {
-                float next = clamp(getTranslationY() + deltaPx, -max, max);
-                setTranslationY(next);
+                setTranslationY(clamp(getTranslationY() + deltaPx, -max, max));
             } else {
-                float next = clamp(getTranslationX() + deltaPx, -max, max);
-                setTranslationX(next);
+                setTranslationX(clamp(getTranslationX() + deltaPx, -max, max));
             }
         }
 
@@ -152,14 +174,18 @@ public class SpringRecyclerView extends RecyclerView {
 
         @Override
         public void onAbsorb(int velocity) {
-            active = true;
-
+            // NOTE: do NOT set active=true here. `active` tracks user pulls
+            // (set in handlePull, cleared in onRelease). onAbsorb is a system
+            // event triggered by a fling hitting the edge — leaving active
+            // alone lets isFinished() correctly observe the spring lifecycle.
             SpringAnimation anim = vertical ? springAnimY : springAnimX;
             anim.cancel();
 
             float v = sign * velocity * ABSORB_VELOCITY_FACTOR;
             anim.setStartVelocity(v);
 
+            // Nudge the view off the rest position so the spring has somewhere
+            // to bounce from. 1px is sub-pixel on hidpi, invisible.
             if (vertical && Math.abs(getTranslationY()) <= EPSILON_PX) setTranslationY(sign * 1f);
             if (!vertical && Math.abs(getTranslationX()) <= EPSILON_PX) setTranslationX(sign * 1f);
 
@@ -167,18 +193,14 @@ public class SpringRecyclerView extends RecyclerView {
         }
 
         private void startSpringBackIfNeeded() {
-            if (vertical) {
-                if (Math.abs(getTranslationY()) > EPSILON_PX) {
-                    springAnimY.start();
-                } else {
-                    setTranslationY(0f);
-                }
+            SpringAnimation anim = vertical ? springAnimY : springAnimX;
+            float t = vertical ? getTranslationY() : getTranslationX();
+            if (Math.abs(t) > EPSILON_PX) {
+                anim.start();
+            } else if (vertical) {
+                setTranslationY(0f);
             } else {
-                if (Math.abs(getTranslationX()) > EPSILON_PX) {
-                    springAnimX.start();
-                } else {
-                    setTranslationX(0f);
-                }
+                setTranslationX(0f);
             }
         }
 
@@ -201,10 +223,15 @@ public class SpringRecyclerView extends RecyclerView {
         @Override
         public void finish() {
             active = false;
-            if (springAnimY != null) springAnimY.cancel();
-            if (springAnimX != null) springAnimX.cancel();
-            setTranslationY(0f);
-            setTranslationX(0f);
+            // Only touch our axis: the other axis has its own EdgeEffect
+            // tracking an unrelated translation.
+            if (vertical) {
+                springAnimY.cancel();
+                setTranslationY(0f);
+            } else {
+                springAnimX.cancel();
+                setTranslationX(0f);
+            }
         }
     }
 

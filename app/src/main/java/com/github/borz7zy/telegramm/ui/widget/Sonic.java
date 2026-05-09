@@ -4,6 +4,13 @@ import android.os.SystemClock;
 
 import androidx.recyclerview.widget.RecyclerView;
 
+/**
+ * Repeated-fling boost: when the user flings in the same direction within
+ * {@link #BOOST_WINDOW_MS} of a previous fling (or while the previous fling
+ * was still settling), each subsequent fling's velocity is multiplied by a
+ * curve that grows with the streak length. The curve is logarithmic so the
+ * boost feels increasingly subtle past the first few flings.
+ */
 public final class Sonic {
     private static final long BOOST_WINDOW_MS = 400;
     private static final int MIN_VELOCITY = 500;
@@ -28,33 +35,27 @@ public final class Sonic {
         long now = SystemClock.uptimeMillis();
         int direction = Integer.signum(velocityY);
 
-        if (Math.abs(velocityY) < MIN_VELOCITY || direction == 0) {
-            reset();
-            return velocityY;
-        }
-
-        if (!rv.canScrollVertically(direction)) {
+        // Below the noise floor or against a non-scrollable edge: no boost.
+        if (Math.abs(velocityY) < MIN_VELOCITY
+                || direction == 0
+                || !rv.canScrollVertically(direction)) {
             reset();
             return velocityY;
         }
 
         boolean timeValid = (now - lastFlingTime < BOOST_WINDOW_MS);
         boolean isBoosting = (direction == lastDirection) && (timeValid || wasSettling);
+
         if (isBoosting) {
-            if (maxFlingVelocity > 0) {
-                int halfSpeed = maxFlingVelocity / 2;
-                if (Math.abs(velocityY) < halfSpeed) {
-                    velocityY = direction * halfSpeed;
-                    boostFactor = 1f;
-                } else {
-                    boostFactor = Math.min(boostFactor * BOOST_STEP, MAX_BOOST);
-                    float curvedBoost = 1f + (float) Math.log1p(boostFactor - 1f);
-                    velocityY = (int) (velocityY * curvedBoost);
-                }
+            // First "real" fling of a streak that's slower than half the
+            // platform max: bump it to the half-max baseline so the user
+            // feels an immediate response, and start the streak fresh.
+            int halfSpeed = maxFlingVelocity > 0 ? maxFlingVelocity / 2 : 0;
+            if (halfSpeed > 0 && Math.abs(velocityY) < halfSpeed) {
+                velocityY = direction * halfSpeed;
+                boostFactor = 1f;
             } else {
-                boostFactor = Math.min(boostFactor * BOOST_STEP, MAX_BOOST);
-                float curvedBoost = 1f + (float) Math.log1p(boostFactor - 1f);
-                velocityY = (int) (velocityY * curvedBoost);
+                velocityY = applyCurvedBoost(velocityY);
             }
         } else {
             boostFactor = 1f;
@@ -65,6 +66,17 @@ public final class Sonic {
         wasSettling = false;
 
         return velocityY;
+    }
+
+    /**
+     * Multiply velocity by the next step of the boost curve, capping the
+     * accumulated boost at {@link #MAX_BOOST}. Extracted out of {@link
+     * #applyBoost} so the formula isn't duplicated across branches.
+     */
+    private int applyCurvedBoost(int velocityY) {
+        boostFactor = Math.min(boostFactor * BOOST_STEP, MAX_BOOST);
+        float curvedBoost = 1f + (float) Math.log1p(boostFactor - 1f);
+        return (int) (velocityY * curvedBoost);
     }
 
     public void reset() {
