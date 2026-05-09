@@ -242,9 +242,13 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
 
         h.stickerView.setVisibility(View.GONE);
         Glide.with(h.stickerView).clear(h.stickerView);
+        // Clear the contentKey tag so a stale callback can't accidentally match
+        // after the holder has been rebound to a different message.
+        h.stickerView.setTag(null);
 
         h.stickerPlayerView.setVisibility(View.GONE);
         h.stickerPlayerView.setPlayer(null);
+        h.stickerPlayerView.setTag(null);
 
         h.mediaRequestId = REQUEST_ID_GEN.incrementAndGet();
 
@@ -305,44 +309,63 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         int[] size = computeStickerSizePx(h.itemView, sticker.width, sticker.height);
         applyStickerSize(h, sticker.type, size[0], size[1]);
 
+        // Tag the active sticker view so async callbacks can verify they're still
+        // targeting the right binding before mutating it.
+        final String contentKey = "sticker_" + sticker.fileId;
+        final boolean isVideo = sticker.type == UiContent.StickerType.VIDEO_WEBM;
+
+        if (isVideo) {
+            h.stickerPlayerView.setTag(contentKey);
+            h.stickerPlayerView.setVisibility(View.VISIBLE);
+        } else {
+            h.stickerView.setTag(contentKey);
+            h.stickerView.setVisibility(View.VISIBLE);
+        }
+
         String cached = TdMediaRepository.get().getCachedPath(sticker.fileId);
         if (!TextUtils.isEmpty(cached)) {
-            if (sticker.type != UiContent.StickerType.VIDEO_WEBM) {
-                renderSticker(h.stickerView, cached, sticker.type);
-            } else {
+            if (isVideo) {
                 renderSticker(h.stickerPlayerView, cached, sticker.type);
+            } else {
+                renderSticker(h.stickerView, cached, sticker.type);
             }
             return;
         }
 
-        String contentKey = "sticker_" + sticker.fileId;
-        h.stickerView.setTag(contentKey);
-        h.stickerPlayerView.setTag(contentKey);
-
-        if (sticker.type != UiContent.StickerType.VIDEO_WEBM) {
+        // Show an empty target while the file is downloading.
+        if (!isVideo) {
             h.stickerView.setImageDrawable(null);
-            h.stickerView.setVisibility(View.VISIBLE);
-        } else {
-            h.stickerPlayerView.setVisibility(View.VISIBLE);
         }
 
-        long requestId = REQUEST_ID_GEN.incrementAndGet();
+        final long requestId = REQUEST_ID_GEN.incrementAndGet();
         h.mediaRequestId = requestId;
 
         WeakReference<ImageView> weakImg = new WeakReference<>(h.stickerView);
         WeakReference<PlayerView> weakPlayer = new WeakReference<>(h.stickerPlayerView);
 
         TdMediaRepository.get().getPathOrRequest(sticker.fileId, path -> {
+            // The callback runs on the main thread (fired from finish() via mainHandler).
             if (h.mediaRequestId != requestId) return;
+            if (TextUtils.isEmpty(path)) return;
 
-            if (sticker.type != UiContent.StickerType.VIDEO_WEBM) {
-                ImageView iv = weakImg.get();
-                if (iv == null || !Objects.equals(iv.getTag(), contentKey) || TextUtils.isEmpty(path)) return;
-                iv.post(() -> renderSticker(iv, path, sticker.type));
-            } else {
+            if (isVideo) {
                 PlayerView pv = weakPlayer.get();
-                if (pv == null || !Objects.equals(pv.getTag(), contentKey) || TextUtils.isEmpty(path)) return;
-                pv.post(() -> renderSticker(pv, path, sticker.type));
+                if (pv == null || !contentKey.equals(pv.getTag())) return;
+                // Re-verify inside post(): the holder may be rebound between the
+                // check above and the runnable being dispatched.
+                pv.post(() -> {
+                    if (!contentKey.equals(pv.getTag())) return;
+                    if (h.mediaRequestId != requestId) return;
+                    renderSticker(pv, path, sticker.type);
+                });
+            } else {
+                ImageView iv = weakImg.get();
+                if (iv == null || !contentKey.equals(iv.getTag())) return;
+                iv.post(() -> {
+                    if (!contentKey.equals(iv.getTag())) return;
+                    if (h.mediaRequestId != requestId) return;
+                    renderSticker(iv, path, sticker.type);
+                });
             }
         });
     }
