@@ -37,8 +37,8 @@ import com.github.borz7zy.telegramm.ui.widget.LiquidTabBarView;
 import com.github.borz7zy.telegramm.utils.EmojiStatusRepository;
 import com.github.borz7zy.telegramm.utils.TdMediaRepository;
 
-import eightbitlab.com.blurview.BlurTarget;
-import eightbitlab.com.blurview.BlurView;
+import com.github.borz7zy.telegramm.ui.widget.blur.BlurTarget;
+import com.github.borz7zy.telegramm.ui.widget.blur.BlurView;
 
 public class MainFragment extends Fragment {
 

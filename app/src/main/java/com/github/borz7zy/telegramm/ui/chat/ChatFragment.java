@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.graphics.drawable.Drawable;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
@@ -70,9 +69,8 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import eightbitlab.com.blurview.BlurTarget;
-import eightbitlab.com.blurview.BlurView;
-import kotlin.Unit;
+import com.github.borz7zy.telegramm.ui.widget.blur.BlurTarget;
+import com.github.borz7zy.telegramm.ui.widget.blur.BlurView;
 
 public class ChatFragment extends DialogFragment {
 
@@ -759,9 +757,8 @@ public class ChatFragment extends DialogFragment {
         BlurTarget target = view.findViewById(R.id.blur_target);
         BlurView header = view.findViewById(R.id.header_blur);
         BlurView input = view.findViewById(R.id.input_blur);
-        Drawable bg = requireActivity().getWindow().getDecorView().getBackground();
-        header.setupWith(target).setFrameClearDrawable(bg).setBlurRadius(BLUR_RADIUS);
-        input.setupWith(target).setFrameClearDrawable(bg).setBlurRadius(BLUR_RADIUS);
+        header.setupWith(target).setBlurRadius(BLUR_RADIUS);
+        input.setupWith(target).setBlurRadius(BLUR_RADIUS);
     }
 
     private void closeAnimated() {

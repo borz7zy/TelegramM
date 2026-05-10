@@ -89,7 +89,6 @@ dependencies {
     implementation 'androidx.dynamicanimation:dynamicanimation:1.0.0'
     implementation 'com.github.massoudss:waveformSeekBar:5.0.2'
     implementation 'com.github.lincollincol:amplituda:2.2.2'
-    implementation 'com.github.Dimezis:BlurView:version-3.2.0'
 
     implementation 'com.airbnb.android:lottie:6.7.1'
     implementation "androidx.media3:media3-exoplayer:1.9.2"

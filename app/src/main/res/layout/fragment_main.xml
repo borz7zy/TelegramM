@@ -24,7 +24,7 @@
             android:layout_height="match_parent"
             tools:context=".ui.dialogs.DialogsFragment">
 
-            <eightbitlab.com.blurview.BlurTarget
+            <com.github.borz7zy.telegramm.ui.widget.blur.BlurTarget
                 android:id="@+id/blur_target"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
@@ -34,14 +34,14 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent" />
 
-            </eightbitlab.com.blurview.BlurTarget>
+            </com.github.borz7zy.telegramm.ui.widget.blur.BlurTarget>
 
-            <eightbitlab.com.blurview.BlurView
+            <com.github.borz7zy.telegramm.ui.widget.blur.BlurView
                 android:id="@+id/header_blur"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_alignParentTop="true"
-                app:blurOverlayColor="@android:color/transparent">
+>
 
                 <LinearLayout
                     android:id="@+id/topbar"
@@ -128,7 +128,7 @@
                         tools:visibility="visible" />
                 </LinearLayout>
 
-            </eightbitlab.com.blurview.BlurView>
+            </com.github.borz7zy.telegramm.ui.widget.blur.BlurView>
 
         </RelativeLayout>
     </FrameLayout>
@@ -142,27 +142,27 @@
         android:clickable="true"
         android:focusable="false">
 
-        <eightbitlab.com.blurview.BlurView
+        <com.github.borz7zy.telegramm.ui.widget.blur.BlurView
             android:id="@+id/bottom_blur"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:blurOverlayColor="@android:color/transparent">
+>
 
             <include
                 layout="@layout/item_bottom_nav"/>
 
-        </eightbitlab.com.blurview.BlurView>
+        </com.github.borz7zy.telegramm.ui.widget.blur.BlurView>
 
-        <eightbitlab.com.blurview.BlurView
+        <com.github.borz7zy.telegramm.ui.widget.blur.BlurView
             android:id="@+id/hidden_panel_blur"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            app:blurOverlayColor="@android:color/transparent">
+>
 
             <include
                 layout="@layout/fragment_profile"/>
 
-        </eightbitlab.com.blurview.BlurView>
+        </com.github.borz7zy.telegramm.ui.widget.blur.BlurView>
 
     </LinearLayout>
 
