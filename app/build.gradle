@@ -99,7 +99,6 @@ dependencies {
     implementation libs.fragment.ktx
     annotationProcessor 'com.github.bumptech.glide:compiler:5.0.5'
 
-    implementation project(':SharedUtils')
     implementation project(':SlidingMenu')
     implementation project(':LibMonet')
     implementation project(':tdlib')

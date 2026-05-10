@@ -209,11 +209,23 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         applyThemeToHolder(h, m);
 
         String text = "";
-        if (m.ui instanceof UiContent.Text t) text = t.text;
-        else if (m.ui instanceof UiContent.Media md) text = md.caption;
+        org.drinkless.tdlib.TdApi.TextEntity[] entities = null;
+        if (m.ui instanceof UiContent.Text t) {
+            text = t.text;
+            entities = t.entities;
+        } else if (m.ui instanceof UiContent.Media md) {
+            text = md.caption;
+            entities = md.entities;
+        }
 
         h.text.setVisibility(TextUtils.isEmpty(text) ? View.GONE : View.VISIBLE);
-        if (!TextUtils.isEmpty(text)) h.text.setText(text);
+        if (!TextUtils.isEmpty(text)) {
+            if (h.text instanceof com.github.borz7zy.telegramm.ui.emoji.EmojiTextView etv) {
+                etv.setFormattedText(text, entities);
+            } else {
+                h.text.setText(text);
+            }
+        }
 
         h.time.setText(m.time);
 
@@ -288,8 +300,9 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         if (h.groupChatUserTag != null) h.groupChatUserTag.setTextColor(subTextColor);
     }
 
-    private static int[] computeStickerSizePx(View view, int rawW, int rawH) {
-        int maxPx = (int) (180 * view.getResources().getDisplayMetrics().density);
+    private static int[] computeStickerSizePx(View view, int rawW, int rawH, boolean isAnimatedEmoji) {
+        int dpMax = isAnimatedEmoji ? 112 : 180;
+        int maxPx = (int) (dpMax * view.getResources().getDisplayMetrics().density);
         if (rawW <= 0 || rawH <= 0) return new int[]{maxPx, maxPx};
         float ratio = (float) rawW / (float) rawH;
         int w, h;
@@ -375,7 +388,7 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
     private void bindSticker(VH h, UiContent.Sticker sticker) {
         if (sticker.fileId == 0) return;
 
-        int[] size = computeStickerSizePx(h.itemView, sticker.width, sticker.height);
+        int[] size = computeStickerSizePx(h.itemView, sticker.width, sticker.height, sticker.isAnimatedEmoji);
         applyStickerSize(h, sticker.type, size[0], size[1]);
 
         // Tag the active sticker view so async callbacks can verify they're still
@@ -661,14 +674,24 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
 
         if ((mask & PAYLOAD_TEXT) != 0) {
             String text = "";
-            if (item.ui instanceof UiContent.Text t) text = t.text;
-            else if (item.ui instanceof UiContent.Media md) text = md.caption;
+            org.drinkless.tdlib.TdApi.TextEntity[] entities = null;
+            if (item.ui instanceof UiContent.Text t) {
+                text = t.text;
+                entities = t.entities;
+            } else if (item.ui instanceof UiContent.Media md) {
+                text = md.caption;
+                entities = md.entities;
+            }
 
             if (TextUtils.isEmpty(text)) {
                 h.text.setVisibility(View.GONE);
             } else {
                 h.text.setVisibility(View.VISIBLE);
-                h.text.setText(text);
+                if (h.text instanceof com.github.borz7zy.telegramm.ui.emoji.EmojiTextView etv) {
+                    etv.setFormattedText(text, entities);
+                } else {
+                    h.text.setText(text);
+                }
             }
             h.time.setText(item.time);
         }

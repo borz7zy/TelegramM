@@ -6,7 +6,7 @@
     android:layout_height="36dp"
     android:layout_marginHorizontal="4dp">
 
-    <TextView
+    <com.github.borz7zy.telegramm.ui.emoji.EmojiTextView
         android:id="@+id/folder_title"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"

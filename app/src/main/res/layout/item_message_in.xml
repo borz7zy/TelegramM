@@ -18,7 +18,7 @@
         app:layout_constraintBottom_toTopOf="@+id/group_tag_tv"
         app:layout_constraintStart_toStartOf="@+id/bubble">
 
-        <TextView
+        <com.github.borz7zy.telegramm.ui.emoji.EmojiTextView
             android:id="@+id/username_tv"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -37,7 +37,7 @@
             android:visibility="gone"/>
     </LinearLayout>
 
-    <TextView
+    <com.github.borz7zy.telegramm.ui.emoji.EmojiTextView
         android:id="@+id/group_tag_tv"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -93,7 +93,7 @@
             android:visibility="gone"
             tools:visibility="visible" />
 
-        <TextView
+        <com.github.borz7zy.telegramm.ui.emoji.EmojiTextView
             android:id="@+id/tv_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -142,7 +142,7 @@
 
     </LinearLayout>
 
-    <TextView
+    <com.github.borz7zy.telegramm.ui.emoji.EmojiTextView
         android:id="@+id/tv_time"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

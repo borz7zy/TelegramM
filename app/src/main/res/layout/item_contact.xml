@@ -25,7 +25,7 @@
 
     </androidx.cardview.widget.CardView>
 
-    <TextView
+    <com.github.borz7zy.telegramm.ui.emoji.EmojiTextView
         android:id="@+id/contact_name"
         style="@style/TgTitle"
         android:layout_width="0dp"
@@ -41,7 +41,7 @@
         app:layout_constraintTop_toTopOf="@id/card_avatar"
         tools:text="Юрий Г." />
 
-    <TextView
+    <com.github.borz7zy.telegramm.ui.emoji.EmojiTextView
         android:id="@+id/contact_last_online_time"
         style="@style/TgSubtitle"
         android:layout_width="0dp"

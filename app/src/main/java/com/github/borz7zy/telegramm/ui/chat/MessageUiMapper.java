@@ -136,11 +136,9 @@ public final class MessageUiMapper {
     // --------------------
 
     private void registerDefaults() {
-        register(TdApi.MessageText.class, (t, sid) -> {
-            return new UiContent.Text(safeText(t.text));
-        });
-        register(TdApi.MessagePhoto.class, (p, sid) -> new UiContent.Media(safeText(p.caption)));
-        register(TdApi.MessageVideo.class, (v, sid) -> new UiContent.Media(safeText(v.caption)));
+        register(TdApi.MessageText.class, (t, sid) -> new UiContent.Text(t.text));
+        register(TdApi.MessagePhoto.class, (p, sid) -> new UiContent.Media(p.caption));
+        register(TdApi.MessageVideo.class, (v, sid) -> new UiContent.Media(v.caption));
         register(TdApi.MessageVoiceNote.class, (vn, sid) ->{
             return new UiContent.Text("[x] MessageVoiceNote"); // TODO: implement this
         });
@@ -148,7 +146,28 @@ public final class MessageUiMapper {
         registerStubMedia(TdApi.MessageDocument.class);
         registerStubMedia(TdApi.MessageAudio.class);
         registerStubMedia(TdApi.MessageAnimation.class);
-        registerStubMedia(TdApi.MessageAnimatedEmoji.class);
+
+        register(TdApi.MessageAnimatedEmoji.class, (m, sid) -> {
+            TdApi.AnimatedEmoji ae = m.animatedEmoji;
+            // TDLib may deliver MessageAnimatedEmoji without a sticker (no animation
+            // available for that emoji); fall back to plain text rendering of the
+            // emoji codepoints — the EmojiTextView pipeline still gives Apple style.
+            if (ae == null || ae.sticker == null || ae.sticker.sticker == null) {
+                return new UiContent.Text(m.emoji != null ? m.emoji : "");
+            }
+            TdApi.Sticker s = ae.sticker;
+            UiContent.StickerType type;
+            if (s.format instanceof TdApi.StickerFormatTgs) {
+                type = UiContent.StickerType.ANIMATED_TGS;
+            } else if (s.format instanceof TdApi.StickerFormatWebm) {
+                type = UiContent.StickerType.VIDEO_WEBM;
+            } else {
+                type = UiContent.StickerType.STATIC;
+            }
+            int w = ae.stickerWidth > 0 ? ae.stickerWidth : s.width;
+            int h = ae.stickerHeight > 0 ? ae.stickerHeight : s.height;
+            return new UiContent.Sticker(s.sticker.id, w, h, type, true);
+        });
         register(TdApi.MessageChecklist.class, (a, sid) -> new UiContent.Media("[x] Checklist premium"));
         registerStubMedia(TdApi.MessagePoll.class);
 
@@ -276,10 +295,6 @@ public final class MessageUiMapper {
         String joined = TextUtils.join(", ", names.subList(0, take));
         if (names.size() > max) joined += " +" + (names.size() - max);
         return "added " + joined;
-    }
-
-    private static String safeText(TdApi.FormattedText ft) {
-        return (ft == null || ft.text == null) ? "" : ft.text;
     }
 
     private void injectButtons(UiContent content, TdApi.ReplyMarkup replyMarkup) {

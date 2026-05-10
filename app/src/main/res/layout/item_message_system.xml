@@ -23,7 +23,7 @@
             tools:visibility="visible"
             tools:src="@drawable/bg_badge"/>
 
-        <TextView
+        <com.github.borz7zy.telegramm.ui.emoji.EmojiTextView
             android:id="@+id/gift_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -34,7 +34,7 @@
             tools:visibility="visible"
             tools:text="Telegram premium" />
 
-        <TextView
+        <com.github.borz7zy.telegramm.ui.emoji.EmojiTextView
             android:id="@+id/tv_system"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -46,7 +46,7 @@
             tools:visibility="visible"
             tools:text="Юрий говнокод подарил Вам Telegram Premium на 12 месяцев! бла бла бла бла бла"/>
 
-        <TextView
+        <com.github.borz7zy.telegramm.ui.emoji.EmojiTextView
             android:id="@+id/gift_comment"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

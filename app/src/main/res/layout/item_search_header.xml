@@ -23,7 +23,7 @@
             android:src="@drawable/ic_search_outline"
             app:tint="@color/onSurfaceColor" />
 
-        <EditText
+        <com.github.borz7zy.telegramm.ui.emoji.EmojiEditText
             android:id="@+id/editSearch"
             android:layout_width="match_parent"
             android:layout_height="match_parent"

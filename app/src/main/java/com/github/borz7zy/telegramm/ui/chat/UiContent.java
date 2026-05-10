@@ -1,10 +1,12 @@
 package com.github.borz7zy.telegramm.ui.chat;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import org.drinkless.tdlib.TdApi;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -45,9 +47,19 @@ public abstract class UiContent {
 
     public static final class Text extends UiContent {
         public final String text;
+        @Nullable public final TdApi.TextEntity[] entities;
 
         public Text(String text) {
+            this(text, null);
+        }
+
+        public Text(@Nullable TdApi.FormattedText ft) {
+            this(ft != null ? ft.text : "", ft != null ? ft.entities : null);
+        }
+
+        public Text(String text, @Nullable TdApi.TextEntity[] entities) {
             this.text = text != null ? text : "";
+            this.entities = entities;
         }
 
         @NonNull @Override
@@ -57,10 +69,13 @@ public abstract class UiContent {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (!(o instanceof Text that)) return false;
-            return Objects.equals(text, that.text);
+            return Objects.equals(text, that.text)
+                    && Arrays.equals(entities, that.entities);
         }
 
-        @Override public int hashCode() { return Objects.hash(text); }
+        @Override public int hashCode() {
+            return 31 * Objects.hashCode(text) + Arrays.hashCode(entities);
+        }
     }
 
     public static final class Unknown extends UiContent {
@@ -87,9 +102,19 @@ public abstract class UiContent {
 
     public static final class Media extends UiContent {
         public final String caption;
+        @Nullable public final TdApi.TextEntity[] entities;
 
         public Media(String caption) {
+            this(caption, null);
+        }
+
+        public Media(@Nullable TdApi.FormattedText ft) {
+            this(ft != null ? ft.text : "", ft != null ? ft.entities : null);
+        }
+
+        public Media(String caption, @Nullable TdApi.TextEntity[] entities) {
             this.caption = caption != null ? caption : "";
+            this.entities = entities;
         }
 
         @NonNull @Override
@@ -101,11 +126,12 @@ public abstract class UiContent {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (!(o instanceof Media that)) return false;
-            return Objects.equals(caption, that.caption);
+            return Objects.equals(caption, that.caption)
+                    && Arrays.equals(entities, that.entities);
         }
 
         @Override public int hashCode() {
-            return Objects.hash(caption);
+            return 31 * Objects.hashCode(caption) + Arrays.hashCode(entities);
         }
     }
 
@@ -139,12 +165,18 @@ public abstract class UiContent {
         public final int width;
         public final int height;
         public final StickerType type;
+        public final boolean isAnimatedEmoji;
 
         public Sticker(int fileId, int w, int h, StickerType type) {
+            this(fileId, w, h, type, false);
+        }
+
+        public Sticker(int fileId, int w, int h, StickerType type, boolean isAnimatedEmoji) {
             this.fileId = fileId;
             this.width = w;
             this.height = h;
             this.type = type;
+            this.isAnimatedEmoji = isAnimatedEmoji;
         }
 
 
@@ -161,11 +193,12 @@ public abstract class UiContent {
             return fileId == that.fileId
                     && width == that.width
                     && height == that.height
-                    && type == that.type;
+                    && type == that.type
+                    && isAnimatedEmoji == that.isAnimatedEmoji;
         }
 
         @Override public int hashCode() {
-            return Objects.hash(fileId, width, height, type);
+            return Objects.hash(fileId, width, height, type, isAnimatedEmoji);
         }
     }
 }
