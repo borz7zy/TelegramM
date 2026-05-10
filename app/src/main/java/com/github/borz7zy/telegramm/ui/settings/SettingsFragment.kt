@@ -17,6 +17,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.github.borz7zy.telegramm.AppManager
 import com.github.borz7zy.telegramm.R
 import com.github.borz7zy.telegramm.ui.MainViewModel
+import com.github.borz7zy.telegramm.ui.theme.ThemePickerSheet
 
 class SettingsFragment : Fragment() {
 
@@ -104,6 +105,12 @@ class SettingsFragment : Fragment() {
         root.addView(createSettingsItem(context, R.drawable.ic_folder_outline, "Папки с чатами", R.id.folders_settings))
         root.addView(createSettingsItem(context, R.drawable.ic_devices_outline, "Устройства", R.id.devices_settings))
         root.addView(createSettingsItem(context, R.drawable.ic_hieroglyph_character_outline, "Язык", R.id.lang_settings))
+
+        val themeItem = createSettingsItem(context, R.drawable.ic_lightbulb_outline, "Тема оформления", View.NO_ID)
+        themeItem.setOnClickListener {
+            ThemePickerSheet.showGlobal(parentFragmentManager)
+        }
+        root.addView(themeItem)
 
         return root
     }

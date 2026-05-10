@@ -38,6 +38,18 @@ import java.util.Objects;
 
 public class DialogsAdapter extends RecyclerView.Adapter<DialogsAdapter.VH> {
 
+    // Payload bit flags returned from getChangePayload so onBindViewHolder
+    // can repaint only the changed parts of an existing row instead of the
+    // whole item view (which causes visible flashes during typing / unread
+    // / order updates).
+    private static final int P_NAME    = 1;
+    private static final int P_MESSAGE = 1 << 1; // text + isTyping
+    private static final int P_TIME    = 1 << 2;
+    private static final int P_UNREAD  = 1 << 3;
+    private static final int P_AVATAR  = 1 << 4;
+    private static final int P_FORUM   = 1 << 5; // isForum, isExpanded, topics
+    private static final int P_PINNED  = 1 << 6;
+
     private ThemeEngine.Theme theme;
     private final AsyncListDiffer<DialogItem> differ;
 
@@ -132,9 +144,26 @@ public class DialogsAdapter extends RecyclerView.Adapter<DialogsAdapter.VH> {
                     @Override
                     public Object getChangePayload(@NonNull DialogItem oldItem,
                                                    @NonNull DialogItem newItem) {
-
-                        // TODO: implement granular payload
-                        return null;
+                        int mask = 0;
+                        if (!TextUtils.equals(oldItem.name, newItem.name)) mask |= P_NAME;
+                        if (!TextUtils.equals(oldItem.text, newItem.text)
+                                || oldItem.isTyping != newItem.isTyping) mask |= P_MESSAGE;
+                        if (!TextUtils.equals(oldItem.time, newItem.time)) mask |= P_TIME;
+                        if (oldItem.unread != newItem.unread) mask |= P_UNREAD;
+                        if (oldItem.avatarFileId != newItem.avatarFileId
+                                || !TextUtils.equals(oldItem.avatarPath, newItem.avatarPath)) {
+                            mask |= P_AVATAR;
+                        }
+                        if (oldItem.isForum != newItem.isForum
+                                || oldItem.isExpanded != newItem.isExpanded
+                                || !Objects.equals(oldItem.topics, newItem.topics)) {
+                            mask |= P_FORUM;
+                        }
+                        if (oldItem.isPinned != newItem.isPinned) mask |= P_PINNED;
+                        // mask 0 means areContentsTheSame would have returned true;
+                        // returning null falls through to a full rebind which we
+                        // never want here.
+                        return mask == 0 ? null : Integer.valueOf(mask);
                     }
                 };
 
@@ -198,8 +227,24 @@ public class DialogsAdapter extends RecyclerView.Adapter<DialogsAdapter.VH> {
     @SuppressLint("ResourceAsColor")
     @Override
     public void onBindViewHolder(@NonNull VH h, int position) {
-        DialogItem item = differ.getCurrentList().get(position);
+        bindFull(h, differ.getCurrentList().get(position));
+    }
 
+    @Override
+    public void onBindViewHolder(@NonNull VH h, int position, @NonNull List<Object> payloads) {
+        if (payloads.isEmpty()) {
+            bindFull(h, differ.getCurrentList().get(position));
+            return;
+        }
+        int mask = 0;
+        for (Object p : payloads) {
+            if (p instanceof Integer) mask |= (Integer) p;
+        }
+        DialogItem item = differ.getCurrentList().get(position);
+        bindPartial(h, item, mask);
+    }
+
+    private void bindFull(@NonNull VH h, @NonNull DialogItem item) {
         h.itemView.setOnClickListener(v -> {
             if (clickListener != null) clickListener.onDialogClick(item);
         });
@@ -241,28 +286,72 @@ public class DialogsAdapter extends RecyclerView.Adapter<DialogsAdapter.VH> {
         }
         h.message.setTextColor(messageColor);
 
+        applyUnread(h, item, badgeColor, textBadgeColor);
+
+        bindAvatar(h.avatar, item.chatId, item.avatarFileId, item.avatarPath, badgeColor);
+
+        applyForum(h, item, nameColor, messageColor);
+    }
+
+    private void bindPartial(@NonNull VH h, @NonNull DialogItem item, int mask) {
+        // Click listeners can change identity-by-item, refresh cheaply.
+        h.itemView.setOnClickListener(v -> {
+            if (clickListener != null) clickListener.onDialogClick(item);
+        });
+        h.itemView.setOnLongClickListener(v -> {
+            if (!item.isPinned) return false;
+            v.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+            if (dragListener != null) dragListener.onStartDrag(h);
+            return true;
+        });
+
+        if (theme == null) {
+            // Without a theme we can't tint; full bind path covers the
+            // text-only fallback already.
+            bindFull(h, item);
+            return;
+        }
+        int nameColor = theme.onSurfaceColor;
+        int messageColor = theme.onSecondaryContainerColor;
+        int badgeColor = theme.primaryColor;
+        int textBadgeColor = theme.onPrimaryColor;
+
+        if ((mask & P_NAME) != 0) h.name.setText(item.name);
+        if ((mask & P_MESSAGE) != 0) {
+            h.message.setText(item.isTyping ? "Печатает..." : item.text);
+        }
+        if ((mask & P_TIME) != 0) h.time.setText(item.time);
+        if ((mask & P_UNREAD) != 0) applyUnread(h, item, badgeColor, textBadgeColor);
+        if ((mask & P_AVATAR) != 0) {
+            bindAvatar(h.avatar, item.chatId, item.avatarFileId, item.avatarPath, badgeColor);
+        }
+        if ((mask & P_FORUM) != 0) applyForum(h, item, nameColor, messageColor);
+        // P_PINNED currently only flips the long-press behaviour, already
+        // wired through the listener above.
+    }
+
+    private void applyUnread(@NonNull VH h, @NonNull DialogItem item,
+                             int badgeColor, int textBadgeColor) {
         if (item.unread > 0) {
             h.unread.setVisibility(View.VISIBLE);
             h.unread.setText(String.valueOf(item.unread));
             h.unread.setTextColor(textBadgeColor);
-
             Drawable bg = DrawableCompat.wrap(h.unread.getBackground().mutate());
             DrawableCompat.setTint(bg, badgeColor);
             h.unread.setBackground(bg);
         } else {
             h.unread.setVisibility(View.GONE);
         }
+    }
 
-        bindAvatar(h.avatar, item.chatId, item.avatarFileId, item.avatarPath, badgeColor);
-
+    private void applyForum(@NonNull VH h, @NonNull DialogItem item,
+                            int nameColor, int messageColor) {
         if (item.isForum) {
             h.showTopicsBtn.setVisibility(View.VISIBLE);
             h.showTopicsBtn.setOnClickListener(v -> {
                 if (topicToggleListener != null) topicToggleListener.onTopicToggle(item);
             });
-
             h.showTopicsBtn.setRotation(item.isExpanded ? 180f : 0f);
-
             if (item.isExpanded) {
                 h.topicsContainer.setVisibility(View.VISIBLE);
                 populateTopics(h.topicsContainer, item, nameColor, messageColor);
@@ -333,7 +422,15 @@ public class DialogsAdapter extends RecyclerView.Adapter<DialogsAdapter.VH> {
     private void bindAvatar(ImageView iv, long chatId, int fileId, String pathFromModel, int badgeColor) {
         if (iv == null) return;
 
+        // Skip when the holder is already showing this avatar — avoids a
+        // visible flash to the placeholder while Glide re-fetches the same
+        // file on every state change (typing, unread, time, etc.).
+        final String tag = (fileId == 0) ? ("empty:" + chatId) : (chatId + ":" + fileId);
+        Object existing = iv.getTag();
+        if (tag.equals(existing) && iv.getDrawable() != null) return;
+
         Glide.with(iv).clear(iv);
+        iv.setTag(tag);
 
         ShapeDrawable placeholder = new ShapeDrawable(new OvalShape());
         placeholder.getPaint().setColor(badgeColor);
@@ -342,9 +439,6 @@ public class DialogsAdapter extends RecyclerView.Adapter<DialogsAdapter.VH> {
             iv.setImageDrawable(placeholder);
             return;
         }
-
-        final String tag = chatId + ":" + fileId;
-        iv.setTag(tag);
 
         String path = !TextUtils.isEmpty(pathFromModel)
                 ? pathFromModel

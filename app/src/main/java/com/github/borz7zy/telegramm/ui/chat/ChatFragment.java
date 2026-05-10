@@ -48,8 +48,12 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
+import com.github.borz7zy.telegramm.AppManager;
 import com.github.borz7zy.telegramm.R;
+import com.github.borz7zy.telegramm.ui.ThemeEngine;
 import com.github.borz7zy.telegramm.ui.model.MessageItem;
+import com.github.borz7zy.telegramm.ui.theme.BackgroundResolver;
+import com.github.borz7zy.telegramm.ui.theme.ThemeRepository;
 import com.github.borz7zy.telegramm.ui.widget.EdgeSwipeDismissLayout;
 import com.github.borz7zy.telegramm.ui.widget.SpringRecyclerView;
 import com.github.borz7zy.telegramm.ui.widget.TypingDrawable;
@@ -122,6 +126,17 @@ public class ChatFragment extends DialogFragment {
     private boolean isPaginationInProgress = false;
     private boolean isUserAtBottom = true;
     private boolean forceScrollToBottomNext = false;
+    /**
+     * Becomes true after the first ScrollToBottom event for this fragment is
+     * handled. Until then, scroll requests jump instantly with
+     * scrollToPositionWithOffset to avoid the smooth-scroll animation racing
+     * with the initial diff dispatch (which leaves the RV stranded mid-list).
+     */
+    private boolean firstPaintDone = false;
+
+    // --- per-chat theming ---
+    private final BackgroundResolver bgResolver = new BackgroundResolver();
+    @Nullable private ThemeEngine.Theme effectiveChatTheme; // null = use global
 
     public static ChatFragment newInstance(long chatId, String title) {
         ChatFragment f = new ChatFragment();
@@ -255,6 +270,13 @@ public class ChatFragment extends DialogFragment {
         ImageView btnClose = content.findViewById(R.id.btn_close);
         tvTitle.setText(title);
         btnClose.setOnClickListener(v -> closeAnimated());
+        // Long-press on the chat title opens the per-chat theme picker.
+        // (Cheap discoverability shim until a dedicated header button lands.)
+        tvTitle.setOnLongClickListener(v -> {
+            com.github.borz7zy.telegramm.ui.theme.ThemePickerSheet.showForChat(
+                    getChildFragmentManager(), chatId);
+            return true;
+        });
 
         ivChatAvatar = findImageView(content, "chat_avatar", "iv_avatar", "avatar", "image_avatar");
         if (ivChatAvatar != null) ivChatAvatar.setImageResource(R.drawable.bg_badge);
@@ -313,6 +335,14 @@ public class ChatFragment extends DialogFragment {
         });
 
         rv.setLayoutManager(lm);
+        // Cache more off-screen view holders so re-binding cost during fast
+        // fling doesn't show as visible frame drops. Default is 2; bumping
+        // to 20 matches the typical onscreen page + an off-screen buffer.
+        rv.setItemViewCacheSize(20);
+        // Enable LinearLayoutManager's two-pass prefetcher so neighbour items
+        // start their bind on the GPU/IO thread before they enter the screen.
+        lm.setItemPrefetchEnabled(true);
+        lm.setInitialPrefetchItemCount(4);
         rv.setAdapter(concat);
 
         rv.addOnScrollListener(new RecyclerView.OnScrollListener() {
@@ -354,6 +384,16 @@ public class ChatFragment extends DialogFragment {
 
         viewModel.getChatAvatar().observe(getViewLifecycleOwner(), this::applyChatAvatar);
 
+        // Per-chat theme + background. Falls back to the global ThemeEngine
+        // if the chat has neither a custom theme nor a wallpaper.
+        ThemeRepository.get().observeChat(chatId).observe(getViewLifecycleOwner(), this::applyChatThemeState);
+        AppManager.getInstance().getThemeEngine().getCurrentTheme()
+                .observe(getViewLifecycleOwner(), globalTheme -> {
+                    // If we have no per-chat override, the global theme
+                    // determines the chat colors.
+                    if (effectiveChatTheme == null) applyResolvedTheme(globalTheme);
+                });
+
         viewModel.getTypingStatus().observe(getViewLifecycleOwner(), status -> {
             if (status != null) showTyping(status);
             else hideTyping();
@@ -364,6 +404,17 @@ public class ChatFragment extends DialogFragment {
                 if (adapter.getItemCount() == 0) return;
 
                 int realLastPosition = adapter.getItemCount() - 1 + (topLoading.isVisible() ? 1 : 0);
+
+                // First scroll for this fragment instance: jump instantly so
+                // we land at the bottom regardless of whether the diff has
+                // finished dispatching. Subsequent live scrolls animate.
+                if (!firstPaintDone) {
+                    firstPaintDone = true;
+                    rv.post(() -> {
+                        if (lm != null) lm.scrollToPositionWithOffset(realLastPosition, 0);
+                    });
+                    return;
+                }
 
                 if (forceScrollToBottomNext) {
                     forceScrollToBottomNext = false;
@@ -387,6 +438,139 @@ public class ChatFragment extends DialogFragment {
             else if (event instanceof ChatViewModel.UiEvent.PaginationApplied) {
             }
         });
+    }
+
+    /**
+     * React to a per-chat theme/background update from {@link ThemeRepository}.
+     *
+     * <p>Three cases:
+     * <ul>
+     *   <li>State is empty: fall back to the global theme (clear any chat
+     *       override).</li>
+     *   <li>Background present: render it on the RecyclerView. If it provided
+     *       a {@code seedBitmap}, derive Monet colors from the dominant
+     *       wallpaper color; otherwise use {@code ThemeSettings.accentColor}.</li>
+     *   <li>No background but custom theme: derive Monet from the theme's
+     *       accent color and clear any per-chat wallpaper.</li>
+     * </ul>
+     */
+    private void applyChatThemeState(@Nullable ThemeRepository.ChatThemeState state) {
+        ThemeEngine engine = AppManager.getInstance().getThemeEngine();
+        ThemeEngine.Theme global = engine.getCurrentTheme().getValue();
+        boolean isDark = global == null || global.isDark;
+
+        if (state == null || state.isEmpty()) {
+            effectiveChatTheme = null;
+            // Fall back to the user's default Telegram wallpaper if TDLib has
+            // delivered one; otherwise clear (RV inherits parent surface).
+            TdApi.Background defaultBg = ThemeRepository.get().getDefaultBackground(isDark);
+            int fallbackColor = (global != null) ? global.surfaceColor : Color.BLACK;
+            if (defaultBg != null) {
+                bgResolver.resolve(requireContext(), defaultBg, 0, isDark, fallbackColor, result -> {
+                    if (content == null) return;
+                    View bgHost = content.findViewById(R.id.blur_target);
+                    if (bgHost != null) bgHost.setBackground(result.drawable);
+                    if (result.isPlaceholder) return;
+                    if (result.seedColor != null) {
+                        effectiveChatTheme = ThemeEngine.Theme.forSeed(result.seedColor, isDark);
+                        applyResolvedTheme(effectiveChatTheme);
+                    } else {
+                        applyResolvedTheme(global);
+                    }
+                });
+                return;
+            }
+            if (content != null) {
+                View bgHost = content.findViewById(R.id.blur_target);
+                if (bgHost != null) bgHost.setBackground(null);
+            }
+            applyResolvedTheme(global);
+            return;
+        }
+
+        // Resolve which TdApi.Background applies (chat override > theme bg).
+        TdApi.Background bg = null;
+        int dimming = 0;
+        if (state.background != null) {
+            bg = state.background.background;
+            dimming = state.background.darkThemeDimming;
+        } else if (state.theme != null) {
+            TdApi.ThemeSettings ts = isDark ? state.theme.darkSettings : state.theme.lightSettings;
+            if (ts != null) bg = ts.background;
+        }
+
+        // Pick a fallback for the BackgroundResolver while documents download.
+        int fallbackColor = (global != null) ? global.surfaceColor : Color.BLACK;
+
+        // Resolve the accent color we'll use as seed when there's no usable
+        // wallpaper bitmap.
+        int themeAccent;
+        if (state.theme != null) {
+            TdApi.ThemeSettings ts = isDark ? state.theme.darkSettings : state.theme.lightSettings;
+            themeAccent = (ts != null) ? ts.accentColor : ((global != null) ? global.seedColor : fallbackColor);
+        } else {
+            themeAccent = (global != null) ? global.seedColor : fallbackColor;
+        }
+
+        final int finalDimming = dimming;
+        final boolean finalIsDark = isDark;
+        final int seedFallback = themeAccent;
+        bgResolver.resolve(requireContext(), bg, finalDimming, finalIsDark, fallbackColor, result -> {
+            // Render the wallpaper on the BlurTarget (the RV's parent) so the
+            // SpringRecyclerView's overscroll TranslationY does not drag the
+            // wallpaper with it (visible "spring" on the wallpaper otherwise).
+            if (content != null) {
+                View bgHost = content.findViewById(R.id.blur_target);
+                if (bgHost != null) bgHost.setBackground(result.drawable);
+            }
+
+            // Placeholders are emitted synchronously while a wallpaper/pattern
+            // document downloads; recomputing Monet on them would cause a
+            // visible color flash before the real bitmap-derived seed lands.
+            if (result.isPlaceholder) return;
+
+            // BackgroundResolver pre-computes the Monet seed off the main
+            // thread. Falling back to seedFallback only when the resolver
+            // didn't provide one (fill-only / unknown type).
+            int seed = (result.seedColor != null) ? result.seedColor : seedFallback;
+            effectiveChatTheme = ThemeEngine.Theme.forSeed(seed, finalIsDark);
+            applyResolvedTheme(effectiveChatTheme);
+        });
+    }
+
+    /**
+     * Apply a resolved Monet theme to the chat surface widgets (header, input
+     * bar, title color) and forward it to the message adapter so bubbles /
+     * text colors follow the per-chat palette.
+     */
+    private void applyResolvedTheme(@Nullable ThemeEngine.Theme theme) {
+        if (theme == null || content == null) return;
+
+        if (tvTitle != null) tvTitle.setTextColor(theme.onSurfaceColor);
+        if (typingBar != null) {
+            android.widget.TextView tv = typingBar.findViewById(R.id.typing_text);
+            if (tv != null) tv.setTextColor(theme.onSurfaceVariantColor);
+        }
+        // Pick overlay roles per-mode: in light theme surfaceContainer collapses
+        // toward white and disappears over light wallpapers, so we use
+        // surfaceVariant for stronger contrast there.
+        int headerOverlay = theme.isDark
+                ? withAlpha(theme.surfaceContainerColor, 0.65f)
+                : withAlpha(theme.surfaceVariantColor, 0.78f);
+        int inputOverlay = theme.isDark
+                ? withAlpha(theme.surfaceContainerHighColor, 0.65f)
+                : withAlpha(theme.surfaceVariantColor, 0.85f);
+        View header = content.findViewById(R.id.header_blur);
+        View input  = content.findViewById(R.id.input_blur);
+        if (header != null) header.setBackgroundColor(headerOverlay);
+        if (input  != null) input.setBackgroundColor(inputOverlay);
+
+        if (adapter != null) adapter.setTheme(theme);
+    }
+
+    private static int withAlpha(int color, float alpha) {
+        int a = (int) (255 * Math.max(0f, Math.min(1f, alpha)));
+        return (a << 24) | (color & 0x00FFFFFF);
     }
 
     private void captureScrollAnchor() {

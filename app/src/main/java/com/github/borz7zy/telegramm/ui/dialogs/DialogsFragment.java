@@ -201,6 +201,10 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
     private void cacheChat(TdApi.Chat chat) {
         if (chat == null) return;
         viewModel.getChatCache().put(chat.id, chat);
+        // Surface initial per-chat theme/background to ThemeRepository so
+        // ChatFragment can paint the chat the moment it opens, even before
+        // UpdateChatTheme/UpdateChatBackground arrives.
+        com.github.borz7zy.telegramm.ui.theme.ThemeRepository.get().seedChat(chat);
     }
 
     private void mergePositionIntoCache(long chatId, TdApi.ChatPosition position) {
@@ -359,6 +363,8 @@ public class DialogsFragment extends BaseTelegramFragment implements Client.Resu
 
             currentSession = AccountManager.getInstance().getSession(account.getAccountId());
             TdMediaRepository.get().setCurrentAccountId(account.getAccountId());
+            com.github.borz7zy.telegramm.ui.theme.ThemeRepository.get()
+                    .setCurrentAccountId(account.getAccountId());
             com.github.borz7zy.telegramm.utils.EmojiStatusRepository.get()
                     .setCurrentAccountId(account.getAccountId());
 

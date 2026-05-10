@@ -37,6 +37,7 @@ import com.airbnb.lottie.LottieTask;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.github.borz7zy.telegramm.R;
+import com.github.borz7zy.telegramm.ui.ThemeEngine;
 import com.github.borz7zy.telegramm.ui.model.MessageItem;
 import com.github.borz7zy.telegramm.ui.model.PhotoData;
 import com.github.borz7zy.telegramm.ui.model.SystemMessages;
@@ -73,6 +74,25 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
 
     private Runnable loadMoreListener;
     private static final int LOAD_MORE_THRESHOLD = 8;
+
+    /**
+     * Per-chat (or global, when no override) Monet palette. Pushed in by
+     * ChatFragment whenever the resolved theme changes; null until the first
+     * theme arrives, in which case bindUserMessage falls back to the bubble's
+     * XML defaults so we never paint a blank state.
+     */
+    private ThemeEngine.Theme theme;
+
+    public void setTheme(ThemeEngine.Theme theme) {
+        if (theme == null) return;
+        if (this.theme != null
+                && this.theme.seedColor == theme.seedColor
+                && this.theme.isDark == theme.isDark) {
+            return;
+        }
+        this.theme = theme;
+        notifyDataSetChanged();
+    }
 
     private static final AtomicLong REQUEST_ID_GEN = new AtomicLong();
 
@@ -160,6 +180,13 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         sh.giftName.setVisibility(View.GONE);
         sh.comment.setVisibility(View.GONE);
 
+        if (theme != null) {
+            int sysColor = theme.onSurfaceVariantColor;
+            if (sh.system != null) sh.system.setTextColor(sysColor);
+            if (sh.giftName != null) sh.giftName.setTextColor(theme.onSurfaceColor);
+            if (sh.comment != null) sh.comment.setTextColor(sysColor);
+        }
+
         if (sysUi.messageType instanceof SystemMessages.PremiumGift pg) {
             sh.giftName.setText(sysUi.text);
             sh.giftName.setVisibility(View.VISIBLE);
@@ -178,6 +205,8 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
     @UnstableApi
     private void bindUserMessage(VH h, MessageItem m) {
         resetMedia(h);
+
+        applyThemeToHolder(h, m);
 
         String text = "";
         if (m.ui instanceof UiContent.Text t) text = t.text;
@@ -226,6 +255,37 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
             h.bubble.setBackground(h.bubbleBg);
         }
         h.bubble.setPadding(h.bubblePadL, h.bubblePadT, h.bubblePadR, h.bubblePadB);
+    }
+
+    /**
+     * Tint per-message Views from the current Monet palette. We mutate the
+     * shared bubble drawable's tint, so this runs before applyStickerBubble /
+     * applyDefaultBubble (which only swap background reference, not tint).
+     */
+    private void applyThemeToHolder(VH h, MessageItem m) {
+        if (theme == null) return;
+
+        boolean outgoing = m.outgoing;
+        // Outgoing → primaryContainer (Material You "you" surface).
+        // Incoming → secondaryContainer instead of surfaceContainer: in light
+        // theme without a wallpaper, surface and surfaceContainer collapse to
+        // near-white and the bubble disappears. secondaryContainer is tinted
+        // with the seed and stays distinct from the chat surface.
+        int bubbleColor = outgoing ? theme.primaryContainerColor : theme.secondaryContainerColor;
+        int textColor = outgoing ? theme.onPrimaryContainerColor : theme.onSecondaryContainerColor;
+        int subTextColor = outgoing ? theme.onPrimaryContainerColor : theme.onSecondaryContainerColor;
+
+        if (h.bubbleBg != null) {
+            // mutate() so the tint doesn't bleed into other holders sharing the
+            // same constant-state drawable.
+            android.graphics.drawable.Drawable bg = h.bubbleBg.mutate();
+            bg.setTint(bubbleColor);
+        }
+
+        if (h.text != null) h.text.setTextColor(textColor);
+        if (h.time != null) h.time.setTextColor(subTextColor);
+        if (h.userName != null) h.userName.setTextColor(theme.primaryColor);
+        if (h.groupChatUserTag != null) h.groupChatUserTag.setTextColor(subTextColor);
     }
 
     private static int[] computeStickerSizePx(View view, int rawW, int rawH) {
@@ -417,10 +477,17 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         }
     }
 
+    private static final java.util.concurrent.ExecutorService TGS_IO_EXECUTOR =
+            java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
+                Thread t = new Thread(r, "ChatAdapter-tgs-io");
+                t.setPriority(Thread.NORM_PRIORITY - 1);
+                return t;
+            });
+
     private void renderTgsSticker(LottieAnimationView lav, String path) {
         // Cancel any prior Glide load + Lottie animation; .tgs is a gzipped
-        // Lottie JSON, so we feed a GZIPInputStream into LottieCompositionFactory
-        // and key the cache by the file path.
+        // Lottie JSON. Opening the GZIPInputStream reads the gzip header off
+        // disk, so we do that off the main thread to keep scroll smooth.
         Glide.with(lav).clear(lav);
         lav.cancelAnimation();
         lav.setVisibility(View.VISIBLE);
@@ -429,15 +496,25 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         final Object expectedTag = lav.getTag();
         final WeakReference<LottieAnimationView> weak = new WeakReference<>(lav);
 
-        InputStream is;
-        try {
-            is = new GZIPInputStream(new FileInputStream(path));
-        } catch (IOException e) {
-            com.github.borz7zy.telegramm.utils.Logger.LOGE(
-                    "ChatAdapter", "Failed to open TGS file: " + e.getMessage());
-            return;
-        }
+        TGS_IO_EXECUTOR.execute(() -> {
+            InputStream is;
+            try {
+                is = new GZIPInputStream(new FileInputStream(path));
+            } catch (IOException e) {
+                com.github.borz7zy.telegramm.utils.Logger.LOGE(
+                        "ChatAdapter", "Failed to open TGS file: " + e.getMessage());
+                return;
+            }
+            LottieAnimationView v0 = weak.get();
+            if (v0 == null) return;
+            v0.post(() -> attachTgsTask(weak, expectedTag, is, cacheKey));
+        });
+    }
 
+    private void attachTgsTask(WeakReference<LottieAnimationView> weak,
+                               Object expectedTag,
+                               InputStream is,
+                               String cacheKey) {
         LottieTask<LottieComposition> task =
                 LottieCompositionFactory.fromJsonInputStream(is, cacheKey);
 
@@ -530,6 +607,11 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
                 btnView.setText(btnData.text);
                 btnView.setAllCaps(false);
                 btnView.setTextSize(14f);
+                if (theme != null) {
+                    btnView.setTextColor(theme.onSecondaryContainerColor);
+                    btnView.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                            theme.secondaryContainerColor));
+                }
 
                 LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                         0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);

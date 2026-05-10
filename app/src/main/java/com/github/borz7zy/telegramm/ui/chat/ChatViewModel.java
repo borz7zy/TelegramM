@@ -103,6 +103,13 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
         AccountStorage.getInstance().getCurrentActive(account -> {
             this.session = AccountManager.getInstance().getSession(account.getAccountId()); // TODO: LiveData
 
+            // Bind ThemeRepository to this account *before* GetChat lands —
+            // setCurrentAccountId wipes per-chat theme caches, so seedChat()
+            // calls that fire after binding survive while ones fired before
+            // would be erased.
+            com.github.borz7zy.telegramm.ui.theme.ThemeRepository.get()
+                    .setCurrentAccountId(account.getAccountId());
+
             if(session != null){
                 session.addUpdateHandler(this);
 
@@ -113,6 +120,10 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
 
                         chatTitle.postValue(chat.title);
                         chatAvatar.postValue(chat.photo);
+                        // Surface initial theme/background for this chat;
+                        // ChatFragment observes ThemeRepository.observeChat(id).
+                        com.github.borz7zy.telegramm.ui.theme.ThemeRepository.get()
+                                .seedChat(chat);
                     }else if(obj instanceof TdApi.Error){
                         TdApi.Error err = (TdApi.Error)obj;
                         Logger.LOGE("ChatViewModel", "GetChat ERROR: " + err.code + " - " + err.message);
@@ -141,6 +152,9 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
             );
 
             TdMediaRepository.get().setCurrentAccountId(account.getAccountId());
+            // ThemeRepository already bound above; calling setCurrentAccountId
+            // here would no-op for the same id, but we keep it explicit to
+            // mirror the other repositories.
             com.github.borz7zy.telegramm.utils.EmojiStatusRepository.get()
                     .setCurrentAccountId(account.getAccountId());
             requestInitialHistory();
@@ -303,8 +317,12 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
         }
 
         if (isInitialLoad) {
+            // While the retry chain runs, only push items into the list — do
+            // NOT request scroll-to-bottom yet. Each retry would otherwise
+            // schedule another smoothScrollToPosition while the previous one
+            // is still animating, leaving the RV at a random offset.
             if (count > 0) {
-                scheduleUiUpdate(false, true);
+                scheduleUiUpdate(false, false);
             }
 
             boolean partial = count < INITIAL_PAGE_SIZE;
@@ -322,6 +340,9 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
             loading = false;
             hasMore = count >= PAGE_SIZE && oldestId > 1;
             topLoading.postValue(false);
+            // Initial chain settled — emit a single scroll-to-bottom request
+            // so the RV jumps to the latest message exactly once.
+            scheduleUiUpdate(false, true);
         } else {
             loading = false;
             hasMore = count >= PAGE_SIZE && oldestId > 1;
