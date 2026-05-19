@@ -55,7 +55,7 @@
                 android:padding="2dp"
                 android:visibility="gone" />
 
-            <com.airbnb.lottie.LottieAnimationView
+            <com.github.borz7zy.rlottie.RLottieAnimationView
                 android:id="@+id/sticker_view"
                 android:layout_width="200dp"
                 android:layout_height="200dp"

@@ -1,0 +1,1 @@
+-keep class com.github.borz7zy.rlottie.RLottieNative { *; }

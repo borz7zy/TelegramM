@@ -7,7 +7,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
@@ -17,9 +16,7 @@ import android.text.style.ReplacementSpan;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.airbnb.lottie.LottieComposition;
-import com.airbnb.lottie.LottieCompositionFactory;
-import com.airbnb.lottie.LottieDrawable;
+import com.github.borz7zy.rlottie.RLottieDrawable;
 import com.github.borz7zy.telegramm.AppManager;
 import com.github.borz7zy.telegramm.utils.EmojiStatusRepository;
 import com.github.borz7zy.telegramm.utils.Logger;
@@ -27,13 +24,10 @@ import com.github.borz7zy.telegramm.utils.TdMediaRepository;
 
 import org.drinkless.tdlib.TdApi;
 
-import java.io.FileInputStream;
-import java.io.InputStream;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.zip.GZIPInputStream;
 
 /**
  * Inline animated/static custom emoji. The host EmojiTextView drives invalidate
@@ -52,7 +46,8 @@ public class CustomEmojiSpan extends ReplacementSpan {
                 return t;
             });
 
-    private static final Map<Long, LottieComposition> COMP_CACHE = new ConcurrentHashMap<>();
+    /** Decompressed Lottie JSON keyed by document id — avoids re-reading + gunzipping the .tgs. */
+    private static final Map<Long, String> JSON_CACHE = new ConcurrentHashMap<>();
     private static final Map<Long, Bitmap> BITMAP_CACHE = new ConcurrentHashMap<>();
     private static final Map<Long, Boolean> NO_ANIMATION = new ConcurrentHashMap<>();
 
@@ -60,8 +55,7 @@ public class CustomEmojiSpan extends ReplacementSpan {
     private final int size;
     @Nullable private final Paint.FontMetricsInt fontMetrics;
 
-    @Nullable private LottieDrawable lottieDrawable;
-    @Nullable private LottieComposition composition;
+    @Nullable private RLottieDrawable lottieDrawable;
     @Nullable private Bitmap bitmap;
 
     private boolean loadStarted;
@@ -79,7 +73,7 @@ public class CustomEmojiSpan extends ReplacementSpan {
     }
 
     public boolean isAnimated() {
-        return composition != null;
+        return lottieDrawable != null && lottieDrawable.isValid();
     }
 
     @Override
@@ -103,14 +97,14 @@ public class CustomEmojiSpan extends ReplacementSpan {
         int yc = (top + bottom) / 2;
         int left = (int) x;
 
-        Drawable d = lottieDrawable;
-        if (d != null && composition != null) {
+        RLottieDrawable d = lottieDrawable;
+        if (d != null && d.isValid()) {
             if (startMs == 0L) startMs = SystemClock.uptimeMillis();
-            float dur = composition.getDuration();
+            long dur = d.getDurationMs();
             if (dur > 0) {
                 long elapsed = SystemClock.uptimeMillis() - startMs;
-                float progress = (elapsed % (long) dur) / dur;
-                lottieDrawable.setProgress(progress);
+                float progress = (elapsed % dur) / (float) dur;
+                d.setProgress(progress);
             }
             d.setBounds(left, yc - s / 2, left + s, yc + s / 2);
             d.draw(canvas);
@@ -132,9 +126,10 @@ public class CustomEmojiSpan extends ReplacementSpan {
         if (loadStarted) return;
         loadStarted = true;
 
-        LottieComposition cachedComp = COMP_CACHE.get(documentId);
-        if (cachedComp != null) {
-            installLottie(cachedComp);
+        String cachedJson = JSON_CACHE.get(documentId);
+        if (cachedJson != null) {
+            final String j = cachedJson;
+            DECODE_EXEC.execute(() -> buildAndInstall(j));
             return;
         }
         Bitmap cachedBmp = BITMAP_CACHE.get(documentId);
@@ -172,15 +167,27 @@ public class CustomEmojiSpan extends ReplacementSpan {
     }
 
     private void decodeTgs(String path) {
-        try (InputStream is = new GZIPInputStream(new FileInputStream(path))) {
-            LottieComposition comp = LottieCompositionFactory
-                    .fromJsonInputStreamSync(is, "ce:" + documentId)
-                    .getValue();
-            if (comp == null) return;
-            COMP_CACHE.put(documentId, comp);
-            MAIN.post(() -> installLottie(comp));
+        try {
+            String json = RLottieDrawable.readTgsAsJson(path);
+            if (json == null) return;
+            JSON_CACHE.put(documentId, json);
+            buildAndInstall(json);
         } catch (Throwable e) {
             Logger.LOGE(TAG, "decodeTgs failed for " + documentId, e);
+        }
+    }
+
+    /** Construct an RLottieDrawable on the current (background) thread and post the result. */
+    private void buildAndInstall(String json) {
+        try {
+            RLottieDrawable d = new RLottieDrawable(json, "ce:" + documentId, size, size);
+            if (!d.isValid()) {
+                d.release();
+                return;
+            }
+            MAIN.post(() -> installLottie(d));
+        } catch (Throwable e) {
+            Logger.LOGE(TAG, "buildRLottie failed for " + documentId, e);
         }
     }
 
@@ -210,13 +217,11 @@ public class CustomEmojiSpan extends ReplacementSpan {
         }
     }
 
-    private void installLottie(LottieComposition comp) {
-        this.composition = comp;
-        LottieDrawable d = new LottieDrawable();
-        d.setComposition(comp);
-        d.setRepeatCount(LottieDrawable.INFINITE);
-        // We drive progress manually from draw(); LottieDrawable's own ValueAnimator
-        // is therefore unused. Don't call playAnimation().
+    private void installLottie(RLottieDrawable d) {
+        // We drive progress manually from draw(); the drawable's own ticker
+        // would invalidate the entire host TextView every frame instead of the
+        // local span — leave start() unused.
+        d.setRepeatCount(RLottieDrawable.INFINITE);
         this.lottieDrawable = d;
     }
 

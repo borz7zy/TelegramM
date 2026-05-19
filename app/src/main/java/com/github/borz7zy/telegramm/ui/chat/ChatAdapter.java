@@ -29,13 +29,9 @@ import androidx.paging.PagingDataAdapter;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.airbnb.lottie.LottieAnimationView;
-import com.airbnb.lottie.LottieComposition;
-import com.airbnb.lottie.LottieCompositionFactory;
-import com.airbnb.lottie.LottieDrawable;
-import com.airbnb.lottie.LottieTask;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
+import com.github.borz7zy.rlottie.RLottieAnimationView;
 import com.github.borz7zy.telegramm.R;
 import com.github.borz7zy.telegramm.ui.ThemeEngine;
 import com.github.borz7zy.telegramm.ui.model.MessageItem;
@@ -47,15 +43,11 @@ import com.github.borz7zy.telegramm.utils.RoundedOutlineProvider;
 import com.github.borz7zy.telegramm.utils.TdMediaRepository;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.zip.GZIPInputStream;
 
 public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.ViewHolder> {
 
@@ -476,8 +468,8 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
             return;
         }
 
-        if (!(obj instanceof LottieAnimationView)) return;
-        LottieAnimationView lav = (LottieAnimationView) obj;
+        if (!(obj instanceof RLottieAnimationView)) return;
+        RLottieAnimationView lav = (RLottieAnimationView) obj;
 
         if (type == UiContent.StickerType.STATIC) {
             // Make sure any TGS animation from a prior binding is stopped before
@@ -490,60 +482,15 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         }
     }
 
-    private static final java.util.concurrent.ExecutorService TGS_IO_EXECUTOR =
-            java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
-                Thread t = new Thread(r, "ChatAdapter-tgs-io");
-                t.setPriority(Thread.NORM_PRIORITY - 1);
-                return t;
-            });
-
-    private void renderTgsSticker(LottieAnimationView lav, String path) {
-        // Cancel any prior Glide load + Lottie animation; .tgs is a gzipped
-        // Lottie JSON. Opening the GZIPInputStream reads the gzip header off
-        // disk, so we do that off the main thread to keep scroll smooth.
+    private void renderTgsSticker(RLottieAnimationView lav, String path) {
+        // Cancel any prior Glide load + rlottie animation. setTgsFile reads
+        // and decompresses the .tgs on a background thread, so scrolling
+        // stays smooth.
         Glide.with(lav).clear(lav);
         lav.cancelAnimation();
         lav.setVisibility(View.VISIBLE);
-
-        final String cacheKey = "tgs:" + path;
-        final Object expectedTag = lav.getTag();
-        final WeakReference<LottieAnimationView> weak = new WeakReference<>(lav);
-
-        TGS_IO_EXECUTOR.execute(() -> {
-            InputStream is;
-            try {
-                is = new GZIPInputStream(new FileInputStream(path));
-            } catch (IOException e) {
-                com.github.borz7zy.telegramm.utils.Logger.LOGE(
-                        "ChatAdapter", "Failed to open TGS file: " + e.getMessage());
-                return;
-            }
-            LottieAnimationView v0 = weak.get();
-            if (v0 == null) return;
-            v0.post(() -> attachTgsTask(weak, expectedTag, is, cacheKey));
-        });
-    }
-
-    private void attachTgsTask(WeakReference<LottieAnimationView> weak,
-                               Object expectedTag,
-                               InputStream is,
-                               String cacheKey) {
-        LottieTask<LottieComposition> task =
-                LottieCompositionFactory.fromJsonInputStream(is, cacheKey);
-
-        task.addListener(composition -> {
-            LottieAnimationView v = weak.get();
-            if (v == null) return;
-            // The holder may have been rebound while the composition was
-            // being parsed off the main thread.
-            if (!Objects.equals(expectedTag, v.getTag())) return;
-            v.setComposition(composition);
-            v.setRepeatCount(LottieDrawable.INFINITE);
-            v.playAnimation();
-        });
-        task.addFailureListener(e -> com.github.borz7zy.telegramm.utils.Logger.LOGE(
-                "ChatAdapter",
-                "Failed to parse TGS: " + (e == null ? "null" : e.getMessage())));
+        lav.setRepeatCount(RLottieAnimationView.INFINITE);
+        lav.setTgsFile(path, "tgs:" + path);
     }
 
     @UnstableApi
@@ -722,7 +669,7 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         final TextView time;
         final JustifiedLayout imageBoardTop;
         final JustifiedLayout imageBoardBottom;
-        final LottieAnimationView stickerView;
+        final RLottieAnimationView stickerView;
         PlayerView stickerPlayerView;
         ExoPlayer player;
         String currentVideoPath;

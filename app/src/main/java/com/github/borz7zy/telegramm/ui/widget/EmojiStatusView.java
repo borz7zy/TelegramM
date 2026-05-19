@@ -23,24 +23,20 @@ import androidx.media3.exoplayer.source.ProgressiveMediaSource;
 import androidx.media3.ui.AspectRatioFrameLayout;
 import androidx.media3.ui.PlayerView;
 
-import com.airbnb.lottie.LottieAnimationView;
-import com.airbnb.lottie.LottieCompositionFactory;
-import com.airbnb.lottie.LottieDrawable;
 import com.bumptech.glide.Glide;
+import com.github.borz7zy.rlottie.RLottieAnimationView;
 import com.github.borz7zy.telegramm.utils.EmojiStatusRepository;
 import com.github.borz7zy.telegramm.utils.TdMediaRepository;
 
 import org.drinkless.tdlib.TdApi;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.util.zip.GZIPInputStream;
 
 @UnstableApi
 public class EmojiStatusView extends FrameLayout {
 
     private final ImageView imageView;
-    private final LottieAnimationView lottieView;
+    private final RLottieAnimationView lottieView;
     private final PlayerView playerView;
     @Nullable private ExoPlayer player;
     @Nullable private String currentVideoPath;
@@ -62,9 +58,9 @@ public class EmojiStatusView extends FrameLayout {
         imageView.setVisibility(GONE);
         addView(imageView, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
 
-        lottieView = new LottieAnimationView(context);
+        lottieView = new RLottieAnimationView(context);
         lottieView.setVisibility(GONE);
-        lottieView.setRepeatCount(LottieDrawable.INFINITE);
+        lottieView.setRepeatCount(RLottieAnimationView.INFINITE);
         addView(lottieView, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
 
         playerView = (PlayerView) LayoutInflater.from(context)
@@ -136,24 +132,12 @@ public class EmojiStatusView extends FrameLayout {
     }
 
     private void renderTgs(String path, long g) {
-        try {
-            LottieCompositionFactory.fromJsonInputStream(
-                    new GZIPInputStream(new FileInputStream(path)), path
-            ).addListener(composition -> {
-                if (g != generation || composition == null) return;
-                imageView.setVisibility(GONE);
-                playerView.setVisibility(GONE);
-                lottieView.setVisibility(VISIBLE);
-                lottieView.setComposition(composition);
-                lottieView.setRepeatCount(LottieDrawable.INFINITE);
-                lottieView.playAnimation();
-            }).addFailureListener(t -> {
-                if (g != generation) return;
-                setVisibility(GONE);
-            });
-        } catch (Exception e) {
-            setVisibility(GONE);
-        }
+        if (g != generation) return;
+        imageView.setVisibility(GONE);
+        playerView.setVisibility(GONE);
+        lottieView.setVisibility(VISIBLE);
+        lottieView.setRepeatCount(RLottieAnimationView.INFINITE);
+        lottieView.setTgsFile(path, path);
     }
 
     private void renderStatic(String path, long g) {
@@ -232,7 +216,7 @@ public class EmojiStatusView extends FrameLayout {
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        if (lottieView.getVisibility() == VISIBLE && lottieView.getComposition() != null) {
+        if (lottieView.getVisibility() == VISIBLE && lottieView.getLottieDrawable() != null) {
             lottieView.playAnimation();
         }
         if (player != null && playerView.getVisibility() == VISIBLE) {
