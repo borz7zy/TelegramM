@@ -21,7 +21,7 @@ public class TdApi {
         }
     }
 
-    private static final String GIT_COMMIT_HASH = "6d509061574d684117f74133056aa43df89022fc";
+    private static final String GIT_COMMIT_HASH = "e0943d068ce90b5010f1aea946e6901e25b43bf6";
 
     private TdApi() {
     }
@@ -63,6 +63,7 @@ public class TdApi {
         @Retention(RetentionPolicy.SOURCE)
         @IntDef({
             AcceptCall.CONSTRUCTOR,
+            AcceptOauthRequest.CONSTRUCTOR,
             AcceptTermsOfService.CONSTRUCTOR,
             ActivateStoryStealthMode.CONSTRUCTOR,
             AddBotMediaPreview.CONSTRUCTOR,
@@ -84,6 +85,7 @@ public class TdApi {
             AddOffer.CONSTRUCTOR,
             AddPendingLiveStoryReaction.CONSTRUCTOR,
             AddPendingPaidMessageReaction.CONSTRUCTOR,
+            AddPollOption.CONSTRUCTOR,
             AddProfileAudio.CONSTRUCTOR,
             AddProxy.CONSTRUCTOR,
             AddQuickReplyShortcutInlineQueryResultMessage.CONSTRUCTOR,
@@ -95,10 +97,12 @@ public class TdApi {
             AddSavedNotificationSound.CONSTRUCTOR,
             AddStickerToSet.CONSTRUCTOR,
             AddStoryAlbumStories.CONSTRUCTOR,
+            AddTextCompositionStyle.CONSTRUCTOR,
             AllowBotToSendMessages.CONSTRUCTOR,
             AllowUnpaidMessagesFromUser.CONSTRUCTOR,
             AnswerCallbackQuery.CONSTRUCTOR,
             AnswerCustomQuery.CONSTRUCTOR,
+            AnswerGuestQuery.CONSTRUCTOR,
             AnswerInlineQuery.CONSTRUCTOR,
             AnswerPreCheckoutQuery.CONSTRUCTOR,
             AnswerShippingQuery.CONSTRUCTOR,
@@ -130,12 +134,14 @@ public class TdApi {
             CheckAuthenticationPassword.CONSTRUCTOR,
             CheckAuthenticationPasswordRecoveryCode.CONSTRUCTOR,
             CheckAuthenticationPremiumPurchase.CONSTRUCTOR,
+            CheckBotUsername.CONSTRUCTOR,
             CheckChatFolderInviteLink.CONSTRUCTOR,
             CheckChatInviteLink.CONSTRUCTOR,
             CheckChatUsername.CONSTRUCTOR,
             CheckCreatedPublicChatsLimit.CONSTRUCTOR,
             CheckEmailAddressVerificationCode.CONSTRUCTOR,
             CheckLoginEmailAddressCode.CONSTRUCTOR,
+            CheckOauthRequestMatchCode.CONSTRUCTOR,
             CheckPasswordRecoveryCode.CONSTRUCTOR,
             CheckPhoneNumberCode.CONSTRUCTOR,
             CheckPremiumGiftCode.CONSTRUCTOR,
@@ -164,11 +170,13 @@ public class TdApi {
             CloseWebApp.CONSTRUCTOR,
             CommitPendingLiveStoryReactions.CONSTRUCTOR,
             CommitPendingPaidMessageReactions.CONSTRUCTOR,
+            ComposeTextWithAi.CONSTRUCTOR,
             ConfirmQrCodeAuthentication.CONSTRUCTOR,
             ConfirmSession.CONSTRUCTOR,
             ConnectAffiliateProgram.CONSTRUCTOR,
             CraftGift.CONSTRUCTOR,
             CreateBasicGroupChat.CONSTRUCTOR,
+            CreateBot.CONSTRUCTOR,
             CreateBusinessChatLink.CONSTRUCTOR,
             CreateCall.CONSTRUCTOR,
             CreateChatFolder.CONSTRUCTOR,
@@ -188,12 +196,15 @@ public class TdApi {
             CreateStoryAlbum.CONSTRUCTOR,
             CreateSupergroupChat.CONSTRUCTOR,
             CreateTemporaryPassword.CONSTRUCTOR,
+            CreateTextCompositionStyle.CONSTRUCTOR,
             CreateVideoChat.CONSTRUCTOR,
             DeclineGroupCallInvitation.CONSTRUCTOR,
+            DeclineOauthRequest.CONSTRUCTOR,
             DeclineSuggestedPost.CONSTRUCTOR,
             DecryptGroupCallData.CONSTRUCTOR,
             DeleteAccount.CONSTRUCTOR,
             DeleteAllCallMessages.CONSTRUCTOR,
+            DeleteAllRecentMessageReactionsFromSender.CONSTRUCTOR,
             DeleteAllRevokedChatInviteLinks.CONSTRUCTOR,
             DeleteBotMediaPreviews.CONSTRUCTOR,
             DeleteBusinessChatLink.CONSTRUCTOR,
@@ -218,8 +229,10 @@ public class TdApi {
             DeleteGroupCallMessages.CONSTRUCTOR,
             DeleteGroupCallMessagesBySender.CONSTRUCTOR,
             DeleteLanguagePack.CONSTRUCTOR,
+            DeleteMessageReactionsFromSender.CONSTRUCTOR,
             DeleteMessages.CONSTRUCTOR,
             DeletePassportElement.CONSTRUCTOR,
+            DeletePollOption.CONSTRUCTOR,
             DeleteProfilePhoto.CONSTRUCTOR,
             DeleteQuickReplyShortcut.CONSTRUCTOR,
             DeleteQuickReplyShortcutMessages.CONSTRUCTOR,
@@ -231,6 +244,7 @@ public class TdApi {
             DeleteStickerSet.CONSTRUCTOR,
             DeleteStory.CONSTRUCTOR,
             DeleteStoryAlbum.CONSTRUCTOR,
+            DeleteTextCompositionStyle.CONSTRUCTOR,
             Destroy.CONSTRUCTOR,
             DisableAllSupergroupUsernames.CONSTRUCTOR,
             DisableProxy.CONSTRUCTOR,
@@ -272,6 +286,7 @@ public class TdApi {
             EditStarSubscription.CONSTRUCTOR,
             EditStory.CONSTRUCTOR,
             EditStoryCover.CONSTRUCTOR,
+            EditTextCompositionStyle.CONSTRUCTOR,
             EditUserStarSubscription.CONSTRUCTOR,
             EnableProxy.CONSTRUCTOR,
             EncryptGroupCallData.CONSTRUCTOR,
@@ -279,6 +294,7 @@ public class TdApi {
             EndGroupCallRecording.CONSTRUCTOR,
             EndGroupCallScreenSharing.CONSTRUCTOR,
             FinishFileGeneration.CONSTRUCTOR,
+            FixTextWithAi.CONSTRUCTOR,
             ForwardMessages.CONSTRUCTOR,
             GetAccountTtl.CONSTRUCTOR,
             GetActiveSessions.CONSTRUCTOR,
@@ -452,6 +468,8 @@ public class TdApi {
             GetLoginUrl.CONSTRUCTOR,
             GetLoginUrlInfo.CONSTRUCTOR,
             GetMainWebApp.CONSTRUCTOR,
+            GetManagedBotAccessSettings.CONSTRUCTOR,
+            GetManagedBotToken.CONSTRUCTOR,
             GetMapThumbnailFile.CONSTRUCTOR,
             GetMarkdownText.CONSTRUCTOR,
             GetMe.CONSTRUCTOR,
@@ -477,6 +495,7 @@ public class TdApi {
             GetMessages.CONSTRUCTOR,
             GetNetworkStatistics.CONSTRUCTOR,
             GetNewChatPrivacySettings.CONSTRUCTOR,
+            GetOauthLinkInfo.CONSTRUCTOR,
             GetOption.CONSTRUCTOR,
             GetOwnedBots.CONSTRUCTOR,
             GetOwnedStickerSets.CONSTRUCTOR,
@@ -488,8 +507,11 @@ public class TdApi {
             GetPasswordState.CONSTRUCTOR,
             GetPaymentForm.CONSTRUCTOR,
             GetPaymentReceipt.CONSTRUCTOR,
+            GetPersonalChatHistory.CONSTRUCTOR,
             GetPhoneNumberInfo.CONSTRUCTOR,
             GetPhoneNumberInfoSync.CONSTRUCTOR,
+            GetPollOptionProperties.CONSTRUCTOR,
+            GetPollVoteStatistics.CONSTRUCTOR,
             GetPollVoters.CONSTRUCTOR,
             GetPreferredCountryLanguage.CONSTRUCTOR,
             GetPremiumFeatures.CONSTRUCTOR,
@@ -501,6 +523,7 @@ public class TdApi {
             GetPremiumStickerExamples.CONSTRUCTOR,
             GetPremiumStickers.CONSTRUCTOR,
             GetPreparedInlineMessage.CONSTRUCTOR,
+            GetPreparedKeyboardButton.CONSTRUCTOR,
             GetProxies.CONSTRUCTOR,
             GetPublicPostSearchLimits.CONSTRUCTOR,
             GetPushReceiverId.CONSTRUCTOR,
@@ -563,6 +586,7 @@ public class TdApi {
             GetSupportName.CONSTRUCTOR,
             GetSupportUser.CONSTRUCTOR,
             GetTemporaryPasswordState.CONSTRUCTOR,
+            GetTextCompositionStyleExample.CONSTRUCTOR,
             GetTextEntities.CONSTRUCTOR,
             GetThemeParametersJsonString.CONSTRUCTOR,
             GetThemedChatEmojiStatuses.CONSTRUCTOR,
@@ -613,6 +637,7 @@ public class TdApi {
             LaunchPrepaidGiveaway.CONSTRUCTOR,
             LeaveChat.CONSTRUCTOR,
             LeaveGroupCall.CONSTRUCTOR,
+            ListenToAudio.CONSTRUCTOR,
             LoadActiveStories.CONSTRUCTOR,
             LoadChats.CONSTRUCTOR,
             LoadDirectMessagesChatTopics.CONSTRUCTOR,
@@ -639,15 +664,18 @@ public class TdApi {
             PostStory.CONSTRUCTOR,
             PreliminaryUploadFile.CONSTRUCTOR,
             ProcessChatFolderNewChats.CONSTRUCTOR,
+            ProcessChatHasProtectedContentDisableRequest.CONSTRUCTOR,
             ProcessChatJoinRequest.CONSTRUCTOR,
             ProcessChatJoinRequests.CONSTRUCTOR,
             ProcessGiftPurchaseOffer.CONSTRUCTOR,
             ProcessPushNotification.CONSTRUCTOR,
             RateSpeechRecognition.CONSTRUCTOR,
             ReadAllChatMentions.CONSTRUCTOR,
+            ReadAllChatPollVotes.CONSTRUCTOR,
             ReadAllChatReactions.CONSTRUCTOR,
             ReadAllDirectMessagesChatTopicReactions.CONSTRUCTOR,
             ReadAllForumTopicMentions.CONSTRUCTOR,
+            ReadAllForumTopicPollVotes.CONSTRUCTOR,
             ReadAllForumTopicReactions.CONSTRUCTOR,
             ReadBusinessMessage.CONSTRUCTOR,
             ReadChatList.CONSTRUCTOR,
@@ -684,6 +712,7 @@ public class TdApi {
             RemoveSearchedForTag.CONSTRUCTOR,
             RemoveStickerFromSet.CONSTRUCTOR,
             RemoveStoryAlbumStories.CONSTRUCTOR,
+            RemoveTextCompositionStyle.CONSTRUCTOR,
             RemoveTopChat.CONSTRUCTOR,
             ReorderActiveUsernames.CONSTRUCTOR,
             ReorderBotActiveUsernames.CONSTRUCTOR,
@@ -730,6 +759,7 @@ public class TdApi {
             RevokeGroupCallInviteLink.CONSTRUCTOR,
             SaveApplicationLogEvent.CONSTRUCTOR,
             SavePreparedInlineMessage.CONSTRUCTOR,
+            SavePreparedKeyboardButton.CONSTRUCTOR,
             SearchAffiliatePrograms.CONSTRUCTOR,
             SearchBackground.CONSTRUCTOR,
             SearchCallMessages.CONSTRUCTOR,
@@ -762,6 +792,7 @@ public class TdApi {
             SearchStickerSets.CONSTRUCTOR,
             SearchStickers.CONSTRUCTOR,
             SearchStringsByPrefix.CONSTRUCTOR,
+            SearchTextCompositionStyle.CONSTRUCTOR,
             SearchUserByPhoneNumber.CONSTRUCTOR,
             SearchUserByToken.CONSTRUCTOR,
             SearchWebApp.CONSTRUCTOR,
@@ -783,6 +814,7 @@ public class TdApi {
             SendInlineQueryResultMessage.CONSTRUCTOR,
             SendMessage.CONSTRUCTOR,
             SendMessageAlbum.CONSTRUCTOR,
+            SendMessageViewMetrics.CONSTRUCTOR,
             SendPassportAuthorizationForm.CONSTRUCTOR,
             SendPaymentForm.CONSTRUCTOR,
             SendPhoneNumberCode.CONSTRUCTOR,
@@ -834,6 +866,7 @@ public class TdApi {
             SetChatEmojiStatus.CONSTRUCTOR,
             SetChatLocation.CONSTRUCTOR,
             SetChatMemberStatus.CONSTRUCTOR,
+            SetChatMemberTag.CONSTRUCTOR,
             SetChatMessageAutoDeleteTime.CONSTRUCTOR,
             SetChatMessageSender.CONSTRUCTOR,
             SetChatNotificationSettings.CONSTRUCTOR,
@@ -875,6 +908,7 @@ public class TdApi {
             SetLogVerbosityLevel.CONSTRUCTOR,
             SetLoginEmailAddress.CONSTRUCTOR,
             SetMainProfileTab.CONSTRUCTOR,
+            SetManagedBotAccessSettings.CONSTRUCTOR,
             SetMenuButton.CONSTRUCTOR,
             SetMessageFactCheck.CONSTRUCTOR,
             SetMessageReactions.CONSTRUCTOR,
@@ -1437,6 +1471,10 @@ public class TdApi {
          */
         public boolean isEnabled;
         /**
+         * Comment for the proxy added by the user.
+         */
+        public String comment;
+        /**
          * The proxy.
          */
         public Proxy proxy;
@@ -1453,19 +1491,21 @@ public class TdApi {
          * @param id Unique identifier of the proxy.
          * @param lastUsedDate Point in time (Unix timestamp) when the proxy was last used; 0 if never.
          * @param isEnabled True, if the proxy is enabled now.
+         * @param comment Comment for the proxy added by the user.
          * @param proxy The proxy.
          */
-        public AddedProxy(int id, int lastUsedDate, boolean isEnabled, Proxy proxy) {
+        public AddedProxy(int id, int lastUsedDate, boolean isEnabled, String comment, Proxy proxy) {
             this.id = id;
             this.lastUsedDate = lastUsedDate;
             this.isEnabled = isEnabled;
+            this.comment = comment;
             this.proxy = proxy;
         }
 
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = 820767669;
+        public static final int CONSTRUCTOR = -2076257392;
 
         /**
          * @return this.CONSTRUCTOR
@@ -3782,6 +3822,10 @@ public class TdApi {
          */
         public String storeProductId;
         /**
+         * Duration of the Telegram Premium subscription after the purchase; may be 0 if Telegram Premium subscription will not be granted.
+         */
+        public int premiumDayCount;
+        /**
          * Email address to use for support if the user has issues with Telegram Premium purchase.
          */
         public String supportEmailAddress;
@@ -3800,11 +3844,13 @@ public class TdApi {
          * The user must buy Telegram Premium as an in-store purchase to log in. Call checkAuthenticationPremiumPurchase and then setAuthenticationPremiumPurchaseTransaction.
          *
          * @param storeProductId Identifier of the store product that must be bought.
+         * @param premiumDayCount Duration of the Telegram Premium subscription after the purchase; may be 0 if Telegram Premium subscription will not be granted.
          * @param supportEmailAddress Email address to use for support if the user has issues with Telegram Premium purchase.
          * @param supportEmailSubject Subject for the email sent to the support email address.
          */
-        public AuthorizationStateWaitPremiumPurchase(String storeProductId, String supportEmailAddress, String supportEmailSubject) {
+        public AuthorizationStateWaitPremiumPurchase(String storeProductId, int premiumDayCount, String supportEmailAddress, String supportEmailSubject) {
             this.storeProductId = storeProductId;
+            this.premiumDayCount = premiumDayCount;
             this.supportEmailAddress = supportEmailAddress;
             this.supportEmailSubject = supportEmailSubject;
         }
@@ -3812,7 +3858,7 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = 2097616261;
+        public static final int CONSTRUCTOR = -1192878334;
 
         /**
          * @return this.CONSTRUCTOR
@@ -4000,7 +4046,7 @@ public class TdApi {
     }
 
     /**
-     * The user is unregistered and need to accept terms of service and enter their first name and last name to finish registration. Call registerUser to accept the terms of service and provide the data.
+     * The user is unregistered and needs to accept terms of service and enter their first name and last name to finish registration. Call registerUser to accept the terms of service and provide the data.
      */
     public static class AuthorizationStateWaitRegistration extends AuthorizationState {
         /**
@@ -4009,13 +4055,13 @@ public class TdApi {
         public TermsOfService termsOfService;
 
         /**
-         * The user is unregistered and need to accept terms of service and enter their first name and last name to finish registration. Call registerUser to accept the terms of service and provide the data.
+         * The user is unregistered and needs to accept terms of service and enter their first name and last name to finish registration. Call registerUser to accept the terms of service and provide the data.
          */
         public AuthorizationStateWaitRegistration() {
         }
 
         /**
-         * The user is unregistered and need to accept terms of service and enter their first name and last name to finish registration. Call registerUser to accept the terms of service and provide the data.
+         * The user is unregistered and needs to accept terms of service and enter their first name and last name to finish registration. Call registerUser to accept the terms of service and provide the data.
          *
          * @param termsOfService Telegram terms of service.
          */
@@ -5604,6 +5650,50 @@ public class TdApi {
     }
 
     /**
+     * Describes users that have access to a bot.
+     */
+    public static class BotAccessSettings extends Object {
+        /**
+         * True, if access to the bot is restricted to its owner and selected users.
+         */
+        public boolean isRestricted;
+        /**
+         * Identifiers of the users who can use the bot additionally to the owner of the bot.
+         */
+        public long[] addedUserIds;
+
+        /**
+         * Describes users that have access to a bot.
+         */
+        public BotAccessSettings() {
+        }
+
+        /**
+         * Describes users that have access to a bot.
+         *
+         * @param isRestricted True, if access to the bot is restricted to its owner and selected users.
+         * @param addedUserIds Identifiers of the users who can use the bot additionally to the owner of the bot.
+         */
+        public BotAccessSettings(boolean isRestricted, long[] addedUserIds) {
+            this.isRestricted = isRestricted;
+            this.addedUserIds = addedUserIds;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 735061332;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
      * Represents a command supported by a bot.
      */
     public static class BotCommand extends Object {
@@ -5965,6 +6055,10 @@ public class TdApi {
          */
         @Nullable public Animation animation;
         /**
+         * Identifier of the bot, which manages the bot; 0 if none or unknown; for owner of the bot only.
+         */
+        public long managerBotUserId;
+        /**
          * Information about a button to show instead of the bot commands menu button; may be null if ordinary bot commands menu must be shown.
          */
         @Nullable public BotMenuButton menuButton;
@@ -6050,6 +6144,7 @@ public class TdApi {
          * @param description The text shown in the chat with the bot if the chat is empty.
          * @param photo Photo shown in the chat with the bot if the chat is empty; may be null.
          * @param animation Animation shown in the chat with the bot if the chat is empty; may be null.
+         * @param managerBotUserId Identifier of the bot, which manages the bot; 0 if none or unknown; for owner of the bot only.
          * @param menuButton Information about a button to show instead of the bot commands menu button; may be null if ordinary bot commands menu must be shown.
          * @param commands List of the bot commands.
          * @param privacyPolicyUrl The HTTP link to the privacy policy of the bot. If empty, then /privacy command must be used if supported by the bot. If the command isn't supported, then https://telegram.org/privacy-tpa must be opened.
@@ -6069,11 +6164,12 @@ public class TdApi {
          * @param editDescriptionMediaLink The internal link, which can be used to edit the photo or animation shown in the chat with the bot if the chat is empty; may be null.
          * @param editSettingsLink The internal link, which can be used to edit bot settings; may be null.
          */
-        public BotInfo(String shortDescription, String description, Photo photo, Animation animation, BotMenuButton menuButton, BotCommand[] commands, String privacyPolicyUrl, ChatAdministratorRights defaultGroupAdministratorRights, ChatAdministratorRights defaultChannelAdministratorRights, AffiliateProgramInfo affiliateProgram, int webAppBackgroundLightColor, int webAppBackgroundDarkColor, int webAppHeaderLightColor, int webAppHeaderDarkColor, BotVerificationParameters verificationParameters, boolean canGetRevenueStatistics, boolean canManageEmojiStatus, boolean hasMediaPreviews, InternalLinkType editCommandsLink, InternalLinkType editDescriptionLink, InternalLinkType editDescriptionMediaLink, InternalLinkType editSettingsLink) {
+        public BotInfo(String shortDescription, String description, Photo photo, Animation animation, long managerBotUserId, BotMenuButton menuButton, BotCommand[] commands, String privacyPolicyUrl, ChatAdministratorRights defaultGroupAdministratorRights, ChatAdministratorRights defaultChannelAdministratorRights, AffiliateProgramInfo affiliateProgram, int webAppBackgroundLightColor, int webAppBackgroundDarkColor, int webAppHeaderLightColor, int webAppHeaderDarkColor, BotVerificationParameters verificationParameters, boolean canGetRevenueStatistics, boolean canManageEmojiStatus, boolean hasMediaPreviews, InternalLinkType editCommandsLink, InternalLinkType editDescriptionLink, InternalLinkType editDescriptionMediaLink, InternalLinkType editSettingsLink) {
             this.shortDescription = shortDescription;
             this.description = description;
             this.photo = photo;
             this.animation = animation;
+            this.managerBotUserId = managerBotUserId;
             this.menuButton = menuButton;
             this.commands = commands;
             this.privacyPolicyUrl = privacyPolicyUrl;
@@ -6097,7 +6193,7 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = 1771886272;
+        public static final int CONSTRUCTOR = -586441582;
 
         /**
          * @return this.CONSTRUCTOR
@@ -6542,7 +6638,7 @@ public class TdApi {
 
     /**
      * This class is an abstract base class.
-     * Describes a built-in theme of an official app.
+     * Describes a built-in theme of an official application.
      */
     public abstract static class BuiltInTheme extends Object {
         /**
@@ -10378,6 +10474,10 @@ public class TdApi {
          */
         public int unreadReactionCount;
         /**
+         * Number of messages with unread poll votes in the chat.
+         */
+        public int unreadPollVoteCount;
+        /**
          * Notification settings for the chat.
          */
         public ChatNotificationSettings notificationSettings;
@@ -10418,7 +10518,7 @@ public class TdApi {
          */
         @Nullable public ChatJoinRequestsInfo pendingJoinRequests;
         /**
-         * Identifier of the message from which reply markup needs to be used; 0 if there is no default custom reply markup in the chat.
+         * Identifier of the message from which reply markup needs to be used; 0 if there is no reply markup in the chat.
          */
         public long replyMarkupMessageId;
         /**
@@ -10468,6 +10568,7 @@ public class TdApi {
          * @param lastReadOutboxMessageId Identifier of the last read outgoing message.
          * @param unreadMentionCount Number of unread messages with a mention/reply in the chat.
          * @param unreadReactionCount Number of messages with unread reactions in the chat.
+         * @param unreadPollVoteCount Number of messages with unread poll votes in the chat.
          * @param notificationSettings Notification settings for the chat.
          * @param availableReactions Types of reaction, available in the chat.
          * @param messageAutoDeleteTime Current message auto-delete or self-destruct timer setting for the chat, in seconds; 0 if disabled. Self-destruct timer in secret chats starts after the message or its content is viewed. Auto-delete timer in other chats starts from the send date.
@@ -10478,11 +10579,11 @@ public class TdApi {
          * @param businessBotManageBar Information about bar for managing a business bot in the chat; may be null if none.
          * @param videoChat Information about video chat of the chat.
          * @param pendingJoinRequests Information about pending join requests; may be null if none.
-         * @param replyMarkupMessageId Identifier of the message from which reply markup needs to be used; 0 if there is no default custom reply markup in the chat.
+         * @param replyMarkupMessageId Identifier of the message from which reply markup needs to be used; 0 if there is no reply markup in the chat.
          * @param draftMessage A draft of a message in the chat; may be null if none.
          * @param clientData Application-specific data associated with the chat. (For example, the chat scroll position or local chat notification settings can be stored here.) Persistent if the message database is used.
          */
-        public Chat(long id, ChatType type, String title, ChatPhotoInfo photo, int accentColorId, long backgroundCustomEmojiId, UpgradedGiftColors upgradedGiftColors, int profileAccentColorId, long profileBackgroundCustomEmojiId, ChatPermissions permissions, Message lastMessage, ChatPosition[] positions, ChatList[] chatLists, MessageSender messageSenderId, BlockList blockList, boolean hasProtectedContent, boolean isTranslatable, boolean isMarkedAsUnread, boolean viewAsTopics, boolean hasScheduledMessages, boolean canBeDeletedOnlyForSelf, boolean canBeDeletedForAllUsers, boolean canBeReported, boolean defaultDisableNotification, int unreadCount, long lastReadInboxMessageId, long lastReadOutboxMessageId, int unreadMentionCount, int unreadReactionCount, ChatNotificationSettings notificationSettings, ChatAvailableReactions availableReactions, int messageAutoDeleteTime, EmojiStatus emojiStatus, ChatBackground background, ChatTheme theme, ChatActionBar actionBar, BusinessBotManageBar businessBotManageBar, VideoChat videoChat, ChatJoinRequestsInfo pendingJoinRequests, long replyMarkupMessageId, DraftMessage draftMessage, String clientData) {
+        public Chat(long id, ChatType type, String title, ChatPhotoInfo photo, int accentColorId, long backgroundCustomEmojiId, UpgradedGiftColors upgradedGiftColors, int profileAccentColorId, long profileBackgroundCustomEmojiId, ChatPermissions permissions, Message lastMessage, ChatPosition[] positions, ChatList[] chatLists, MessageSender messageSenderId, BlockList blockList, boolean hasProtectedContent, boolean isTranslatable, boolean isMarkedAsUnread, boolean viewAsTopics, boolean hasScheduledMessages, boolean canBeDeletedOnlyForSelf, boolean canBeDeletedForAllUsers, boolean canBeReported, boolean defaultDisableNotification, int unreadCount, long lastReadInboxMessageId, long lastReadOutboxMessageId, int unreadMentionCount, int unreadReactionCount, int unreadPollVoteCount, ChatNotificationSettings notificationSettings, ChatAvailableReactions availableReactions, int messageAutoDeleteTime, EmojiStatus emojiStatus, ChatBackground background, ChatTheme theme, ChatActionBar actionBar, BusinessBotManageBar businessBotManageBar, VideoChat videoChat, ChatJoinRequestsInfo pendingJoinRequests, long replyMarkupMessageId, DraftMessage draftMessage, String clientData) {
             this.id = id;
             this.type = type;
             this.title = title;
@@ -10512,6 +10613,7 @@ public class TdApi {
             this.lastReadOutboxMessageId = lastReadOutboxMessageId;
             this.unreadMentionCount = unreadMentionCount;
             this.unreadReactionCount = unreadReactionCount;
+            this.unreadPollVoteCount = unreadPollVoteCount;
             this.notificationSettings = notificationSettings;
             this.availableReactions = availableReactions;
             this.messageAutoDeleteTime = messageAutoDeleteTime;
@@ -10530,7 +10632,7 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = -77484353;
+        public static final int CONSTRUCTOR = -520699983;
 
         /**
          * @return this.CONSTRUCTOR
@@ -11287,7 +11389,7 @@ public class TdApi {
          */
         @Nullable public StoryList list;
         /**
-         * A parameter used to determine order of the stories in the story list; 0 if the stories doesn't need to be shown in the story list. Stories must be sorted by the pair (order, storyPosterChatId) in descending order.
+         * A parameter used to determine order of the stories in the story list; 0 if the stories don't need to be shown in the story list. Stories must be sorted by the pair (order, storyPosterChatId) in descending order.
          */
         public long order;
         /**
@@ -11314,7 +11416,7 @@ public class TdApi {
          *
          * @param chatId Identifier of the chat that posted the stories.
          * @param list Identifier of the story list in which the stories are shown; may be null if the stories aren't shown in a story list.
-         * @param order A parameter used to determine order of the stories in the story list; 0 if the stories doesn't need to be shown in the story list. Stories must be sorted by the pair (order, storyPosterChatId) in descending order.
+         * @param order A parameter used to determine order of the stories in the story list; 0 if the stories don't need to be shown in the story list. Stories must be sorted by the pair (order, storyPosterChatId) in descending order.
          * @param canBeArchived True, if the stories are shown in the main story list and can be archived; otherwise, the stories can be hidden from the main story list only by calling removeTopChat with topChatCategoryUsers and the chatId. Stories of the current user can't be archived nor hidden using removeTopChat.
          * @param maxReadStoryId Identifier of the last read active story.
          * @param stories Basic information about the stories; use getStory to get full information about the stories. The stories are in chronological order (i.e., in order of increasing story identifiers).
@@ -11358,6 +11460,10 @@ public class TdApi {
          * True, if the user is the owner of the chat.
          */
         public boolean isOwner;
+        /**
+         * True, if the current user can edit the administrator privileges for the administrator.
+         */
+        public boolean canBeEdited;
 
         /**
          * Contains information about a chat administrator.
@@ -11371,17 +11477,19 @@ public class TdApi {
          * @param userId User identifier of the administrator.
          * @param customTitle Custom title of the administrator.
          * @param isOwner True, if the user is the owner of the chat.
+         * @param canBeEdited True, if the current user can edit the administrator privileges for the administrator.
          */
-        public ChatAdministrator(long userId, String customTitle, boolean isOwner) {
+        public ChatAdministrator(long userId, String customTitle, boolean isOwner, boolean canBeEdited) {
             this.userId = userId;
             this.customTitle = customTitle;
             this.isOwner = isOwner;
+            this.canBeEdited = canBeEdited;
         }
 
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = 1920449836;
+        public static final int CONSTRUCTOR = 436066785;
 
         /**
          * @return this.CONSTRUCTOR
@@ -11457,6 +11565,10 @@ public class TdApi {
          */
         public boolean canManageDirectMessages;
         /**
+         * True, if the administrator can change tags of other users; applicable to basic groups and supergroups only.
+         */
+        public boolean canManageTags;
+        /**
          * True, if the administrator isn't shown in the chat member list and sends messages anonymously; applicable to supergroups only.
          */
         public boolean isAnonymous;
@@ -11485,9 +11597,10 @@ public class TdApi {
          * @param canEditStories True, if the administrator can edit stories posted by other users, post stories to the chat page, pin chat stories, and access story archive; applicable to supergroups and channels only.
          * @param canDeleteStories True, if the administrator can delete stories posted by other users; applicable to supergroups and channels only.
          * @param canManageDirectMessages True, if the administrator can answer to channel direct messages; applicable to channels only.
+         * @param canManageTags True, if the administrator can change tags of other users; applicable to basic groups and supergroups only.
          * @param isAnonymous True, if the administrator isn't shown in the chat member list and sends messages anonymously; applicable to supergroups only.
          */
-        public ChatAdministratorRights(boolean canManageChat, boolean canChangeInfo, boolean canPostMessages, boolean canEditMessages, boolean canDeleteMessages, boolean canInviteUsers, boolean canRestrictMembers, boolean canPinMessages, boolean canManageTopics, boolean canPromoteMembers, boolean canManageVideoChats, boolean canPostStories, boolean canEditStories, boolean canDeleteStories, boolean canManageDirectMessages, boolean isAnonymous) {
+        public ChatAdministratorRights(boolean canManageChat, boolean canChangeInfo, boolean canPostMessages, boolean canEditMessages, boolean canDeleteMessages, boolean canInviteUsers, boolean canRestrictMembers, boolean canPinMessages, boolean canManageTopics, boolean canPromoteMembers, boolean canManageVideoChats, boolean canPostStories, boolean canEditStories, boolean canDeleteStories, boolean canManageDirectMessages, boolean canManageTags, boolean isAnonymous) {
             this.canManageChat = canManageChat;
             this.canChangeInfo = canChangeInfo;
             this.canPostMessages = canPostMessages;
@@ -11503,13 +11616,14 @@ public class TdApi {
             this.canEditStories = canEditStories;
             this.canDeleteStories = canDeleteStories;
             this.canManageDirectMessages = canManageDirectMessages;
+            this.canManageTags = canManageTags;
             this.isAnonymous = isAnonymous;
         }
 
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = -1142880374;
+        public static final int CONSTRUCTOR = 1562741834;
 
         /**
          * @return this.CONSTRUCTOR
@@ -12519,6 +12633,7 @@ public class TdApi {
             ChatEventMemberLeft.CONSTRUCTOR,
             ChatEventMemberPromoted.CONSTRUCTOR,
             ChatEventMemberRestricted.CONSTRUCTOR,
+            ChatEventMemberTagChanged.CONSTRUCTOR,
             ChatEventMemberSubscriptionExtended.CONSTRUCTOR,
             ChatEventAvailableReactionsChanged.CONSTRUCTOR,
             ChatEventBackgroundChanged.CONSTRUCTOR,
@@ -13049,6 +13164,56 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = 1603608069;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * A chat member tag has been changed.
+     */
+    public static class ChatEventMemberTagChanged extends ChatEventAction {
+        /**
+         * Affected chat member user identifier.
+         */
+        public long userId;
+        /**
+         * Previous tag of the chat member.
+         */
+        public String oldTag;
+        /**
+         * New tag of the chat member.
+         */
+        public String newTag;
+
+        /**
+         * A chat member tag has been changed.
+         */
+        public ChatEventMemberTagChanged() {
+        }
+
+        /**
+         * A chat member tag has been changed.
+         *
+         * @param userId Affected chat member user identifier.
+         * @param oldTag Previous tag of the chat member.
+         * @param newTag New tag of the chat member.
+         */
+        public ChatEventMemberTagChanged(long userId, String oldTag, String newTag) {
+            this.userId = userId;
+            this.oldTag = oldTag;
+            this.newTag = newTag;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 63814442;
 
         /**
          * @return this.CONSTRUCTOR
@@ -14784,6 +14949,10 @@ public class TdApi {
          */
         public boolean memberRestrictions;
         /**
+         * True, if member tag and custom title change events need to be returned.
+         */
+        public boolean memberTagChanges;
+        /**
          * True, if changes in chat information need to be returned.
          */
         public boolean infoChanges;
@@ -14825,6 +14994,7 @@ public class TdApi {
          * @param memberInvites True, if invited member events need to be returned.
          * @param memberPromotions True, if member promotion/demotion events need to be returned.
          * @param memberRestrictions True, if member restricted/unrestricted/banned/unbanned events need to be returned.
+         * @param memberTagChanges True, if member tag and custom title change events need to be returned.
          * @param infoChanges True, if changes in chat information need to be returned.
          * @param settingChanges True, if changes in chat settings need to be returned.
          * @param inviteLinkChanges True, if changes to invite links need to be returned.
@@ -14832,7 +15002,7 @@ public class TdApi {
          * @param forumChanges True, if forum-related actions need to be returned.
          * @param subscriptionExtensions True, if subscription extensions need to be returned.
          */
-        public ChatEventLogFilters(boolean messageEdits, boolean messageDeletions, boolean messagePins, boolean memberJoins, boolean memberLeaves, boolean memberInvites, boolean memberPromotions, boolean memberRestrictions, boolean infoChanges, boolean settingChanges, boolean inviteLinkChanges, boolean videoChatChanges, boolean forumChanges, boolean subscriptionExtensions) {
+        public ChatEventLogFilters(boolean messageEdits, boolean messageDeletions, boolean messagePins, boolean memberJoins, boolean memberLeaves, boolean memberInvites, boolean memberPromotions, boolean memberRestrictions, boolean memberTagChanges, boolean infoChanges, boolean settingChanges, boolean inviteLinkChanges, boolean videoChatChanges, boolean forumChanges, boolean subscriptionExtensions) {
             this.messageEdits = messageEdits;
             this.messageDeletions = messageDeletions;
             this.messagePins = messagePins;
@@ -14841,6 +15011,7 @@ public class TdApi {
             this.memberInvites = memberInvites;
             this.memberPromotions = memberPromotions;
             this.memberRestrictions = memberRestrictions;
+            this.memberTagChanges = memberTagChanges;
             this.infoChanges = infoChanges;
             this.settingChanges = settingChanges;
             this.inviteLinkChanges = inviteLinkChanges;
@@ -14852,7 +15023,7 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = -1032965711;
+        public static final int CONSTRUCTOR = 1572752816;
 
         /**
          * @return this.CONSTRUCTOR
@@ -16165,6 +16336,10 @@ public class TdApi {
          */
         public MessageSender memberId;
         /**
+         * Tag of the chat member or its custom title if the member is an administrator of the chat; 0-16 characters without emoji; applicable to basic groups and supergroups only.
+         */
+        public String tag;
+        /**
          * Identifier of a user who invited/promoted/banned this member in the chat; 0 if unknown.
          */
         public long inviterUserId;
@@ -16187,12 +16362,14 @@ public class TdApi {
          * Describes a user or a chat as a member of another chat.
          *
          * @param memberId Identifier of the chat member. Currently, other chats can be only Left or Banned. Only supergroups and channels can have other chats as Left or Banned members and these chats must be supergroups or channels.
+         * @param tag Tag of the chat member or its custom title if the member is an administrator of the chat; 0-16 characters without emoji; applicable to basic groups and supergroups only.
          * @param inviterUserId Identifier of a user who invited/promoted/banned this member in the chat; 0 if unknown.
          * @param joinedChatDate Point in time (Unix timestamp) when the user joined/was promoted/was banned in the chat.
          * @param status Status of the member in the chat.
          */
-        public ChatMember(MessageSender memberId, long inviterUserId, int joinedChatDate, ChatMemberStatus status) {
+        public ChatMember(MessageSender memberId, String tag, long inviterUserId, int joinedChatDate, ChatMemberStatus status) {
             this.memberId = memberId;
+            this.tag = tag;
             this.inviterUserId = inviterUserId;
             this.joinedChatDate = joinedChatDate;
             this.status = status;
@@ -16201,7 +16378,7 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = 1829953909;
+        public static final int CONSTRUCTOR = -1910810754;
 
         /**
          * @return this.CONSTRUCTOR
@@ -16249,10 +16426,6 @@ public class TdApi {
      */
     public static class ChatMemberStatusCreator extends ChatMemberStatus {
         /**
-         * A custom title of the owner; 0-16 characters without emoji; applicable to supergroups only.
-         */
-        public String customTitle;
-        /**
          * True, if the creator isn't shown in the chat member list and sends messages anonymously; applicable to supergroups only.
          */
         public boolean isAnonymous;
@@ -16270,12 +16443,10 @@ public class TdApi {
         /**
          * The user is the owner of the chat and has all the administrator privileges.
          *
-         * @param customTitle A custom title of the owner; 0-16 characters without emoji; applicable to supergroups only.
          * @param isAnonymous True, if the creator isn't shown in the chat member list and sends messages anonymously; applicable to supergroups only.
          * @param isMember True, if the user is a member of the chat.
          */
-        public ChatMemberStatusCreator(String customTitle, boolean isAnonymous, boolean isMember) {
-            this.customTitle = customTitle;
+        public ChatMemberStatusCreator(boolean isAnonymous, boolean isMember) {
             this.isAnonymous = isAnonymous;
             this.isMember = isMember;
         }
@@ -16283,7 +16454,7 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = -160019714;
+        public static final int CONSTRUCTOR = 877825117;
 
         /**
          * @return this.CONSTRUCTOR
@@ -16298,10 +16469,6 @@ public class TdApi {
      * The user is a member of the chat and has some additional privileges. In basic groups, administrators can edit and delete messages sent by others, add new members, ban unprivileged members, and manage video chats. In supergroups and channels, there are more detailed options for administrator privileges.
      */
     public static class ChatMemberStatusAdministrator extends ChatMemberStatus {
-        /**
-         * A custom title of the administrator; 0-16 characters without emoji; applicable to supergroups only.
-         */
-        public String customTitle;
         /**
          * True, if the current user can edit the administrator privileges for the called user.
          */
@@ -16320,12 +16487,10 @@ public class TdApi {
         /**
          * The user is a member of the chat and has some additional privileges. In basic groups, administrators can edit and delete messages sent by others, add new members, ban unprivileged members, and manage video chats. In supergroups and channels, there are more detailed options for administrator privileges.
          *
-         * @param customTitle A custom title of the administrator; 0-16 characters without emoji; applicable to supergroups only.
          * @param canBeEdited True, if the current user can edit the administrator privileges for the called user.
          * @param rights Rights of the administrator.
          */
-        public ChatMemberStatusAdministrator(String customTitle, boolean canBeEdited, ChatAdministratorRights rights) {
-            this.customTitle = customTitle;
+        public ChatMemberStatusAdministrator(boolean canBeEdited, ChatAdministratorRights rights) {
             this.canBeEdited = canBeEdited;
             this.rights = rights;
         }
@@ -16333,7 +16498,7 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = -70024163;
+        public static final int CONSTRUCTOR = -861316634;
 
         /**
          * @return this.CONSTRUCTOR
@@ -17015,6 +17180,14 @@ public class TdApi {
          */
         public boolean canAddLinkPreviews;
         /**
+         * True, if the user can react to messages.
+         */
+        public boolean canReactToMessages;
+        /**
+         * True, if the user may change the tag of self.
+         */
+        public boolean canEditTag;
+        /**
          * True, if the user can change the chat title, photo, and other settings.
          */
         public boolean canChangeInfo;
@@ -17050,12 +17223,14 @@ public class TdApi {
          * @param canSendPolls True, if the user can send polls and checklists.
          * @param canSendOtherMessages True, if the user can send animations, games, stickers, and dice and use inline bots.
          * @param canAddLinkPreviews True, if the user may add a link preview to their messages.
+         * @param canReactToMessages True, if the user can react to messages.
+         * @param canEditTag True, if the user may change the tag of self.
          * @param canChangeInfo True, if the user can change the chat title, photo, and other settings.
          * @param canInviteUsers True, if the user can invite new users to the chat.
          * @param canPinMessages True, if the user can pin messages.
          * @param canCreateTopics True, if the user can create topics.
          */
-        public ChatPermissions(boolean canSendBasicMessages, boolean canSendAudios, boolean canSendDocuments, boolean canSendPhotos, boolean canSendVideos, boolean canSendVideoNotes, boolean canSendVoiceNotes, boolean canSendPolls, boolean canSendOtherMessages, boolean canAddLinkPreviews, boolean canChangeInfo, boolean canInviteUsers, boolean canPinMessages, boolean canCreateTopics) {
+        public ChatPermissions(boolean canSendBasicMessages, boolean canSendAudios, boolean canSendDocuments, boolean canSendPhotos, boolean canSendVideos, boolean canSendVideoNotes, boolean canSendVoiceNotes, boolean canSendPolls, boolean canSendOtherMessages, boolean canAddLinkPreviews, boolean canReactToMessages, boolean canEditTag, boolean canChangeInfo, boolean canInviteUsers, boolean canPinMessages, boolean canCreateTopics) {
             this.canSendBasicMessages = canSendBasicMessages;
             this.canSendAudios = canSendAudios;
             this.canSendDocuments = canSendDocuments;
@@ -17066,6 +17241,8 @@ public class TdApi {
             this.canSendPolls = canSendPolls;
             this.canSendOtherMessages = canSendOtherMessages;
             this.canAddLinkPreviews = canAddLinkPreviews;
+            this.canReactToMessages = canReactToMessages;
+            this.canEditTag = canEditTag;
             this.canChangeInfo = canChangeInfo;
             this.canInviteUsers = canInviteUsers;
             this.canPinMessages = canPinMessages;
@@ -17075,7 +17252,7 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = -118334855;
+        public static final int CONSTRUCTOR = -2007710412;
 
         /**
          * @return this.CONSTRUCTOR
@@ -19274,7 +19451,7 @@ public class TdApi {
      */
     public static class Checklist extends Object {
         /**
-         * Title of the checklist; may contain only Bold, Italic, Underline, Strikethrough, Spoiler, and CustomEmoji entities.
+         * Title of the checklist; may contain only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities.
          */
         public FormattedText title;
         /**
@@ -19307,7 +19484,7 @@ public class TdApi {
         /**
          * Describes a checklist.
          *
-         * @param title Title of the checklist; may contain only Bold, Italic, Underline, Strikethrough, Spoiler, and CustomEmoji entities.
+         * @param title Title of the checklist; may contain only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities.
          * @param tasks List of tasks in the checklist.
          * @param othersCanAddTasks True, if users other than creator of the list can add tasks to the list.
          * @param canAddTasks True, if the current user can add tasks to the list if they have Telegram Premium subscription.
@@ -19346,7 +19523,7 @@ public class TdApi {
          */
         public int id;
         /**
-         * Text of the task; may contain only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, Url, EmailAddress, Mention, Hashtag, Cashtag and PhoneNumber entities.
+         * Text of the task; may contain only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, DateTime and automatically found entities.
          */
         public FormattedText text;
         /**
@@ -19368,7 +19545,7 @@ public class TdApi {
          * Describes a task in a checklist.
          *
          * @param id Unique identifier of the task.
-         * @param text Text of the task; may contain only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, Url, EmailAddress, Mention, Hashtag, Cashtag and PhoneNumber entities.
+         * @param text Text of the task; may contain only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, DateTime and automatically found entities.
          * @param completedBy Identifier of the user or chat that completed the task; may be null if the task isn't completed yet.
          * @param completionDate Point in time (Unix timestamp) when the task was completed; 0 if the task isn't completed.
          */
@@ -20710,6 +20887,213 @@ public class TdApi {
     }
 
     /**
+     * This class is an abstract base class.
+     * Describes date and time formatting.
+     */
+    public abstract static class DateTimeFormattingType extends Object {
+        /**
+         * Describes possible values returned by getConstructor().
+         */
+        @Retention(RetentionPolicy.SOURCE)
+        @IntDef({
+            DateTimeFormattingTypeRelative.CONSTRUCTOR,
+            DateTimeFormattingTypeAbsolute.CONSTRUCTOR
+        })
+        public @interface Constructors {}
+
+        /**
+         * @return identifier uniquely determining type of the object.
+         */
+        @Constructors
+        @Override
+        public abstract int getConstructor();
+        /**
+         * Default class constructor.
+         */
+        public DateTimeFormattingType() {
+        }
+    }
+
+    /**
+     * The time must be shown relative to the current time ([in ] X seconds, minutes, hours, days, months, years [ago]).
+     */
+    public static class DateTimeFormattingTypeRelative extends DateTimeFormattingType {
+
+        /**
+         * The time must be shown relative to the current time ([in ] X seconds, minutes, hours, days, months, years [ago]).
+         */
+        public DateTimeFormattingTypeRelative() {
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -648483424;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * The date and time must be shown as absolute timestamps.
+     */
+    public static class DateTimeFormattingTypeAbsolute extends DateTimeFormattingType {
+        /**
+         * The precision with which hours, minutes and seconds are shown.
+         */
+        public DateTimePartPrecision timePrecision;
+        /**
+         * The precision with which the date is shown.
+         */
+        public DateTimePartPrecision datePrecision;
+        /**
+         * True, if the day of week must be shown.
+         */
+        public boolean showDayOfWeek;
+
+        /**
+         * The date and time must be shown as absolute timestamps.
+         */
+        public DateTimeFormattingTypeAbsolute() {
+        }
+
+        /**
+         * The date and time must be shown as absolute timestamps.
+         *
+         * @param timePrecision The precision with which hours, minutes and seconds are shown.
+         * @param datePrecision The precision with which the date is shown.
+         * @param showDayOfWeek True, if the day of week must be shown.
+         */
+        public DateTimeFormattingTypeAbsolute(DateTimePartPrecision timePrecision, DateTimePartPrecision datePrecision, boolean showDayOfWeek) {
+            this.timePrecision = timePrecision;
+            this.datePrecision = datePrecision;
+            this.showDayOfWeek = showDayOfWeek;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 47463317;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * This class is an abstract base class.
+     * Describes precision with which to show a date or a time.
+     */
+    public abstract static class DateTimePartPrecision extends Object {
+        /**
+         * Describes possible values returned by getConstructor().
+         */
+        @Retention(RetentionPolicy.SOURCE)
+        @IntDef({
+            DateTimePartPrecisionNone.CONSTRUCTOR,
+            DateTimePartPrecisionShort.CONSTRUCTOR,
+            DateTimePartPrecisionLong.CONSTRUCTOR
+        })
+        public @interface Constructors {}
+
+        /**
+         * @return identifier uniquely determining type of the object.
+         */
+        @Constructors
+        @Override
+        public abstract int getConstructor();
+        /**
+         * Default class constructor.
+         */
+        public DateTimePartPrecision() {
+        }
+    }
+
+    /**
+     * Don't show the date or time.
+     */
+    public static class DateTimePartPrecisionNone extends DateTimePartPrecision {
+
+        /**
+         * Don't show the date or time.
+         */
+        public DateTimePartPrecisionNone() {
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 1790302111;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Show the date or time in a short way (17.03.22 or 22:45).
+     */
+    public static class DateTimePartPrecisionShort extends DateTimePartPrecision {
+
+        /**
+         * Show the date or time in a short way (17.03.22 or 22:45).
+         */
+        public DateTimePartPrecisionShort() {
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 1290158159;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Show the date or time in a long way (March 17, 2022 or 22:45:00.)
+     */
+    public static class DateTimePartPrecisionLong extends DateTimePartPrecision {
+
+        /**
+         * Show the date or time in a long way (March 17, 2022 or 22:45:00.)
+         */
+        public DateTimePartPrecisionLong() {
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -105378824;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
      * File with the date it was uploaded.
      */
     public static class DatedFile extends Object {
@@ -21451,6 +21835,217 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = -375223124;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Represents a change of a text.
+     */
+    public static class DiffEntity extends Object {
+        /**
+         * Offset of the entity, in UTF-16 code units.
+         */
+        public int offset;
+        /**
+         * Length of the entity, in UTF-16 code units.
+         */
+        public int length;
+        /**
+         * Type of the entity.
+         */
+        public DiffEntityType type;
+
+        /**
+         * Represents a change of a text.
+         */
+        public DiffEntity() {
+        }
+
+        /**
+         * Represents a change of a text.
+         *
+         * @param offset Offset of the entity, in UTF-16 code units.
+         * @param length Length of the entity, in UTF-16 code units.
+         * @param type Type of the entity.
+         */
+        public DiffEntity(int offset, int length, DiffEntityType type) {
+            this.offset = offset;
+            this.length = length;
+            this.type = type;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -509020080;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * This class is an abstract base class.
+     * Represents a change of a text.
+     */
+    public abstract static class DiffEntityType extends Object {
+        /**
+         * Describes possible values returned by getConstructor().
+         */
+        @Retention(RetentionPolicy.SOURCE)
+        @IntDef({
+            DiffEntityTypeInsert.CONSTRUCTOR,
+            DiffEntityTypeReplace.CONSTRUCTOR,
+            DiffEntityTypeDelete.CONSTRUCTOR
+        })
+        public @interface Constructors {}
+
+        /**
+         * @return identifier uniquely determining type of the object.
+         */
+        @Constructors
+        @Override
+        public abstract int getConstructor();
+        /**
+         * Default class constructor.
+         */
+        public DiffEntityType() {
+        }
+    }
+
+    /**
+     * Addition of some text.
+     */
+    public static class DiffEntityTypeInsert extends DiffEntityType {
+
+        /**
+         * Addition of some text.
+         */
+        public DiffEntityTypeInsert() {
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 119434282;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Change of some text.
+     */
+    public static class DiffEntityTypeReplace extends DiffEntityType {
+        /**
+         * The old text.
+         */
+        public String oldText;
+
+        /**
+         * Change of some text.
+         */
+        public DiffEntityTypeReplace() {
+        }
+
+        /**
+         * Change of some text.
+         *
+         * @param oldText The old text.
+         */
+        public DiffEntityTypeReplace(String oldText) {
+            this.oldText = oldText;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -1951790397;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Removal of some text.
+     */
+    public static class DiffEntityTypeDelete extends DiffEntityType {
+
+        /**
+         * Removal of some text.
+         */
+        public DiffEntityTypeDelete() {
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 1198494499;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * A text with some changes highlighted.
+     */
+    public static class DiffText extends Object {
+        /**
+         * The text.
+         */
+        public String text;
+        /**
+         * Entities describing changes in the text. Entities don't mutually intersect with each other.
+         */
+        public DiffEntity[] entities;
+
+        /**
+         * A text with some changes highlighted.
+         */
+        public DiffText() {
+        }
+
+        /**
+         * A text with some changes highlighted.
+         *
+         * @param text The text.
+         * @param entities Entities describing changes in the text. Entities don't mutually intersect with each other.
+         */
+        public DiffText(String text, DiffEntity[] entities) {
+            this.text = text;
+            this.entities = entities;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 1328070684;
 
         /**
          * @return this.CONSTRUCTOR
@@ -23349,6 +23944,7 @@ public class TdApi {
             FileTypeAnimation.CONSTRUCTOR,
             FileTypeAudio.CONSTRUCTOR,
             FileTypeDocument.CONSTRUCTOR,
+            FileTypeLivePhotoVideo.CONSTRUCTOR,
             FileTypeNotificationSound.CONSTRUCTOR,
             FileTypePhoto.CONSTRUCTOR,
             FileTypePhotoStory.CONSTRUCTOR,
@@ -23356,6 +23952,7 @@ public class TdApi {
             FileTypeSecret.CONSTRUCTOR,
             FileTypeSecretThumbnail.CONSTRUCTOR,
             FileTypeSecure.CONSTRUCTOR,
+            FileTypeSelfDestructingLivePhotoVideo.CONSTRUCTOR,
             FileTypeSelfDestructingPhoto.CONSTRUCTOR,
             FileTypeSelfDestructingVideo.CONSTRUCTOR,
             FileTypeSelfDestructingVideoNote.CONSTRUCTOR,
@@ -23474,6 +24071,31 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = -564722929;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * The file is a video for a live photo.
+     */
+    public static class FileTypeLivePhotoVideo extends FileType {
+
+        /**
+         * The file is a video for a live photo.
+         */
+        public FileTypeLivePhotoVideo() {
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 444610924;
 
         /**
          * @return this.CONSTRUCTOR
@@ -23649,6 +24271,31 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = -1419133146;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * The file is a self-destructing video for a live photo in a private chat.
+     */
+    public static class FileTypeSelfDestructingLivePhotoVideo extends FileType {
+
+        /**
+         * The file is a self-destructing video for a live photo in a private chat.
+         */
+        public FileTypeSelfDestructingLivePhotoVideo() {
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -1331098431;
 
         /**
          * @return this.CONSTRUCTOR
@@ -24167,6 +24814,50 @@ public class TdApi {
     }
 
     /**
+     * A text fixed using fixTextWithAi.
+     */
+    public static class FixedText extends Object {
+        /**
+         * The resulting text.
+         */
+        public FormattedText text;
+        /**
+         * Changes made to the original text.
+         */
+        public DiffText diffText;
+
+        /**
+         * A text fixed using fixTextWithAi.
+         */
+        public FixedText() {
+        }
+
+        /**
+         * A text fixed using fixTextWithAi.
+         *
+         * @param text The resulting text.
+         * @param diffText Changes made to the original text.
+         */
+        public FixedText(FormattedText text, DiffText diffText) {
+            this.text = text;
+            this.diffText = diffText;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 1714470508;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
      * A text with some entities.
      */
     public static class FormattedText extends Object {
@@ -24175,7 +24866,7 @@ public class TdApi {
          */
         public String text;
         /**
-         * Entities contained in the text. Entities can be nested, but must not mutually intersect with each other. Pre, Code and PreCode entities can't contain other entities. BlockQuote entities can't contain other BlockQuote entities. Bold, Italic, Underline, Strikethrough, and Spoiler entities can contain and can be part of any other entities. All other entities can't contain each other.
+         * Entities contained in the text. Entities can be nested, but must not mutually intersect with each other. Pre, Code, PreCode, and DateTime entities can't contain other entities. BlockQuote entities can't contain other BlockQuote entities. Bold, Italic, Underline, Strikethrough, and Spoiler entities can contain and can be part of any other entities. All other entities can't contain each other.
          */
         public TextEntity[] entities;
 
@@ -24189,7 +24880,7 @@ public class TdApi {
          * A text with some entities.
          *
          * @param text The text.
-         * @param entities Entities contained in the text. Entities can be nested, but must not mutually intersect with each other. Pre, Code and PreCode entities can't contain other entities. BlockQuote entities can't contain other BlockQuote entities. Bold, Italic, Underline, Strikethrough, and Spoiler entities can contain and can be part of any other entities. All other entities can't contain each other.
+         * @param entities Entities contained in the text. Entities can be nested, but must not mutually intersect with each other. Pre, Code, PreCode, and DateTime entities can't contain other entities. BlockQuote entities can't contain other BlockQuote entities. Bold, Italic, Underline, Strikethrough, and Spoiler entities can contain and can be part of any other entities. All other entities can't contain each other.
          */
         public FormattedText(String text, TextEntity[] entities) {
             this.text = text;
@@ -24251,6 +24942,10 @@ public class TdApi {
          */
         public int unreadReactionCount;
         /**
+         * Number of messages with unread poll votes in the topic.
+         */
+        public int unreadPollVoteCount;
+        /**
          * Notification settings for the topic.
          */
         public ChatNotificationSettings notificationSettings;
@@ -24277,10 +24972,11 @@ public class TdApi {
          * @param lastReadOutboxMessageId Identifier of the last read outgoing message.
          * @param unreadMentionCount Number of unread messages with a mention/reply in the topic.
          * @param unreadReactionCount Number of messages with unread reactions in the topic.
+         * @param unreadPollVoteCount Number of messages with unread poll votes in the topic.
          * @param notificationSettings Notification settings for the topic.
          * @param draftMessage A draft of a message in the topic; may be null if none.
          */
-        public ForumTopic(ForumTopicInfo info, Message lastMessage, long order, boolean isPinned, int unreadCount, long lastReadInboxMessageId, long lastReadOutboxMessageId, int unreadMentionCount, int unreadReactionCount, ChatNotificationSettings notificationSettings, DraftMessage draftMessage) {
+        public ForumTopic(ForumTopicInfo info, Message lastMessage, long order, boolean isPinned, int unreadCount, long lastReadInboxMessageId, long lastReadOutboxMessageId, int unreadMentionCount, int unreadReactionCount, int unreadPollVoteCount, ChatNotificationSettings notificationSettings, DraftMessage draftMessage) {
             this.info = info;
             this.lastMessage = lastMessage;
             this.order = order;
@@ -24290,6 +24986,7 @@ public class TdApi {
             this.lastReadOutboxMessageId = lastReadOutboxMessageId;
             this.unreadMentionCount = unreadMentionCount;
             this.unreadReactionCount = unreadReactionCount;
+            this.unreadPollVoteCount = unreadPollVoteCount;
             this.notificationSettings = notificationSettings;
             this.draftMessage = draftMessage;
         }
@@ -24297,7 +24994,7 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = -2094608976;
+        public static final int CONSTRUCTOR = 779443783;
 
         /**
          * @return this.CONSTRUCTOR
@@ -28574,7 +29271,7 @@ public class TdApi {
          */
         public String lastName;
         /**
-         * Note to add about the user; 0-getOption(&quot;user_note_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, and CustomEmoji entities are allowed; pass null to keep the current user's note.
+         * Note to add about the user; 0-getOption(&quot;user_note_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities are allowed; pass null to keep the current user's note.
          */
         public FormattedText note;
 
@@ -28590,7 +29287,7 @@ public class TdApi {
          * @param phoneNumber Phone number of the user.
          * @param firstName First name of the user; 1-64 characters.
          * @param lastName Last name of the user; 0-64 characters.
-         * @param note Note to add about the user; 0-getOption(&quot;user_note_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, and CustomEmoji entities are allowed; pass null to keep the current user's note.
+         * @param note Note to add about the user; 0-getOption(&quot;user_note_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities are allowed; pass null to keep the current user's note.
          */
         public ImportedContact(String phoneNumber, String firstName, String lastName, FormattedText note) {
             this.phoneNumber = phoneNumber;
@@ -29111,6 +29808,44 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = 68883206;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Contains identifier of a sent guest message.
+     */
+    public static class InlineMessageId extends Object {
+        /**
+         * Unique identifier for the message.
+         */
+        public String id;
+
+        /**
+         * Contains identifier of a sent guest message.
+         */
+        public InlineMessageId() {
+        }
+
+        /**
+         * Contains identifier of a sent guest message.
+         *
+         * @param id Unique identifier for the message.
+         */
+        public InlineMessageId(String id) {
+            this.id = id;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 1908477921;
 
         /**
          * @return this.CONSTRUCTOR
@@ -30220,6 +30955,116 @@ public class TdApi {
 
     /**
      * This class is an abstract base class.
+     * Describes a call.
+     */
+    public abstract static class InputCall extends Object {
+        /**
+         * Describes possible values returned by getConstructor().
+         */
+        @Retention(RetentionPolicy.SOURCE)
+        @IntDef({
+            InputCallDiscarded.CONSTRUCTOR,
+            InputCallFromMessage.CONSTRUCTOR
+        })
+        public @interface Constructors {}
+
+        /**
+         * @return identifier uniquely determining type of the object.
+         */
+        @Constructors
+        @Override
+        public abstract int getConstructor();
+        /**
+         * Default class constructor.
+         */
+        public InputCall() {
+        }
+    }
+
+    /**
+     * A just ended call.
+     */
+    public static class InputCallDiscarded extends InputCall {
+        /**
+         * Identifier of the call.
+         */
+        public int callId;
+
+        /**
+         * A just ended call.
+         */
+        public InputCallDiscarded() {
+        }
+
+        /**
+         * A just ended call.
+         *
+         * @param callId Identifier of the call.
+         */
+        public InputCallDiscarded(int callId) {
+            this.callId = callId;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 1956569937;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * A call from a message of the type messageCall with non-zero messageCall.uniqueId.
+     */
+    public static class InputCallFromMessage extends InputCall {
+        /**
+         * Chat identifier of the message.
+         */
+        public long chatId;
+        /**
+         * Message identifier.
+         */
+        public long messageId;
+
+        /**
+         * A call from a message of the type messageCall with non-zero messageCall.uniqueId.
+         */
+        public InputCallFromMessage() {
+        }
+
+        /**
+         * A call from a message of the type messageCall with non-zero messageCall.uniqueId.
+         *
+         * @param chatId Chat identifier of the message.
+         * @param messageId Message identifier.
+         */
+        public InputCallFromMessage(long chatId, long messageId) {
+            this.chatId = chatId;
+            this.messageId = messageId;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 980874855;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * This class is an abstract base class.
      * Describes a photo to be set as a user profile or chat photo.
      */
     public abstract static class InputChatPhoto extends Object {
@@ -30515,7 +31360,7 @@ public class TdApi {
      */
     public static class InputChecklist extends Object {
         /**
-         * Title of the checklist; 1-getOption(&quot;checklist_title_length_max&quot;) characters. May contain only Bold, Italic, Underline, Strikethrough, Spoiler, and CustomEmoji entities.
+         * Title of the checklist; 1-getOption(&quot;checklist_title_length_max&quot;) characters. May contain only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities.
          */
         public FormattedText title;
         /**
@@ -30540,7 +31385,7 @@ public class TdApi {
         /**
          * Describes a checklist to be sent.
          *
-         * @param title Title of the checklist; 1-getOption(&quot;checklist_title_length_max&quot;) characters. May contain only Bold, Italic, Underline, Strikethrough, Spoiler, and CustomEmoji entities.
+         * @param title Title of the checklist; 1-getOption(&quot;checklist_title_length_max&quot;) characters. May contain only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities.
          * @param tasks List of tasks in the checklist; 1-getOption(&quot;checklist_task_count_max&quot;) tasks.
          * @param othersCanAddTasks True, if other users can add tasks to the list.
          * @param othersCanMarkTasksAsDone True, if other users can mark tasks as done or not done.
@@ -30575,7 +31420,7 @@ public class TdApi {
          */
         public int id;
         /**
-         * Text of the task; 1-getOption(&quot;checklist_task_text_length_max&quot;) characters without line feeds. May contain only Bold, Italic, Underline, Strikethrough, Spoiler, and CustomEmoji entities.
+         * Text of the task; 1-getOption(&quot;checklist_task_text_length_max&quot;) characters without line feeds. May contain only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities.
          */
         public FormattedText text;
 
@@ -30589,7 +31434,7 @@ public class TdApi {
          * Describes a task in a checklist to be sent.
          *
          * @param id Unique identifier of the task; must be positive.
-         * @param text Text of the task; 1-getOption(&quot;checklist_task_text_length_max&quot;) characters without line feeds. May contain only Bold, Italic, Underline, Strikethrough, Spoiler, and CustomEmoji entities.
+         * @param text Text of the task; 1-getOption(&quot;checklist_task_text_length_max&quot;) characters without line feeds. May contain only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities.
          */
         public InputChecklistTask(int id, FormattedText text) {
             this.id = id;
@@ -32369,7 +33214,7 @@ public class TdApi {
      */
     public static class InputMessageText extends InputMessageContent {
         /**
-         * Formatted text to be sent; 0-getOption(&quot;message_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, BlockQuote, ExpandableBlockQuote, Code, Pre, PreCode, TextUrl and MentionName entities are allowed to be specified manually.
+         * Formatted text to be sent; 0-getOption(&quot;message_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, BlockQuote, ExpandableBlockQuote, Code, Pre, PreCode, TextUrl, MentionName, and DateTime entities are allowed to be specified manually.
          */
         public FormattedText text;
         /**
@@ -32390,7 +33235,7 @@ public class TdApi {
         /**
          * A text message.
          *
-         * @param text Formatted text to be sent; 0-getOption(&quot;message_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, BlockQuote, ExpandableBlockQuote, Code, Pre, PreCode, TextUrl and MentionName entities are allowed to be specified manually.
+         * @param text Formatted text to be sent; 0-getOption(&quot;message_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, BlockQuote, ExpandableBlockQuote, Code, Pre, PreCode, TextUrl, MentionName, and DateTime entities are allowed to be specified manually.
          * @param linkPreviewOptions Options to be used for generation of a link preview; may be null if none; pass null to use default link preview options.
          * @param clearDraft True, if the chat message draft must be deleted.
          */
@@ -32699,6 +33544,10 @@ public class TdApi {
          */
         public InputThumbnail thumbnail;
         /**
+         * Video of the live photo; not supported in secret chats; pass null if the photo isn't a live photo.
+         */
+        public InputFile video;
+        /**
          * File identifiers of the stickers added to the photo, if applicable.
          */
         public int[] addedStickerFileIds;
@@ -32738,6 +33587,7 @@ public class TdApi {
          *
          * @param photo Photo to send. The photo must be at most 10 MB in size. The photo's width and height must not exceed 10000 in total. Width and height ratio must be at most 20.
          * @param thumbnail Photo thumbnail to be sent; pass null to skip thumbnail uploading. The thumbnail is sent to the other party only in secret chats.
+         * @param video Video of the live photo; not supported in secret chats; pass null if the photo isn't a live photo.
          * @param addedStickerFileIds File identifiers of the stickers added to the photo, if applicable.
          * @param width Photo width.
          * @param height Photo height.
@@ -32746,9 +33596,10 @@ public class TdApi {
          * @param selfDestructType Photo self-destruct type; pass null if none; private chats only.
          * @param hasSpoiler True, if the photo preview must be covered by a spoiler animation; not supported in secret chats.
          */
-        public InputMessagePhoto(InputFile photo, InputThumbnail thumbnail, int[] addedStickerFileIds, int width, int height, FormattedText caption, boolean showCaptionAboveMedia, MessageSelfDestructType selfDestructType, boolean hasSpoiler) {
+        public InputMessagePhoto(InputFile photo, InputThumbnail thumbnail, InputFile video, int[] addedStickerFileIds, int width, int height, FormattedText caption, boolean showCaptionAboveMedia, MessageSelfDestructType selfDestructType, boolean hasSpoiler) {
             this.photo = photo;
             this.thumbnail = thumbnail;
+            this.video = video;
             this.addedStickerFileIds = addedStickerFileIds;
             this.width = width;
             this.height = height;
@@ -32761,7 +33612,7 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = -810129442;
+        public static final int CONSTRUCTOR = 163591772;
 
         /**
          * @return this.CONSTRUCTOR
@@ -33407,23 +34258,55 @@ public class TdApi {
          */
         public FormattedText question;
         /**
-         * List of poll answer options, 2-getOption(&quot;poll_answer_count_max&quot;) strings 1-100 characters each. Only custom emoji entities are allowed to be added and only by Premium users.
+         * List of poll answer options; 1-getOption(&quot;poll_answer_count_max&quot;) options.
          */
-        public FormattedText[] options;
+        public InputPollOption[] options;
+        /**
+         * Poll description; pass null to use an empty description; 0-getOption(&quot;message_caption_length_max&quot;) characters.
+         */
+        public FormattedText description;
+        /**
+         * Media attached to the poll; pass null if none. Must be one of the following types: inputMessageAnimation, inputMessageAudio, inputMessageDocument, non-live inputMessageLocation, inputMessagePhoto, inputMessageVenue, or inputMessageVideo without caption.
+         */
+        public InputMessageContent media;
         /**
          * True, if the poll voters are anonymous. Non-anonymous polls can't be sent or forwarded to channels.
          */
         public boolean isAnonymous;
         /**
+         * True, if multiple answer options can be chosen simultaneously.
+         */
+        public boolean allowsMultipleAnswers;
+        /**
+         * True, if the poll can be answered multiple times.
+         */
+        public boolean allowsRevoting;
+        /**
+         * True, if only the users that are members of the chat for more than a day will be able to vote; for channel chats only.
+         */
+        public boolean membersOnly;
+        /**
+         * The list of two-letter ISO 3166-1 alpha-2 codes of countries, users from which will be able to vote; for channel chats only. If empty, then all users can participate in the poll. There can be up to getOption(&quot;poll_country_count_max&quot;) chosen countries.
+         */
+        public String[] countryCodes;
+        /**
+         * True, if poll options must be shown in a fixed random order.
+         */
+        public boolean shuffleOptions;
+        /**
+         * True, if the poll results will appear only after the poll closes.
+         */
+        public boolean hideResultsUntilCloses;
+        /**
          * Type of the poll.
          */
-        public PollType type;
+        public InputPollType type;
         /**
-         * Amount of time the poll will be active after creation, in seconds; for bots only.
+         * Amount of time the poll will be active after creation, in seconds; 0-getOption(&quot;poll_open_period_max&quot;); pass 0 if not specified.
          */
         public int openPeriod;
         /**
-         * Point in time (Unix timestamp) when the poll will automatically be closed; for bots only.
+         * Point in time (Unix timestamp) when the poll will automatically be closed; must be 0-getOption(&quot;poll_open_period_max&quot;) seconds in the future; pass 0 if not specified.
          */
         public int closeDate;
         /**
@@ -33441,17 +34324,33 @@ public class TdApi {
          * A message with a poll. Polls can't be sent to secret chats and channel direct messages chats. Polls can be sent to a private chat only if the chat is a chat with a bot or the Saved Messages chat.
          *
          * @param question Poll question; 1-255 characters (up to 300 characters for bots). Only custom emoji entities are allowed to be added and only by Premium users.
-         * @param options List of poll answer options, 2-getOption(&quot;poll_answer_count_max&quot;) strings 1-100 characters each. Only custom emoji entities are allowed to be added and only by Premium users.
+         * @param options List of poll answer options; 1-getOption(&quot;poll_answer_count_max&quot;) options.
+         * @param description Poll description; pass null to use an empty description; 0-getOption(&quot;message_caption_length_max&quot;) characters.
+         * @param media Media attached to the poll; pass null if none. Must be one of the following types: inputMessageAnimation, inputMessageAudio, inputMessageDocument, non-live inputMessageLocation, inputMessagePhoto, inputMessageVenue, or inputMessageVideo without caption.
          * @param isAnonymous True, if the poll voters are anonymous. Non-anonymous polls can't be sent or forwarded to channels.
+         * @param allowsMultipleAnswers True, if multiple answer options can be chosen simultaneously.
+         * @param allowsRevoting True, if the poll can be answered multiple times.
+         * @param membersOnly True, if only the users that are members of the chat for more than a day will be able to vote; for channel chats only.
+         * @param countryCodes The list of two-letter ISO 3166-1 alpha-2 codes of countries, users from which will be able to vote; for channel chats only. If empty, then all users can participate in the poll. There can be up to getOption(&quot;poll_country_count_max&quot;) chosen countries.
+         * @param shuffleOptions True, if poll options must be shown in a fixed random order.
+         * @param hideResultsUntilCloses True, if the poll results will appear only after the poll closes.
          * @param type Type of the poll.
-         * @param openPeriod Amount of time the poll will be active after creation, in seconds; for bots only.
-         * @param closeDate Point in time (Unix timestamp) when the poll will automatically be closed; for bots only.
+         * @param openPeriod Amount of time the poll will be active after creation, in seconds; 0-getOption(&quot;poll_open_period_max&quot;); pass 0 if not specified.
+         * @param closeDate Point in time (Unix timestamp) when the poll will automatically be closed; must be 0-getOption(&quot;poll_open_period_max&quot;) seconds in the future; pass 0 if not specified.
          * @param isClosed True, if the poll needs to be sent already closed; for bots only.
          */
-        public InputMessagePoll(FormattedText question, FormattedText[] options, boolean isAnonymous, PollType type, int openPeriod, int closeDate, boolean isClosed) {
+        public InputMessagePoll(FormattedText question, InputPollOption[] options, FormattedText description, InputMessageContent media, boolean isAnonymous, boolean allowsMultipleAnswers, boolean allowsRevoting, boolean membersOnly, String[] countryCodes, boolean shuffleOptions, boolean hideResultsUntilCloses, InputPollType type, int openPeriod, int closeDate, boolean isClosed) {
             this.question = question;
             this.options = options;
+            this.description = description;
+            this.media = media;
             this.isAnonymous = isAnonymous;
+            this.allowsMultipleAnswers = allowsMultipleAnswers;
+            this.allowsRevoting = allowsRevoting;
+            this.membersOnly = membersOnly;
+            this.countryCodes = countryCodes;
+            this.shuffleOptions = shuffleOptions;
+            this.hideResultsUntilCloses = hideResultsUntilCloses;
             this.type = type;
             this.openPeriod = openPeriod;
             this.closeDate = closeDate;
@@ -33461,7 +34360,7 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = -263337164;
+        public static final int CONSTRUCTOR = -808965345;
 
         /**
          * @return this.CONSTRUCTOR
@@ -33717,6 +34616,10 @@ public class TdApi {
          * Identifier of the checklist task in the message to be replied; pass 0 to reply to the whole message.
          */
         public int checklistTaskId;
+        /**
+         * Identifier of the poll option in the message to be replied; pass an empty string if none.
+         */
+        public String pollOptionId;
 
         /**
          * Describes a message to be replied in the same chat and forum topic.
@@ -33730,17 +34633,19 @@ public class TdApi {
          * @param messageId The identifier of the message to be replied in the same chat and forum topic. A message can be replied in the same chat and forum topic only if messageProperties.canBeReplied.
          * @param quote Quote from the message to be replied; pass null if none. Must always be null for replies in secret chats.
          * @param checklistTaskId Identifier of the checklist task in the message to be replied; pass 0 to reply to the whole message.
+         * @param pollOptionId Identifier of the poll option in the message to be replied; pass an empty string if none.
          */
-        public InputMessageReplyToMessage(long messageId, InputTextQuote quote, int checklistTaskId) {
+        public InputMessageReplyToMessage(long messageId, InputTextQuote quote, int checklistTaskId, String pollOptionId) {
             this.messageId = messageId;
             this.quote = quote;
             this.checklistTaskId = checklistTaskId;
+            this.pollOptionId = pollOptionId;
         }
 
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = -782038760;
+        public static final int CONSTRUCTOR = 1117785378;
 
         /**
          * @return this.CONSTRUCTOR
@@ -33771,6 +34676,10 @@ public class TdApi {
          * Identifier of the checklist task in the message to be replied; pass 0 to reply to the whole message.
          */
         public int checklistTaskId;
+        /**
+         * Identifier of the poll option in the message to be replied; pass an empty string if none.
+         */
+        public String pollOptionId;
 
         /**
          * Describes a message to be replied that is from a different chat or a forum topic; not supported in secret chats.
@@ -33785,18 +34694,20 @@ public class TdApi {
          * @param messageId The identifier of the message to be replied in the specified chat. A message can be replied in another chat or forum topic only if messageProperties.canBeRepliedInAnotherChat.
          * @param quote Quote from the message to be replied; pass null if none.
          * @param checklistTaskId Identifier of the checklist task in the message to be replied; pass 0 to reply to the whole message.
+         * @param pollOptionId Identifier of the poll option in the message to be replied; pass an empty string if none.
          */
-        public InputMessageReplyToExternalMessage(long chatId, long messageId, InputTextQuote quote, int checklistTaskId) {
+        public InputMessageReplyToExternalMessage(long chatId, long messageId, InputTextQuote quote, int checklistTaskId, String pollOptionId) {
             this.chatId = chatId;
             this.messageId = messageId;
             this.quote = quote;
             this.checklistTaskId = checklistTaskId;
+            this.pollOptionId = pollOptionId;
         }
 
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = -505276703;
+        public static final int CONSTRUCTOR = 1956732638;
 
         /**
          * @return this.CONSTRUCTOR
@@ -33951,6 +34862,10 @@ public class TdApi {
      * The media is a photo. The photo must be at most 10 MB in size. The photo's width and height must not exceed 10000 in total. Width and height ratio must be at most 20.
      */
     public static class InputPaidMediaTypePhoto extends InputPaidMediaType {
+        /**
+         * Video of the live photo; pass null if the photo isn't a live photo.
+         */
+        public InputFile video;
 
         /**
          * The media is a photo. The photo must be at most 10 MB in size. The photo's width and height must not exceed 10000 in total. Width and height ratio must be at most 20.
@@ -33959,9 +34874,18 @@ public class TdApi {
         }
 
         /**
+         * The media is a photo. The photo must be at most 10 MB in size. The photo's width and height must not exceed 10000 in total. Width and height ratio must be at most 20.
+         *
+         * @param video Video of the live photo; pass null if the photo isn't a live photo.
+         */
+        public InputPaidMediaTypePhoto(InputFile video) {
+            this.video = video;
+        }
+
+        /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = -761660134;
+        public static final int CONSTRUCTOR = 819520113;
 
         /**
          * @return this.CONSTRUCTOR
@@ -35039,6 +35963,166 @@ public class TdApi {
     }
 
     /**
+     * Describes one answer option of a poll to be created.
+     */
+    public static class InputPollOption extends Object {
+        /**
+         * Option text; 1-100 characters. Only custom emoji entities are allowed to be added and only by Premium users.
+         */
+        public FormattedText text;
+        /**
+         * Option media; pass null if none; ignored in addPollOption. Must be one of the following types: inputMessageAnimation, non-live inputMessageLocation, inputMessagePhoto, inputMessageSticker, inputMessageVenue, or inputMessageVideo without caption.
+         */
+        public InputMessageContent media;
+
+        /**
+         * Describes one answer option of a poll to be created.
+         */
+        public InputPollOption() {
+        }
+
+        /**
+         * Describes one answer option of a poll to be created.
+         *
+         * @param text Option text; 1-100 characters. Only custom emoji entities are allowed to be added and only by Premium users.
+         * @param media Option media; pass null if none; ignored in addPollOption. Must be one of the following types: inputMessageAnimation, non-live inputMessageLocation, inputMessagePhoto, inputMessageSticker, inputMessageVenue, or inputMessageVideo without caption.
+         */
+        public InputPollOption(FormattedText text, InputMessageContent media) {
+            this.text = text;
+            this.media = media;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -559227307;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * This class is an abstract base class.
+     * Describes the type of poll to send.
+     */
+    public abstract static class InputPollType extends Object {
+        /**
+         * Describes possible values returned by getConstructor().
+         */
+        @Retention(RetentionPolicy.SOURCE)
+        @IntDef({
+            InputPollTypeRegular.CONSTRUCTOR,
+            InputPollTypeQuiz.CONSTRUCTOR
+        })
+        public @interface Constructors {}
+
+        /**
+         * @return identifier uniquely determining type of the object.
+         */
+        @Constructors
+        @Override
+        public abstract int getConstructor();
+        /**
+         * Default class constructor.
+         */
+        public InputPollType() {
+        }
+    }
+
+    /**
+     * A regular poll.
+     */
+    public static class InputPollTypeRegular extends InputPollType {
+        /**
+         * True, if answer options can be added to the poll after creation; not supported in channel chats and for anonymous polls.
+         */
+        public boolean allowAddingOptions;
+
+        /**
+         * A regular poll.
+         */
+        public InputPollTypeRegular() {
+        }
+
+        /**
+         * A regular poll.
+         *
+         * @param allowAddingOptions True, if answer options can be added to the poll after creation; not supported in channel chats and for anonymous polls.
+         */
+        public InputPollTypeRegular(boolean allowAddingOptions) {
+            this.allowAddingOptions = allowAddingOptions;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -236313041;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * A poll in quiz mode, which has predefined correct answers.
+     */
+    public static class InputPollTypeQuiz extends InputPollType {
+        /**
+         * Increasing list of 0-based identifiers of the correct answer options; must be non-empty.
+         */
+        public int[] correctOptionIds;
+        /**
+         * Text that is shown when the user chooses an incorrect answer or taps on the lamp icon; 0-200 characters with at most 2 line feeds.
+         */
+        public FormattedText explanation;
+        /**
+         * Media that is shown when the user chooses an incorrect answer or taps on the lamp icon; pass null if none. Must be one of the following types: inputMessageAnimation, inputMessageAudio, inputMessageDocument, non-live inputMessageLocation, inputMessagePhoto, inputMessageVenue, or inputMessageVideo without caption.
+         */
+        public InputMessageContent explanationMedia;
+
+        /**
+         * A poll in quiz mode, which has predefined correct answers.
+         */
+        public InputPollTypeQuiz() {
+        }
+
+        /**
+         * A poll in quiz mode, which has predefined correct answers.
+         *
+         * @param correctOptionIds Increasing list of 0-based identifiers of the correct answer options; must be non-empty.
+         * @param explanation Text that is shown when the user chooses an incorrect answer or taps on the lamp icon; 0-200 characters with at most 2 line feeds.
+         * @param explanationMedia Media that is shown when the user chooses an incorrect answer or taps on the lamp icon; pass null if none. Must be one of the following types: inputMessageAnimation, inputMessageAudio, inputMessageDocument, non-live inputMessageLocation, inputMessagePhoto, inputMessageVenue, or inputMessageVideo without caption.
+         */
+        public InputPollTypeQuiz(int[] correctOptionIds, FormattedText explanation, InputMessageContent explanationMedia) {
+            this.correctOptionIds = correctOptionIds;
+            this.explanation = explanation;
+            this.explanationMedia = explanationMedia;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 880659994;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
      * A sticker to be added to a sticker set.
      */
     public static class InputSticker extends Object {
@@ -35751,7 +36835,7 @@ public class TdApi {
      */
     public static class InputTextQuote extends Object {
         /**
-         * Text of the quote; 0-getOption(&quot;message_reply_quote_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, and CustomEmoji entities are allowed to be kept and must be kept in the quote.
+         * Text of the quote; 0-getOption(&quot;message_reply_quote_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities are allowed to be kept and must be kept in the quote.
          */
         public FormattedText text;
         /**
@@ -35768,7 +36852,7 @@ public class TdApi {
         /**
          * Describes manually chosen quote from another message.
          *
-         * @param text Text of the quote; 0-getOption(&quot;message_reply_quote_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, and CustomEmoji entities are allowed to be kept and must be kept in the quote.
+         * @param text Text of the quote; 0-getOption(&quot;message_reply_quote_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities are allowed to be kept and must be kept in the quote.
          * @param position Quote position in the original message in UTF-16 code units.
          */
         public InputTextQuote(FormattedText text, int position) {
@@ -35881,6 +36965,7 @@ public class TdApi {
             InternalLinkTypeNewGroupChat.CONSTRUCTOR,
             InternalLinkTypeNewPrivateChat.CONSTRUCTOR,
             InternalLinkTypeNewStory.CONSTRUCTOR,
+            InternalLinkTypeOauth.CONSTRUCTOR,
             InternalLinkTypePassportDataRequest.CONSTRUCTOR,
             InternalLinkTypePhoneNumberConfirmation.CONSTRUCTOR,
             InternalLinkTypePremiumFeaturesPage.CONSTRUCTOR,
@@ -35889,6 +36974,7 @@ public class TdApi {
             InternalLinkTypeProxy.CONSTRUCTOR,
             InternalLinkTypePublicChat.CONSTRUCTOR,
             InternalLinkTypeQrCodeAuthentication.CONSTRUCTOR,
+            InternalLinkTypeRequestManagedBot.CONSTRUCTOR,
             InternalLinkTypeRestorePurchases.CONSTRUCTOR,
             InternalLinkTypeSavedMessages.CONSTRUCTOR,
             InternalLinkTypeSearch.CONSTRUCTOR,
@@ -35897,6 +36983,7 @@ public class TdApi {
             InternalLinkTypeStickerSet.CONSTRUCTOR,
             InternalLinkTypeStory.CONSTRUCTOR,
             InternalLinkTypeStoryAlbum.CONSTRUCTOR,
+            InternalLinkTypeTextCompositionStyle.CONSTRUCTOR,
             InternalLinkTypeTheme.CONSTRUCTOR,
             InternalLinkTypeUnknownDeepLink.CONSTRUCTOR,
             InternalLinkTypeUpgradedGift.CONSTRUCTOR,
@@ -37131,6 +38218,44 @@ public class TdApi {
     }
 
     /**
+     * The link is an OAuth link. Call getOauthLinkInfo with the given URL to process the link if the link was received from outside of the application; otherwise, ignore it. After getOauthLinkInfo, show the user confirmation dialog and process it with checkOauthRequestMatchCode, acceptOauthRequest or declineOauthRequest.
+     */
+    public static class InternalLinkTypeOauth extends InternalLinkType {
+        /**
+         * URL to be passed to getOauthLinkInfo.
+         */
+        public String url;
+
+        /**
+         * The link is an OAuth link. Call getOauthLinkInfo with the given URL to process the link if the link was received from outside of the application; otherwise, ignore it. After getOauthLinkInfo, show the user confirmation dialog and process it with checkOauthRequestMatchCode, acceptOauthRequest or declineOauthRequest.
+         */
+        public InternalLinkTypeOauth() {
+        }
+
+        /**
+         * The link is an OAuth link. Call getOauthLinkInfo with the given URL to process the link if the link was received from outside of the application; otherwise, ignore it. After getOauthLinkInfo, show the user confirmation dialog and process it with checkOauthRequestMatchCode, acceptOauthRequest or declineOauthRequest.
+         *
+         * @param url URL to be passed to getOauthLinkInfo.
+         */
+        public InternalLinkTypeOauth(String url) {
+            this.url = url;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 263255628;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
      * The link contains a request of Telegram passport data. Call getPassportAuthorizationForm with the given parameters to process the link if the link was received from outside of the application; otherwise, ignore it.
      */
     public static class InternalLinkTypePassportDataRequest extends InternalLinkType {
@@ -37464,6 +38589,56 @@ public class TdApi {
     }
 
     /**
+     * The link is a link to a dialog for creating of a managed bot. Call searchPublicChat with the given manager bot username. If the chat is found, the chat is a chat with a bot and the bot has canManageBots == true, then show bot creation confirmation dialog with the given suggestedBotUsername and suggestedBotName. If user agrees, call createBot with viaLink == true to create the bot.
+     */
+    public static class InternalLinkTypeRequestManagedBot extends InternalLinkType {
+        /**
+         * Username of the bot which will manage the new bot.
+         */
+        public String managerBotUsername;
+        /**
+         * Suggested username for the bot; always ends with &quot;bot&quot; case-insensitive.
+         */
+        public String suggestedBotUsername;
+        /**
+         * Suggested name for the bot; may be empty if not specified.
+         */
+        public String suggestedBotName;
+
+        /**
+         * The link is a link to a dialog for creating of a managed bot. Call searchPublicChat with the given manager bot username. If the chat is found, the chat is a chat with a bot and the bot has canManageBots == true, then show bot creation confirmation dialog with the given suggestedBotUsername and suggestedBotName. If user agrees, call createBot with viaLink == true to create the bot.
+         */
+        public InternalLinkTypeRequestManagedBot() {
+        }
+
+        /**
+         * The link is a link to a dialog for creating of a managed bot. Call searchPublicChat with the given manager bot username. If the chat is found, the chat is a chat with a bot and the bot has canManageBots == true, then show bot creation confirmation dialog with the given suggestedBotUsername and suggestedBotName. If user agrees, call createBot with viaLink == true to create the bot.
+         *
+         * @param managerBotUsername Username of the bot which will manage the new bot.
+         * @param suggestedBotUsername Suggested username for the bot; always ends with &quot;bot&quot; case-insensitive.
+         * @param suggestedBotName Suggested name for the bot; may be empty if not specified.
+         */
+        public InternalLinkTypeRequestManagedBot(String managerBotUsername, String suggestedBotUsername, String suggestedBotName) {
+            this.managerBotUsername = managerBotUsername;
+            this.suggestedBotUsername = suggestedBotUsername;
+            this.suggestedBotName = suggestedBotName;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 1416354488;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
      * The link forces restore of App Store purchases when opened. For official iOS application only.
      */
     public static class InternalLinkTypeRestorePurchases extends InternalLinkType {
@@ -37742,6 +38917,44 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = -332692184;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * The link is a link to a text composition style. Call searchTextCompositionStyle with the given style name to get information about the style. If the style is found and the user wants to add it, then call addTextCompositionStyle.
+     */
+    public static class InternalLinkTypeTextCompositionStyle extends InternalLinkType {
+        /**
+         * Name of the style.
+         */
+        public String styleName;
+
+        /**
+         * The link is a link to a text composition style. Call searchTextCompositionStyle with the given style name to get information about the style. If the style is found and the user wants to add it, then call addTextCompositionStyle.
+         */
+        public InternalLinkTypeTextCompositionStyle() {
+        }
+
+        /**
+         * The link is a link to a text composition style. Call searchTextCompositionStyle with the given style name to get information about the style. If the style is found and the user wants to add it, then call addTextCompositionStyle.
+         *
+         * @param styleName Name of the style.
+         */
+        public InternalLinkTypeTextCompositionStyle(String styleName) {
+            this.styleName = styleName;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -2055372583;
 
         /**
          * @return this.CONSTRUCTOR
@@ -38784,6 +39997,122 @@ public class TdApi {
 
     /**
      * This class is an abstract base class.
+     * Describes source of a keyboard button.
+     */
+    public abstract static class KeyboardButtonSource extends Object {
+        /**
+         * Describes possible values returned by getConstructor().
+         */
+        @Retention(RetentionPolicy.SOURCE)
+        @IntDef({
+            KeyboardButtonSourceMessage.CONSTRUCTOR,
+            KeyboardButtonSourceWebApp.CONSTRUCTOR
+        })
+        public @interface Constructors {}
+
+        /**
+         * @return identifier uniquely determining type of the object.
+         */
+        @Constructors
+        @Override
+        public abstract int getConstructor();
+        /**
+         * Default class constructor.
+         */
+        public KeyboardButtonSource() {
+        }
+    }
+
+    /**
+     * The button is from a bot's message.
+     */
+    public static class KeyboardButtonSourceMessage extends KeyboardButtonSource {
+        /**
+         * Identifier of the chat with the message.
+         */
+        public long chatId;
+        /**
+         * Identifier of the message with the button.
+         */
+        public long messageId;
+
+        /**
+         * The button is from a bot's message.
+         */
+        public KeyboardButtonSourceMessage() {
+        }
+
+        /**
+         * The button is from a bot's message.
+         *
+         * @param chatId Identifier of the chat with the message.
+         * @param messageId Identifier of the message with the button.
+         */
+        public KeyboardButtonSourceMessage(long chatId, long messageId) {
+            this.chatId = chatId;
+            this.messageId = messageId;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 326023575;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * The button is a prepared keyboard button from a Mini App received via getPreparedKeyboardButton.
+     */
+    public static class KeyboardButtonSourceWebApp extends KeyboardButtonSource {
+        /**
+         * Identifier of the bot that created the button.
+         */
+        public long botUserId;
+        /**
+         * Identifier of the prepared button.
+         */
+        public String preparedButtonId;
+
+        /**
+         * The button is a prepared keyboard button from a Mini App received via getPreparedKeyboardButton.
+         */
+        public KeyboardButtonSourceWebApp() {
+        }
+
+        /**
+         * The button is a prepared keyboard button from a Mini App received via getPreparedKeyboardButton.
+         *
+         * @param botUserId Identifier of the bot that created the button.
+         * @param preparedButtonId Identifier of the prepared button.
+         */
+        public KeyboardButtonSourceWebApp(long botUserId, String preparedButtonId) {
+            this.botUserId = botUserId;
+            this.preparedButtonId = preparedButtonId;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -450665232;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * This class is an abstract base class.
      * Describes a keyboard button type.
      */
     public abstract static class KeyboardButtonType extends Object {
@@ -38798,6 +40127,7 @@ public class TdApi {
             KeyboardButtonTypeRequestPoll.CONSTRUCTOR,
             KeyboardButtonTypeRequestUsers.CONSTRUCTOR,
             KeyboardButtonTypeRequestChat.CONSTRUCTOR,
+            KeyboardButtonTypeRequestManagedBot.CONSTRUCTOR,
             KeyboardButtonTypeWebApp.CONSTRUCTOR
         })
         public @interface Constructors {}
@@ -39120,6 +40450,56 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = 1511138485;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * A button that requests creation of a managed bot by the current user; available only in private chats. Use the method createBot to complete the request.
+     */
+    public static class KeyboardButtonTypeRequestManagedBot extends KeyboardButtonType {
+        /**
+         * Unique button identifier.
+         */
+        public int id;
+        /**
+         * Suggested name for the bot; may be empty if not specified.
+         */
+        public String suggestedName;
+        /**
+         * Suggested username for the bot; may be empty if not specified.
+         */
+        public String suggestedUsername;
+
+        /**
+         * A button that requests creation of a managed bot by the current user; available only in private chats. Use the method createBot to complete the request.
+         */
+        public KeyboardButtonTypeRequestManagedBot() {
+        }
+
+        /**
+         * A button that requests creation of a managed bot by the current user; available only in private chats. Use the method createBot to complete the request.
+         *
+         * @param id Unique button identifier.
+         * @param suggestedName Suggested name for the bot; may be empty if not specified.
+         * @param suggestedUsername Suggested username for the bot; may be empty if not specified.
+         */
+        public KeyboardButtonTypeRequestManagedBot(int id, String suggestedName, String suggestedUsername) {
+            this.id = id;
+            this.suggestedName = suggestedName;
+            this.suggestedUsername = suggestedUsername;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 311203127;
 
         /**
          * @return this.CONSTRUCTOR
@@ -39873,12 +41253,14 @@ public class TdApi {
             LinkPreviewTypeMessage.CONSTRUCTOR,
             LinkPreviewTypePhoto.CONSTRUCTOR,
             LinkPreviewTypePremiumGiftCode.CONSTRUCTOR,
+            LinkPreviewTypeRequestManagedBot.CONSTRUCTOR,
             LinkPreviewTypeShareableChatFolder.CONSTRUCTOR,
             LinkPreviewTypeSticker.CONSTRUCTOR,
             LinkPreviewTypeStickerSet.CONSTRUCTOR,
             LinkPreviewTypeStory.CONSTRUCTOR,
             LinkPreviewTypeStoryAlbum.CONSTRUCTOR,
             LinkPreviewTypeSupergroupBoost.CONSTRUCTOR,
+            LinkPreviewTypeTextCompositionStyle.CONSTRUCTOR,
             LinkPreviewTypeTheme.CONSTRUCTOR,
             LinkPreviewTypeUnsupported.CONSTRUCTOR,
             LinkPreviewTypeUpgradedGift.CONSTRUCTOR,
@@ -40317,6 +41699,10 @@ public class TdApi {
          */
         public String url;
         /**
+         * The cached animation; may be null if unknown.
+         */
+        @Nullable public Animation animation;
+        /**
          * Thumbnail of the animation; may be null if unknown.
          */
         @Nullable public Photo thumbnail;
@@ -40343,13 +41729,15 @@ public class TdApi {
          * The link is a link to an animation player.
          *
          * @param url URL of the external animation player.
+         * @param animation The cached animation; may be null if unknown.
          * @param thumbnail Thumbnail of the animation; may be null if unknown.
          * @param duration Duration of the animation, in seconds.
          * @param width Expected width of the embedded player.
          * @param height Expected height of the embedded player.
          */
-        public LinkPreviewTypeEmbeddedAnimationPlayer(String url, Photo thumbnail, int duration, int width, int height) {
+        public LinkPreviewTypeEmbeddedAnimationPlayer(String url, Animation animation, Photo thumbnail, int duration, int width, int height) {
             this.url = url;
+            this.animation = animation;
             this.thumbnail = thumbnail;
             this.duration = duration;
             this.width = width;
@@ -40359,7 +41747,7 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = -1436887547;
+        public static final int CONSTRUCTOR = 413874679;
 
         /**
          * @return this.CONSTRUCTOR
@@ -40378,6 +41766,10 @@ public class TdApi {
          * URL of the external audio player.
          */
         public String url;
+        /**
+         * The cached audio; may be null if unknown.
+         */
+        @Nullable public Audio audio;
         /**
          * Thumbnail of the audio; may be null if unknown.
          */
@@ -40405,13 +41797,15 @@ public class TdApi {
          * The link is a link to an audio player.
          *
          * @param url URL of the external audio player.
+         * @param audio The cached audio; may be null if unknown.
          * @param thumbnail Thumbnail of the audio; may be null if unknown.
          * @param duration Duration of the audio, in seconds.
          * @param width Expected width of the embedded player.
          * @param height Expected height of the embedded player.
          */
-        public LinkPreviewTypeEmbeddedAudioPlayer(String url, Photo thumbnail, int duration, int width, int height) {
+        public LinkPreviewTypeEmbeddedAudioPlayer(String url, Audio audio, Photo thumbnail, int duration, int width, int height) {
             this.url = url;
+            this.audio = audio;
             this.thumbnail = thumbnail;
             this.duration = duration;
             this.width = width;
@@ -40421,7 +41815,7 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = 571163292;
+        public static final int CONSTRUCTOR = 2077132997;
 
         /**
          * @return this.CONSTRUCTOR
@@ -40440,6 +41834,10 @@ public class TdApi {
          * URL of the external video player.
          */
         public String url;
+        /**
+         * The cached video; may be null if unknown.
+         */
+        @Nullable public Video video;
         /**
          * Thumbnail of the video; may be null if unknown.
          */
@@ -40467,13 +41865,15 @@ public class TdApi {
          * The link is a link to a video player.
          *
          * @param url URL of the external video player.
+         * @param video The cached video; may be null if unknown.
          * @param thumbnail Thumbnail of the video; may be null if unknown.
          * @param duration Duration of the video, in seconds.
          * @param width Expected width of the embedded player.
          * @param height Expected height of the embedded player.
          */
-        public LinkPreviewTypeEmbeddedVideoPlayer(String url, Photo thumbnail, int duration, int width, int height) {
+        public LinkPreviewTypeEmbeddedVideoPlayer(String url, Video video, Photo thumbnail, int duration, int width, int height) {
             this.url = url;
+            this.video = video;
             this.thumbnail = thumbnail;
             this.duration = duration;
             this.width = width;
@@ -40483,7 +41883,7 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = -1480606973;
+        public static final int CONSTRUCTOR = -571363951;
 
         /**
          * @return this.CONSTRUCTOR
@@ -40871,6 +42271,31 @@ public class TdApi {
     }
 
     /**
+     * The link is a link to a dialog for creating of a managed bot.
+     */
+    public static class LinkPreviewTypeRequestManagedBot extends LinkPreviewType {
+
+        /**
+         * The link is a link to a dialog for creating of a managed bot.
+         */
+        public LinkPreviewTypeRequestManagedBot() {
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -361102166;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
      * The link is a link to a shareable chat folder.
      */
     public static class LinkPreviewTypeShareableChatFolder extends LinkPreviewType {
@@ -41087,6 +42512,44 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = -1873345418;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * The link is a link to a text composition style.
+     */
+    public static class LinkPreviewTypeTextCompositionStyle extends LinkPreviewType {
+        /**
+         * Identifier of the custom emoji corresponding to the style; 0 if none.
+         */
+        public long customEmojiId;
+
+        /**
+         * The link is a link to a text composition style.
+         */
+        public LinkPreviewTypeTextCompositionStyle() {
+        }
+
+        /**
+         * The link is a link to a text composition style.
+         *
+         * @param customEmojiId Identifier of the custom emoji corresponding to the style; 0 if none.
+         */
+        public LinkPreviewTypeTextCompositionStyle(long customEmojiId) {
+            this.customEmojiId = customEmojiId;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -2139832927;
 
         /**
          * @return this.CONSTRUCTOR
@@ -41937,7 +43400,7 @@ public class TdApi {
 
     /**
      * This class is an abstract base class.
-     * Contains information about an inline button of type inlineKeyboardButtonTypeLoginUrl.
+     * Contains information about an inline button of type inlineKeyboardButtonTypeLoginUrl or an external link.
      */
     public abstract static class LoginUrlInfo extends Object {
         /**
@@ -42027,26 +43490,6 @@ public class TdApi {
          * True, if the user must be asked for the permission to the bot to send them messages.
          */
         public boolean requestWriteAccess;
-        /**
-         * True, if the user must be asked for the permission to share their phone number.
-         */
-        public boolean requestPhoneNumberAccess;
-        /**
-         * The version of a browser used for the authorization; may be empty if irrelevant.
-         */
-        public String browser;
-        /**
-         * Operating system the browser is running on; may be empty if irrelevant.
-         */
-        public String platform;
-        /**
-         * IP address from which the authorization is performed, in human-readable format; may be empty if irrelevant.
-         */
-        public String ipAddress;
-        /**
-         * Human-readable description of a country and a region from which the authorization is performed, based on the IP address; may be empty if irrelevant.
-         */
-        public String location;
 
         /**
          * An authorization confirmation dialog needs to be shown to the user.
@@ -42061,28 +43504,18 @@ public class TdApi {
          * @param domain A domain of the URL.
          * @param botUserId User identifier of a bot linked with the website.
          * @param requestWriteAccess True, if the user must be asked for the permission to the bot to send them messages.
-         * @param requestPhoneNumberAccess True, if the user must be asked for the permission to share their phone number.
-         * @param browser The version of a browser used for the authorization; may be empty if irrelevant.
-         * @param platform Operating system the browser is running on; may be empty if irrelevant.
-         * @param ipAddress IP address from which the authorization is performed, in human-readable format; may be empty if irrelevant.
-         * @param location Human-readable description of a country and a region from which the authorization is performed, based on the IP address; may be empty if irrelevant.
          */
-        public LoginUrlInfoRequestConfirmation(String url, String domain, long botUserId, boolean requestWriteAccess, boolean requestPhoneNumberAccess, String browser, String platform, String ipAddress, String location) {
+        public LoginUrlInfoRequestConfirmation(String url, String domain, long botUserId, boolean requestWriteAccess) {
             this.url = url;
             this.domain = domain;
             this.botUserId = botUserId;
             this.requestWriteAccess = requestWriteAccess;
-            this.requestPhoneNumberAccess = requestPhoneNumberAccess;
-            this.browser = browser;
-            this.platform = platform;
-            this.ipAddress = ipAddress;
-            this.location = location;
         }
 
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = 1416102062;
+        public static final int CONSTRUCTOR = 2128290863;
 
         /**
          * @return this.CONSTRUCTOR
@@ -42384,6 +43817,10 @@ public class TdApi {
          */
         public boolean containsUnreadMention;
         /**
+         * True, if the message is a poll message with unread votes.
+         */
+        public boolean containsUnreadPollVotes;
+        /**
          * Point in time (Unix timestamp) when the message was sent; 0 for scheduled messages.
          */
         public int date;
@@ -42440,6 +43877,10 @@ public class TdApi {
          */
         public long viaBotUserId;
         /**
+         * The identifier of the user or chat which used a guest bot to send the message; may be null if none.
+         */
+        @Nullable public MessageSender guestBotCallerId;
+        /**
          * If non-zero, the user identifier of the business bot that sent this message.
          */
         public long senderBusinessBotUserId;
@@ -42447,6 +43888,10 @@ public class TdApi {
          * Number of times the sender of the message boosted the supergroup at the time the message was sent; 0 if none or unknown. For messages sent by the current user, supergroupFullInfo.myBoostCount must be used instead.
          */
         public int senderBoostCount;
+        /**
+         * Tag of the sender of the message in the supergroup at the time the message was sent; may be empty if none or unknown. For messages sent in basic groups or supergroup administrators, the current custom title or tag must be used instead.
+         */
+        public String senderTag;
         /**
          * The number of Telegram Stars the sender paid to send the message.
          */
@@ -42503,6 +43948,7 @@ public class TdApi {
          * @param isPaidStarSuggestedPost True, if the message is a suggested channel post which was paid in Telegram Stars; a warning must be shown if the message is deleted in less than getOption(&quot;suggested_post_lifetime_min&quot;) seconds after sending.
          * @param isPaidTonSuggestedPost True, if the message is a suggested channel post which was paid in Toncoins; a warning must be shown if the message is deleted in less than getOption(&quot;suggested_post_lifetime_min&quot;) seconds after sending.
          * @param containsUnreadMention True, if the message contains an unread mention for the current user.
+         * @param containsUnreadPollVotes True, if the message is a poll message with unread votes.
          * @param date Point in time (Unix timestamp) when the message was sent; 0 for scheduled messages.
          * @param editDate Point in time (Unix timestamp) when the message was last edited; 0 for scheduled messages.
          * @param forwardInfo Information about the initial message sender; may be null if none or unknown.
@@ -42517,8 +43963,10 @@ public class TdApi {
          * @param selfDestructIn Time left before the message self-destruct timer expires, in seconds; 0 if self-destruction isn't scheduled yet.
          * @param autoDeleteIn Time left before the message will be automatically deleted by messageAutoDeleteTime setting of the chat, in seconds; 0 if never.
          * @param viaBotUserId If non-zero, the user identifier of the inline bot through which this message was sent.
+         * @param guestBotCallerId The identifier of the user or chat which used a guest bot to send the message; may be null if none.
          * @param senderBusinessBotUserId If non-zero, the user identifier of the business bot that sent this message.
          * @param senderBoostCount Number of times the sender of the message boosted the supergroup at the time the message was sent; 0 if none or unknown. For messages sent by the current user, supergroupFullInfo.myBoostCount must be used instead.
+         * @param senderTag Tag of the sender of the message in the supergroup at the time the message was sent; may be empty if none or unknown. For messages sent in basic groups or supergroup administrators, the current custom title or tag must be used instead.
          * @param paidMessageStarCount The number of Telegram Stars the sender paid to send the message.
          * @param authorSignature For channel posts and anonymous group messages, optional author signature.
          * @param mediaAlbumId Unique identifier of an album this message belongs to; 0 if none. Only audios, documents, photos and videos can be grouped together in albums.
@@ -42528,7 +43976,7 @@ public class TdApi {
          * @param content Content of the message.
          * @param replyMarkup Reply markup for the message; may be null if none.
          */
-        public Message(long id, MessageSender senderId, long chatId, MessageSendingState sendingState, MessageSchedulingState schedulingState, boolean isOutgoing, boolean isPinned, boolean isFromOffline, boolean canBeSaved, boolean hasTimestampedMedia, boolean isChannelPost, boolean isPaidStarSuggestedPost, boolean isPaidTonSuggestedPost, boolean containsUnreadMention, int date, int editDate, MessageForwardInfo forwardInfo, MessageImportInfo importInfo, MessageInteractionInfo interactionInfo, UnreadReaction[] unreadReactions, FactCheck factCheck, SuggestedPostInfo suggestedPostInfo, MessageReplyTo replyTo, MessageTopic topicId, MessageSelfDestructType selfDestructType, double selfDestructIn, double autoDeleteIn, long viaBotUserId, long senderBusinessBotUserId, int senderBoostCount, long paidMessageStarCount, String authorSignature, long mediaAlbumId, long effectId, RestrictionInfo restrictionInfo, String summaryLanguageCode, MessageContent content, ReplyMarkup replyMarkup) {
+        public Message(long id, MessageSender senderId, long chatId, MessageSendingState sendingState, MessageSchedulingState schedulingState, boolean isOutgoing, boolean isPinned, boolean isFromOffline, boolean canBeSaved, boolean hasTimestampedMedia, boolean isChannelPost, boolean isPaidStarSuggestedPost, boolean isPaidTonSuggestedPost, boolean containsUnreadMention, boolean containsUnreadPollVotes, int date, int editDate, MessageForwardInfo forwardInfo, MessageImportInfo importInfo, MessageInteractionInfo interactionInfo, UnreadReaction[] unreadReactions, FactCheck factCheck, SuggestedPostInfo suggestedPostInfo, MessageReplyTo replyTo, MessageTopic topicId, MessageSelfDestructType selfDestructType, double selfDestructIn, double autoDeleteIn, long viaBotUserId, MessageSender guestBotCallerId, long senderBusinessBotUserId, int senderBoostCount, String senderTag, long paidMessageStarCount, String authorSignature, long mediaAlbumId, long effectId, RestrictionInfo restrictionInfo, String summaryLanguageCode, MessageContent content, ReplyMarkup replyMarkup) {
             this.id = id;
             this.senderId = senderId;
             this.chatId = chatId;
@@ -42543,6 +43991,7 @@ public class TdApi {
             this.isPaidStarSuggestedPost = isPaidStarSuggestedPost;
             this.isPaidTonSuggestedPost = isPaidTonSuggestedPost;
             this.containsUnreadMention = containsUnreadMention;
+            this.containsUnreadPollVotes = containsUnreadPollVotes;
             this.date = date;
             this.editDate = editDate;
             this.forwardInfo = forwardInfo;
@@ -42557,8 +44006,10 @@ public class TdApi {
             this.selfDestructIn = selfDestructIn;
             this.autoDeleteIn = autoDeleteIn;
             this.viaBotUserId = viaBotUserId;
+            this.guestBotCallerId = guestBotCallerId;
             this.senderBusinessBotUserId = senderBusinessBotUserId;
             this.senderBoostCount = senderBoostCount;
+            this.senderTag = senderTag;
             this.paidMessageStarCount = paidMessageStarCount;
             this.authorSignature = authorSignature;
             this.mediaAlbumId = mediaAlbumId;
@@ -42572,7 +44023,7 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = 875422076;
+        public static final int CONSTRUCTOR = -609581767;
 
         /**
          * @return this.CONSTRUCTOR
@@ -42750,6 +44201,8 @@ public class TdApi {
             MessageVideoChatStarted.CONSTRUCTOR,
             MessageVideoChatEnded.CONSTRUCTOR,
             MessageInviteVideoChatParticipants.CONSTRUCTOR,
+            MessagePollOptionAdded.CONSTRUCTOR,
+            MessagePollOptionDeleted.CONSTRUCTOR,
             MessageBasicGroupChatCreate.CONSTRUCTOR,
             MessageSupergroupChatCreate.CONSTRUCTOR,
             MessageChatChangeTitle.CONSTRUCTOR,
@@ -42757,6 +44210,8 @@ public class TdApi {
             MessageChatDeletePhoto.CONSTRUCTOR,
             MessageChatOwnerLeft.CONSTRUCTOR,
             MessageChatOwnerChanged.CONSTRUCTOR,
+            MessageChatHasProtectedContentToggled.CONSTRUCTOR,
+            MessageChatHasProtectedContentDisableRequested.CONSTRUCTOR,
             MessageChatAddMembers.CONSTRUCTOR,
             MessageChatJoinByLink.CONSTRUCTOR,
             MessageChatJoinByRequest.CONSTRUCTOR,
@@ -42777,6 +44232,7 @@ public class TdApi {
             MessageSuggestBirthdate.CONSTRUCTOR,
             MessageCustomServiceAction.CONSTRUCTOR,
             MessageGameScore.CONSTRUCTOR,
+            MessageManagedBotCreated.CONSTRUCTOR,
             MessagePaymentSuccessful.CONSTRUCTOR,
             MessagePaymentSuccessfulBot.CONSTRUCTOR,
             MessagePaymentRefunded.CONSTRUCTOR,
@@ -43095,6 +44551,10 @@ public class TdApi {
          */
         public Photo photo;
         /**
+         * The video representing the live photo; may be null if the photo is static.
+         */
+        @Nullable public Video video;
+        /**
          * Photo caption.
          */
         public FormattedText caption;
@@ -43121,13 +44581,15 @@ public class TdApi {
          * A photo message.
          *
          * @param photo The photo.
+         * @param video The video representing the live photo; may be null if the photo is static.
          * @param caption Photo caption.
          * @param showCaptionAboveMedia True, if the caption must be shown above the photo; otherwise, the caption must be shown below the photo.
          * @param hasSpoiler True, if the photo preview must be covered by a spoiler animation.
          * @param isSecret True, if the photo must be blurred and must be shown only while tapped.
          */
-        public MessagePhoto(Photo photo, FormattedText caption, boolean showCaptionAboveMedia, boolean hasSpoiler, boolean isSecret) {
+        public MessagePhoto(Photo photo, Video video, FormattedText caption, boolean showCaptionAboveMedia, boolean hasSpoiler, boolean isSecret) {
             this.photo = photo;
+            this.video = video;
             this.caption = caption;
             this.showCaptionAboveMedia = showCaptionAboveMedia;
             this.hasSpoiler = hasSpoiler;
@@ -43137,7 +44599,7 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = 1967947295;
+        public static final int CONSTRUCTOR = -1512013306;
 
         /**
          * @return this.CONSTRUCTOR
@@ -43765,9 +45227,21 @@ public class TdApi {
      */
     public static class MessagePoll extends MessageContent {
         /**
-         * The poll description.
+         * Information about the poll.
          */
         public Poll poll;
+        /**
+         * Description of the poll.
+         */
+        public FormattedText description;
+        /**
+         * Media attached to the poll; may be null if none. If present, currently, can be only of the types messageAnimation, messageAudio, messageDocument, messageLocation, messagePhoto, messageVenue, or messageVideo without caption.
+         */
+        @Nullable public MessageContent media;
+        /**
+         * True, if an option can be added to the poll using addPollOption.
+         */
+        public boolean canAddOption;
 
         /**
          * A message with a poll.
@@ -43778,16 +45252,22 @@ public class TdApi {
         /**
          * A message with a poll.
          *
-         * @param poll The poll description.
+         * @param poll Information about the poll.
+         * @param description Description of the poll.
+         * @param media Media attached to the poll; may be null if none. If present, currently, can be only of the types messageAnimation, messageAudio, messageDocument, messageLocation, messagePhoto, messageVenue, or messageVideo without caption.
+         * @param canAddOption True, if an option can be added to the poll using addPollOption.
          */
-        public MessagePoll(Poll poll) {
+        public MessagePoll(Poll poll, FormattedText description, MessageContent media, boolean canAddOption) {
             this.poll = poll;
+            this.description = description;
+            this.media = media;
+            this.canAddOption = canAddOption;
         }
 
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = -662130099;
+        public static final int CONSTRUCTOR = -1644813882;
 
         /**
          * @return this.CONSTRUCTOR
@@ -44039,6 +45519,10 @@ public class TdApi {
      */
     public static class MessageCall extends MessageContent {
         /**
+         * Persistent unique call identifier; 0 for calls from other devices, which can't be passed as inputCallFromMessage.
+         */
+        public long uniqueId;
+        /**
          * True, if the call was a video call.
          */
         public boolean isVideo;
@@ -44060,11 +45544,13 @@ public class TdApi {
         /**
          * A message with information about an ended call.
          *
+         * @param uniqueId Persistent unique call identifier; 0 for calls from other devices, which can't be passed as inputCallFromMessage.
          * @param isVideo True, if the call was a video call.
          * @param discardReason Reason why the call was discarded.
          * @param duration Call duration, in seconds.
          */
-        public MessageCall(boolean isVideo, CallDiscardReason discardReason, int duration) {
+        public MessageCall(long uniqueId, boolean isVideo, CallDiscardReason discardReason, int duration) {
+            this.uniqueId = uniqueId;
             this.isVideo = isVideo;
             this.discardReason = discardReason;
             this.duration = duration;
@@ -44073,7 +45559,7 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = 538893824;
+        public static final int CONSTRUCTOR = 142247375;
 
         /**
          * @return this.CONSTRUCTOR
@@ -44306,6 +45792,106 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = -1459065585;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * A message with information about an added poll option.
+     */
+    public static class MessagePollOptionAdded extends MessageContent {
+        /**
+         * Identifier of the message with the poll; can be an identifier of a deleted message or 0.
+         */
+        public long pollMessageId;
+        /**
+         * Identifier of the added option in the poll.
+         */
+        public String optionId;
+        /**
+         * Text of the option; 1-100 characters; may contain only custom emoji entities.
+         */
+        public FormattedText text;
+
+        /**
+         * A message with information about an added poll option.
+         */
+        public MessagePollOptionAdded() {
+        }
+
+        /**
+         * A message with information about an added poll option.
+         *
+         * @param pollMessageId Identifier of the message with the poll; can be an identifier of a deleted message or 0.
+         * @param optionId Identifier of the added option in the poll.
+         * @param text Text of the option; 1-100 characters; may contain only custom emoji entities.
+         */
+        public MessagePollOptionAdded(long pollMessageId, String optionId, FormattedText text) {
+            this.pollMessageId = pollMessageId;
+            this.optionId = optionId;
+            this.text = text;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 1826080462;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * A message with information about a deleted poll option.
+     */
+    public static class MessagePollOptionDeleted extends MessageContent {
+        /**
+         * Identifier of the message with the poll; can be an identifier of a deleted message or 0.
+         */
+        public long pollMessageId;
+        /**
+         * Identifier of the deleted option in the poll.
+         */
+        public String optionId;
+        /**
+         * Text of the option; 1-100 characters; may contain only custom emoji entities.
+         */
+        public FormattedText text;
+
+        /**
+         * A message with information about a deleted poll option.
+         */
+        public MessagePollOptionDeleted() {
+        }
+
+        /**
+         * A message with information about a deleted poll option.
+         *
+         * @param pollMessageId Identifier of the message with the poll; can be an identifier of a deleted message or 0.
+         * @param optionId Identifier of the deleted option in the poll.
+         * @param text Text of the option; 1-100 characters; may contain only custom emoji entities.
+         */
+        public MessagePollOptionDeleted(long pollMessageId, String optionId, FormattedText text) {
+            this.pollMessageId = pollMessageId;
+            this.optionId = optionId;
+            this.text = text;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -1808348024;
 
         /**
          * @return this.CONSTRUCTOR
@@ -44565,6 +46151,94 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = 1679665913;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Chat hasProtectedContent setting was changed or request to change it was rejected.
+     */
+    public static class MessageChatHasProtectedContentToggled extends MessageContent {
+        /**
+         * Identifier of the message with the request to change the setting; can be an identifier of a deleted message or 0.
+         */
+        public long requestMessageId;
+        /**
+         * Previous value of the setting.
+         */
+        public boolean oldHasProtectedContent;
+        /**
+         * New value of the setting.
+         */
+        public boolean newHasProtectedContent;
+
+        /**
+         * Chat hasProtectedContent setting was changed or request to change it was rejected.
+         */
+        public MessageChatHasProtectedContentToggled() {
+        }
+
+        /**
+         * Chat hasProtectedContent setting was changed or request to change it was rejected.
+         *
+         * @param requestMessageId Identifier of the message with the request to change the setting; can be an identifier of a deleted message or 0.
+         * @param oldHasProtectedContent Previous value of the setting.
+         * @param newHasProtectedContent New value of the setting.
+         */
+        public MessageChatHasProtectedContentToggled(long requestMessageId, boolean oldHasProtectedContent, boolean newHasProtectedContent) {
+            this.requestMessageId = requestMessageId;
+            this.oldHasProtectedContent = oldHasProtectedContent;
+            this.newHasProtectedContent = newHasProtectedContent;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -809083979;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Chat hasProtectedContent setting was requested to be disabled.
+     */
+    public static class MessageChatHasProtectedContentDisableRequested extends MessageContent {
+        /**
+         * True, if the request has expired.
+         */
+        public boolean isExpired;
+
+        /**
+         * Chat hasProtectedContent setting was requested to be disabled.
+         */
+        public MessageChatHasProtectedContentDisableRequested() {
+        }
+
+        /**
+         * Chat hasProtectedContent setting was requested to be disabled.
+         *
+         * @param isExpired True, if the request has expired.
+         */
+        public MessageChatHasProtectedContentDisableRequested(boolean isExpired) {
+            this.isExpired = isExpired;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 334722856;
 
         /**
          * @return this.CONSTRUCTOR
@@ -45346,6 +47020,44 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = 1344904575;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * A bot managed by another bot was created by the user.
+     */
+    public static class MessageManagedBotCreated extends MessageContent {
+        /**
+         * User identifier of the created bot.
+         */
+        public long botUserId;
+
+        /**
+         * A bot managed by another bot was created by the user.
+         */
+        public MessageManagedBotCreated() {
+        }
+
+        /**
+         * A bot managed by another bot was created by the user.
+         *
+         * @param botUserId User identifier of the created bot.
+         */
+        public MessageManagedBotCreated(long botUserId) {
+            this.botUserId = botUserId;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -1787873036;
 
         /**
          * @return this.CONSTRUCTOR
@@ -48111,6 +49823,14 @@ public class TdApi {
          */
         public int mediaTimestamp;
         /**
+         * Identifier of the checklist task that is linked; 0 if none.
+         */
+        public int checklistTaskId;
+        /**
+         * Identifier of the poll option that is linked; empty if none.
+         */
+        public String pollOptionId;
+        /**
          * True, if the whole media album to which the message belongs is linked.
          */
         public boolean forAlbum;
@@ -48129,21 +49849,25 @@ public class TdApi {
          * @param topicId Identifier of the specific topic in which the message must be opened, or a topic to open if the message is missing; may be null if none.
          * @param message If found, the linked message; may be null.
          * @param mediaTimestamp Timestamp from which the video/audio/video note/voice note/story playing must start, in seconds; 0 if not specified. The media can be in the message content or in its link preview.
+         * @param checklistTaskId Identifier of the checklist task that is linked; 0 if none.
+         * @param pollOptionId Identifier of the poll option that is linked; empty if none.
          * @param forAlbum True, if the whole media album to which the message belongs is linked.
          */
-        public MessageLinkInfo(boolean isPublic, long chatId, MessageTopic topicId, Message message, int mediaTimestamp, boolean forAlbum) {
+        public MessageLinkInfo(boolean isPublic, long chatId, MessageTopic topicId, Message message, int mediaTimestamp, int checklistTaskId, String pollOptionId, boolean forAlbum) {
             this.isPublic = isPublic;
             this.chatId = chatId;
             this.topicId = topicId;
             this.message = message;
             this.mediaTimestamp = mediaTimestamp;
+            this.checklistTaskId = checklistTaskId;
+            this.pollOptionId = pollOptionId;
             this.forAlbum = forAlbum;
         }
 
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = 361619055;
+        public static final int CONSTRUCTOR = 1091360815;
 
         /**
          * @return this.CONSTRUCTOR
@@ -48517,6 +50241,10 @@ public class TdApi {
          */
         public boolean canBeSharedInStory;
         /**
+         * True, if the user can delete reactions of other users in the message using the method deleteMessageReactionsFromSender.
+         */
+        public boolean canDeleteReactions;
+        /**
          * True, if the message can be edited using the method editMessageMedia.
          */
         public boolean canEditMedia;
@@ -48549,6 +50277,10 @@ public class TdApi {
          */
         public boolean canGetMessageThread;
         /**
+         * True, if the message is a poll and vote statistics are available through getPollVoteStatistics.
+         */
+        public boolean canGetPollVoteStatistics;
+        /**
          * True, if read date of the message can be received through getMessageReadDate.
          */
         public boolean canGetReadDate;
@@ -48557,7 +50289,7 @@ public class TdApi {
          */
         public boolean canGetStatistics;
         /**
-         * True, if advertisements for video of the message can be received though getVideoMessageAdvertisements.
+         * True, if advertisements for video of the message can be received through getVideoMessageAdvertisements.
          */
         public boolean canGetVideoAdvertisements;
         /**
@@ -48589,6 +50321,14 @@ public class TdApi {
          */
         public boolean canSetFactCheck;
         /**
+         * True, if content of the message can't be saved locally, because it is protected by the current user; if true, then canBeSaved is false.
+         */
+        public boolean hasProtectedContentByCurrentUser;
+        /**
+         * True, if content of the message can't be saved locally, because it is protected by the other user; if true, then canBeSaved is false.
+         */
+        public boolean hasProtectedContentByOtherUser;
+        /**
          * True, if message statistics must be available from context menu of the message.
          */
         public boolean needShowStatistics;
@@ -48618,6 +50358,7 @@ public class TdApi {
          * @param canBeRepliedInAnotherChat True, if the message can be replied in another chat or forum topic using inputMessageReplyToExternalMessage.
          * @param canBeSaved True, if content of the message can be saved locally.
          * @param canBeSharedInStory True, if the message can be shared in a story using inputStoryAreaTypeMessage.
+         * @param canDeleteReactions True, if the user can delete reactions of other users in the message using the method deleteMessageReactionsFromSender.
          * @param canEditMedia True, if the message can be edited using the method editMessageMedia.
          * @param canEditSchedulingState True, if scheduling state of the message can be edited.
          * @param canEditSuggestedPostInfo True, if another price or post send time can be suggested using addOffer.
@@ -48626,9 +50367,10 @@ public class TdApi {
          * @param canGetLink True, if a link can be generated for the message using getMessageLink.
          * @param canGetMediaTimestampLinks True, if media timestamp links can be generated for media timestamp entities in the message text, caption or link preview description using getMessageLink.
          * @param canGetMessageThread True, if information about the message thread is available through getMessageThread and getMessageThreadHistory.
+         * @param canGetPollVoteStatistics True, if the message is a poll and vote statistics are available through getPollVoteStatistics.
          * @param canGetReadDate True, if read date of the message can be received through getMessageReadDate.
          * @param canGetStatistics True, if message statistics are available through getMessageStatistics and message forwards can be received using getMessagePublicForwards.
-         * @param canGetVideoAdvertisements True, if advertisements for video of the message can be received though getVideoMessageAdvertisements.
+         * @param canGetVideoAdvertisements True, if advertisements for video of the message can be received through getVideoMessageAdvertisements.
          * @param canGetViewers True, if chat members already viewed the message can be received through getMessageViewers.
          * @param canMarkTasksAsDone True, if tasks can be marked as done or not done in the message's checklist using markChecklistTasksAsDone if the current user has Telegram Premium subscription.
          * @param canRecognizeSpeech True, if speech can be recognized for the message through recognizeSpeech.
@@ -48636,9 +50378,11 @@ public class TdApi {
          * @param canReportReactions True, if reactions on the message can be reported through reportMessageReactions.
          * @param canReportSupergroupSpam True, if the message can be reported using reportSupergroupSpam.
          * @param canSetFactCheck True, if fact check for the message can be changed through setMessageFactCheck.
+         * @param hasProtectedContentByCurrentUser True, if content of the message can't be saved locally, because it is protected by the current user; if true, then canBeSaved is false.
+         * @param hasProtectedContentByOtherUser True, if content of the message can't be saved locally, because it is protected by the other user; if true, then canBeSaved is false.
          * @param needShowStatistics True, if message statistics must be available from context menu of the message.
          */
-        public MessageProperties(boolean canAddOffer, boolean canAddTasks, boolean canBeApproved, boolean canBeCopied, boolean canBeCopiedToSecretChat, boolean canBeDeclined, boolean canBeDeletedOnlyForSelf, boolean canBeDeletedForAllUsers, boolean canBeEdited, boolean canBeForwarded, boolean canBePaid, boolean canBePinned, boolean canBeReplied, boolean canBeRepliedInAnotherChat, boolean canBeSaved, boolean canBeSharedInStory, boolean canEditMedia, boolean canEditSchedulingState, boolean canEditSuggestedPostInfo, boolean canGetAuthor, boolean canGetEmbeddingCode, boolean canGetLink, boolean canGetMediaTimestampLinks, boolean canGetMessageThread, boolean canGetReadDate, boolean canGetStatistics, boolean canGetVideoAdvertisements, boolean canGetViewers, boolean canMarkTasksAsDone, boolean canRecognizeSpeech, boolean canReportChat, boolean canReportReactions, boolean canReportSupergroupSpam, boolean canSetFactCheck, boolean needShowStatistics) {
+        public MessageProperties(boolean canAddOffer, boolean canAddTasks, boolean canBeApproved, boolean canBeCopied, boolean canBeCopiedToSecretChat, boolean canBeDeclined, boolean canBeDeletedOnlyForSelf, boolean canBeDeletedForAllUsers, boolean canBeEdited, boolean canBeForwarded, boolean canBePaid, boolean canBePinned, boolean canBeReplied, boolean canBeRepliedInAnotherChat, boolean canBeSaved, boolean canBeSharedInStory, boolean canDeleteReactions, boolean canEditMedia, boolean canEditSchedulingState, boolean canEditSuggestedPostInfo, boolean canGetAuthor, boolean canGetEmbeddingCode, boolean canGetLink, boolean canGetMediaTimestampLinks, boolean canGetMessageThread, boolean canGetPollVoteStatistics, boolean canGetReadDate, boolean canGetStatistics, boolean canGetVideoAdvertisements, boolean canGetViewers, boolean canMarkTasksAsDone, boolean canRecognizeSpeech, boolean canReportChat, boolean canReportReactions, boolean canReportSupergroupSpam, boolean canSetFactCheck, boolean hasProtectedContentByCurrentUser, boolean hasProtectedContentByOtherUser, boolean needShowStatistics) {
             this.canAddOffer = canAddOffer;
             this.canAddTasks = canAddTasks;
             this.canBeApproved = canBeApproved;
@@ -48655,6 +50399,7 @@ public class TdApi {
             this.canBeRepliedInAnotherChat = canBeRepliedInAnotherChat;
             this.canBeSaved = canBeSaved;
             this.canBeSharedInStory = canBeSharedInStory;
+            this.canDeleteReactions = canDeleteReactions;
             this.canEditMedia = canEditMedia;
             this.canEditSchedulingState = canEditSchedulingState;
             this.canEditSuggestedPostInfo = canEditSuggestedPostInfo;
@@ -48663,6 +50408,7 @@ public class TdApi {
             this.canGetLink = canGetLink;
             this.canGetMediaTimestampLinks = canGetMediaTimestampLinks;
             this.canGetMessageThread = canGetMessageThread;
+            this.canGetPollVoteStatistics = canGetPollVoteStatistics;
             this.canGetReadDate = canGetReadDate;
             this.canGetStatistics = canGetStatistics;
             this.canGetVideoAdvertisements = canGetVideoAdvertisements;
@@ -48673,13 +50419,15 @@ public class TdApi {
             this.canReportReactions = canReportReactions;
             this.canReportSupergroupSpam = canReportSupergroupSpam;
             this.canSetFactCheck = canSetFactCheck;
+            this.hasProtectedContentByCurrentUser = hasProtectedContentByCurrentUser;
+            this.hasProtectedContentByOtherUser = hasProtectedContentByOtherUser;
             this.needShowStatistics = needShowStatistics;
         }
 
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = 954223680;
+        public static final int CONSTRUCTOR = -688751636;
 
         /**
          * @return this.CONSTRUCTOR
@@ -49088,6 +50836,10 @@ public class TdApi {
          */
         public int checklistTaskId;
         /**
+         * Identifier of the poll option in the original message that was replied; empty if none.
+         */
+        public String pollOptionId;
+        /**
          * Information about origin of the message if the message was from another chat or topic; may be null for messages from the same chat.
          */
         @Nullable public MessageOrigin origin;
@@ -49113,15 +50865,17 @@ public class TdApi {
          * @param messageId The identifier of the message; may be 0 if the replied message is in unknown chat.
          * @param quote Chosen quote from the replied message; may be null if none.
          * @param checklistTaskId Identifier of the checklist task in the original message that was replied; 0 if none.
+         * @param pollOptionId Identifier of the poll option in the original message that was replied; empty if none.
          * @param origin Information about origin of the message if the message was from another chat or topic; may be null for messages from the same chat.
          * @param originSendDate Point in time (Unix timestamp) when the message was sent if the message was from another chat or topic; 0 for messages from the same chat.
          * @param content Media content of the message if the message was from another chat or topic; may be null for messages from the same chat and messages without media. Can be only one of the following types: messageAnimation, messageAudio, messageChecklist, messageContact, messageDice, messageDocument, messageGame, messageGiveaway, messageGiveawayWinners, messageInvoice, messageLocation, messagePaidMedia, messagePhoto, messagePoll, messageStakeDice, messageSticker, messageStory, messageText (for link preview), messageVenue, messageVideo, messageVideoNote, or messageVoiceNote.
          */
-        public MessageReplyToMessage(long chatId, long messageId, TextQuote quote, int checklistTaskId, MessageOrigin origin, int originSendDate, MessageContent content) {
+        public MessageReplyToMessage(long chatId, long messageId, TextQuote quote, int checklistTaskId, String pollOptionId, MessageOrigin origin, int originSendDate, MessageContent content) {
             this.chatId = chatId;
             this.messageId = messageId;
             this.quote = quote;
             this.checklistTaskId = checklistTaskId;
+            this.pollOptionId = pollOptionId;
             this.origin = origin;
             this.originSendDate = originSendDate;
             this.content = content;
@@ -49130,7 +50884,7 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = -2078029945;
+        public static final int CONSTRUCTOR = -203917195;
 
         /**
          * @return this.CONSTRUCTOR
@@ -49619,7 +51373,7 @@ public class TdApi {
      */
     public static class MessageSenders extends Object {
         /**
-         * Approximate total number of messages senders found.
+         * Approximate total number of message senders found.
          */
         public int totalCount;
         /**
@@ -49636,7 +51390,7 @@ public class TdApi {
         /**
          * Represents a list of message senders.
          *
-         * @param totalCount Approximate total number of messages senders found.
+         * @param totalCount Approximate total number of message senders found.
          * @param senders List of message senders.
          */
         public MessageSenders(int totalCount, MessageSender[] senders) {
@@ -51611,6 +53365,122 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = -711680462;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Information about the OAuth authorization.
+     */
+    public static class OauthLinkInfo extends Object {
+        /**
+         * Identifier of the user for which the link was generated; may be 0 if unknown. The corresponding user may be unknown. If the user is logged in the application, then they must be chosen for authorization by default.
+         */
+        public long userId;
+        /**
+         * An HTTP URL where the user authorizes.
+         */
+        public String url;
+        /**
+         * A domain of the URL.
+         */
+        public String domain;
+        /**
+         * True, if the authorization originates from an application.
+         */
+        public boolean fromApp;
+        /**
+         * Verified name of the application; if empty, then &quot;Unverified App&quot; must be shown instead.
+         */
+        public String verifiedAppName;
+        /**
+         * User identifier of a bot linked with the website.
+         */
+        public long botUserId;
+        /**
+         * True, if the user must be asked for the permission to the bot to send them messages.
+         */
+        public boolean requestWriteAccess;
+        /**
+         * True, if the user must be asked for the permission to share their phone number.
+         */
+        public boolean requestPhoneNumberAccess;
+        /**
+         * The version of a browser used for the authorization.
+         */
+        public String browser;
+        /**
+         * Operating system the browser is running on.
+         */
+        public String platform;
+        /**
+         * IP address from which the authorization is performed, in human-readable format.
+         */
+        public String ipAddress;
+        /**
+         * Human-readable description of a country and a region from which the authorization is performed, based on the IP address.
+         */
+        public String location;
+        /**
+         * True, if code matching dialog must be shown first and checkOauthRequestMatchCode must be called before acceptOauthRequest. Otherwise, checkOauthRequestMatchCode must not be called.
+         */
+        public boolean matchCodeFirst;
+        /**
+         * The list of codes to match; may be empty if irrelevant.
+         */
+        public String[] matchCodes;
+
+        /**
+         * Information about the OAuth authorization.
+         */
+        public OauthLinkInfo() {
+        }
+
+        /**
+         * Information about the OAuth authorization.
+         *
+         * @param userId Identifier of the user for which the link was generated; may be 0 if unknown. The corresponding user may be unknown. If the user is logged in the application, then they must be chosen for authorization by default.
+         * @param url An HTTP URL where the user authorizes.
+         * @param domain A domain of the URL.
+         * @param fromApp True, if the authorization originates from an application.
+         * @param verifiedAppName Verified name of the application; if empty, then &quot;Unverified App&quot; must be shown instead.
+         * @param botUserId User identifier of a bot linked with the website.
+         * @param requestWriteAccess True, if the user must be asked for the permission to the bot to send them messages.
+         * @param requestPhoneNumberAccess True, if the user must be asked for the permission to share their phone number.
+         * @param browser The version of a browser used for the authorization.
+         * @param platform Operating system the browser is running on.
+         * @param ipAddress IP address from which the authorization is performed, in human-readable format.
+         * @param location Human-readable description of a country and a region from which the authorization is performed, based on the IP address.
+         * @param matchCodeFirst True, if code matching dialog must be shown first and checkOauthRequestMatchCode must be called before acceptOauthRequest. Otherwise, checkOauthRequestMatchCode must not be called.
+         * @param matchCodes The list of codes to match; may be empty if irrelevant.
+         */
+        public OauthLinkInfo(long userId, String url, String domain, boolean fromApp, String verifiedAppName, long botUserId, boolean requestWriteAccess, boolean requestPhoneNumberAccess, String browser, String platform, String ipAddress, String location, boolean matchCodeFirst, String[] matchCodes) {
+            this.userId = userId;
+            this.url = url;
+            this.domain = domain;
+            this.fromApp = fromApp;
+            this.verifiedAppName = verifiedAppName;
+            this.botUserId = botUserId;
+            this.requestWriteAccess = requestWriteAccess;
+            this.requestPhoneNumberAccess = requestPhoneNumberAccess;
+            this.browser = browser;
+            this.platform = platform;
+            this.ipAddress = ipAddress;
+            this.location = location;
+            this.matchCodeFirst = matchCodeFirst;
+            this.matchCodes = matchCodes;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -908945202;
 
         /**
          * @return this.CONSTRUCTOR
@@ -53819,6 +55689,10 @@ public class TdApi {
          * The photo.
          */
         public Photo photo;
+        /**
+         * The video representing the live photo; may be null if the photo is static.
+         */
+        @Nullable public Video video;
 
         /**
          * The media is a photo.
@@ -53830,15 +55704,17 @@ public class TdApi {
          * The media is a photo.
          *
          * @param photo The photo.
+         * @param video The video representing the live photo; may be null if the photo is static.
          */
-        public PaidMediaPhoto(Photo photo) {
+        public PaidMediaPhoto(Photo photo, Video video) {
             this.photo = photo;
+            this.video = video;
         }
 
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = -1165863654;
+        public static final int CONSTRUCTOR = -307151500;
 
         /**
          * @return this.CONSTRUCTOR
@@ -56989,7 +58865,7 @@ public class TdApi {
          */
         public long id;
         /**
-         * Poll question; 1-300 characters. Only custom emoji entities are allowed.
+         * Poll question; 1-300 characters; may contain only custom emoji entities.
          */
         public FormattedText question;
         /**
@@ -57001,13 +58877,37 @@ public class TdApi {
          */
         public int totalVoterCount;
         /**
-         * Identifiers of recent voters, if the poll is non-anonymous.
+         * Identifiers of recent voters, if the poll is non-anonymous and poll results are available.
          */
         public MessageSender[] recentVoterIds;
+        /**
+         * True, if the current user can get voters in the poll using getPollVoters.
+         */
+        public boolean canGetVoters;
         /**
          * True, if the poll is anonymous.
          */
         public boolean isAnonymous;
+        /**
+         * True, if multiple answer options can be chosen simultaneously.
+         */
+        public boolean allowsMultipleAnswers;
+        /**
+         * True, if the poll can be answered multiple times.
+         */
+        public boolean allowsRevoting;
+        /**
+         * True, if only the users that are members of the chat for more than a day will be able to vote.
+         */
+        public boolean membersOnly;
+        /**
+         * The list of two-letter ISO 3166-1 alpha-2 codes of countries, users from which will be able to vote. If empty, then all users can participate in the poll.
+         */
+        public String[] countryCodes;
+        /**
+         * The list of 0-based poll identifiers in which the options of the poll must be shown; empty if the order of options must not be changed.
+         */
+        public int[] optionOrder;
         /**
          * Type of the poll.
          */
@@ -57024,6 +58924,10 @@ public class TdApi {
          * True, if the poll is closed.
          */
         public boolean isClosed;
+        /**
+         * The reason describing, why the current user can't vote in the poll; may be null if the user can vote in the poll.
+         */
+        @Nullable public PollVoteRestrictionReason voteRestrictionReason;
 
         /**
          * Describes a poll.
@@ -57035,33 +58939,47 @@ public class TdApi {
          * Describes a poll.
          *
          * @param id Unique poll identifier.
-         * @param question Poll question; 1-300 characters. Only custom emoji entities are allowed.
+         * @param question Poll question; 1-300 characters; may contain only custom emoji entities.
          * @param options List of poll answer options.
          * @param totalVoterCount Total number of voters, participating in the poll.
-         * @param recentVoterIds Identifiers of recent voters, if the poll is non-anonymous.
+         * @param recentVoterIds Identifiers of recent voters, if the poll is non-anonymous and poll results are available.
+         * @param canGetVoters True, if the current user can get voters in the poll using getPollVoters.
          * @param isAnonymous True, if the poll is anonymous.
+         * @param allowsMultipleAnswers True, if multiple answer options can be chosen simultaneously.
+         * @param allowsRevoting True, if the poll can be answered multiple times.
+         * @param membersOnly True, if only the users that are members of the chat for more than a day will be able to vote.
+         * @param countryCodes The list of two-letter ISO 3166-1 alpha-2 codes of countries, users from which will be able to vote. If empty, then all users can participate in the poll.
+         * @param optionOrder The list of 0-based poll identifiers in which the options of the poll must be shown; empty if the order of options must not be changed.
          * @param type Type of the poll.
          * @param openPeriod Amount of time the poll will be active after creation, in seconds.
          * @param closeDate Point in time (Unix timestamp) when the poll will automatically be closed.
          * @param isClosed True, if the poll is closed.
+         * @param voteRestrictionReason The reason describing, why the current user can't vote in the poll; may be null if the user can vote in the poll.
          */
-        public Poll(long id, FormattedText question, PollOption[] options, int totalVoterCount, MessageSender[] recentVoterIds, boolean isAnonymous, PollType type, int openPeriod, int closeDate, boolean isClosed) {
+        public Poll(long id, FormattedText question, PollOption[] options, int totalVoterCount, MessageSender[] recentVoterIds, boolean canGetVoters, boolean isAnonymous, boolean allowsMultipleAnswers, boolean allowsRevoting, boolean membersOnly, String[] countryCodes, int[] optionOrder, PollType type, int openPeriod, int closeDate, boolean isClosed, PollVoteRestrictionReason voteRestrictionReason) {
             this.id = id;
             this.question = question;
             this.options = options;
             this.totalVoterCount = totalVoterCount;
             this.recentVoterIds = recentVoterIds;
+            this.canGetVoters = canGetVoters;
             this.isAnonymous = isAnonymous;
+            this.allowsMultipleAnswers = allowsMultipleAnswers;
+            this.allowsRevoting = allowsRevoting;
+            this.membersOnly = membersOnly;
+            this.countryCodes = countryCodes;
+            this.optionOrder = optionOrder;
             this.type = type;
             this.openPeriod = openPeriod;
             this.closeDate = closeDate;
             this.isClosed = isClosed;
+            this.voteRestrictionReason = voteRestrictionReason;
         }
 
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = 1913016502;
+        public static final int CONSTRUCTOR = 438560099;
 
         /**
          * @return this.CONSTRUCTOR
@@ -57077,17 +58995,29 @@ public class TdApi {
      */
     public static class PollOption extends Object {
         /**
-         * Option text; 1-100 characters. Only custom emoji entities are allowed.
+         * Unique identifier of the option in the poll; may be empty if yet unassigned.
+         */
+        public String id;
+        /**
+         * Option text; 1-100 characters; may contain only custom emoji entities.
          */
         public FormattedText text;
         /**
-         * Number of voters for this option, available only for closed or voted polls.
+         * Option media; may be null if none. If present, currently, can be only of the types messageAnimation, messageLocation, messagePhoto, messageSticker, messageVenue, or messageVideo without caption.
+         */
+        @Nullable public MessageContent media;
+        /**
+         * Number of voters for this option, available only for closed or voted polls, or if the current user is the creator of the poll.
          */
         public int voterCount;
         /**
          * The percentage of votes for this option; 0-100.
          */
         public int votePercentage;
+        /**
+         * Identifiers of recent voters for the option, if the poll is non-anonymous and poll results are available.
+         */
+        public MessageSender[] recentVoterIds;
         /**
          * True, if the option was chosen by the user.
          */
@@ -57096,6 +59026,14 @@ public class TdApi {
          * True, if the option is being chosen by a pending setPollAnswer request.
          */
         public boolean isBeingChosen;
+        /**
+         * Identifier of the user or chat who added the option; may be null if the option existed from creation of the poll.
+         */
+        @Nullable public MessageSender author;
+        /**
+         * Point in time (Unix timestamp) when the option was added; 0 if the option existed from creation of the poll.
+         */
+        public int additionDate;
 
         /**
          * Describes one answer option of a poll.
@@ -57106,24 +59044,90 @@ public class TdApi {
         /**
          * Describes one answer option of a poll.
          *
-         * @param text Option text; 1-100 characters. Only custom emoji entities are allowed.
-         * @param voterCount Number of voters for this option, available only for closed or voted polls.
+         * @param id Unique identifier of the option in the poll; may be empty if yet unassigned.
+         * @param text Option text; 1-100 characters; may contain only custom emoji entities.
+         * @param media Option media; may be null if none. If present, currently, can be only of the types messageAnimation, messageLocation, messagePhoto, messageSticker, messageVenue, or messageVideo without caption.
+         * @param voterCount Number of voters for this option, available only for closed or voted polls, or if the current user is the creator of the poll.
          * @param votePercentage The percentage of votes for this option; 0-100.
+         * @param recentVoterIds Identifiers of recent voters for the option, if the poll is non-anonymous and poll results are available.
          * @param isChosen True, if the option was chosen by the user.
          * @param isBeingChosen True, if the option is being chosen by a pending setPollAnswer request.
+         * @param author Identifier of the user or chat who added the option; may be null if the option existed from creation of the poll.
+         * @param additionDate Point in time (Unix timestamp) when the option was added; 0 if the option existed from creation of the poll.
          */
-        public PollOption(FormattedText text, int voterCount, int votePercentage, boolean isChosen, boolean isBeingChosen) {
+        public PollOption(String id, FormattedText text, MessageContent media, int voterCount, int votePercentage, MessageSender[] recentVoterIds, boolean isChosen, boolean isBeingChosen, MessageSender author, int additionDate) {
+            this.id = id;
             this.text = text;
+            this.media = media;
             this.voterCount = voterCount;
             this.votePercentage = votePercentage;
+            this.recentVoterIds = recentVoterIds;
             this.isChosen = isChosen;
             this.isBeingChosen = isBeingChosen;
+            this.author = author;
+            this.additionDate = additionDate;
         }
 
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = 1676243088;
+        public static final int CONSTRUCTOR = 94416337;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Contains properties of a poll option and describes actions that can be done with the option right now.
+     */
+    public static class PollOptionProperties extends Object {
+        /**
+         * True, if the option can be deleted using deletePollOption.
+         */
+        public boolean canBeDeleted;
+        /**
+         * True, if the poll option can be replied in the same chat and forum topic using inputMessageReplyToMessage.
+         */
+        public boolean canBeReplied;
+        /**
+         * True, if the poll option can be replied in another chat or forum topic using inputMessageReplyToExternalMessage.
+         */
+        public boolean canBeRepliedInAnotherChat;
+        /**
+         * True, if a link can be generated for the poll option using getMessageLink.
+         */
+        public boolean canGetLink;
+
+        /**
+         * Contains properties of a poll option and describes actions that can be done with the option right now.
+         */
+        public PollOptionProperties() {
+        }
+
+        /**
+         * Contains properties of a poll option and describes actions that can be done with the option right now.
+         *
+         * @param canBeDeleted True, if the option can be deleted using deletePollOption.
+         * @param canBeReplied True, if the poll option can be replied in the same chat and forum topic using inputMessageReplyToMessage.
+         * @param canBeRepliedInAnotherChat True, if the poll option can be replied in another chat or forum topic using inputMessageReplyToExternalMessage.
+         * @param canGetLink True, if a link can be generated for the poll option using getMessageLink.
+         */
+        public PollOptionProperties(boolean canBeDeleted, boolean canBeReplied, boolean canBeRepliedInAnotherChat, boolean canGetLink) {
+            this.canBeDeleted = canBeDeleted;
+            this.canBeReplied = canBeReplied;
+            this.canBeRepliedInAnotherChat = canBeRepliedInAnotherChat;
+            this.canGetLink = canGetLink;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -269854419;
 
         /**
          * @return this.CONSTRUCTOR
@@ -57166,10 +59170,6 @@ public class TdApi {
      * A regular poll.
      */
     public static class PollTypeRegular extends PollType {
-        /**
-         * True, if multiple answer options can be chosen simultaneously.
-         */
-        public boolean allowMultipleAnswers;
 
         /**
          * A regular poll.
@@ -57178,18 +59178,9 @@ public class TdApi {
         }
 
         /**
-         * A regular poll.
-         *
-         * @param allowMultipleAnswers True, if multiple answer options can be chosen simultaneously.
-         */
-        public PollTypeRegular(boolean allowMultipleAnswers) {
-            this.allowMultipleAnswers = allowMultipleAnswers;
-        }
-
-        /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = 641265698;
+        public static final int CONSTRUCTOR = 823249292;
 
         /**
          * @return this.CONSTRUCTOR
@@ -57201,39 +59192,379 @@ public class TdApi {
     }
 
     /**
-     * A poll in quiz mode, which has exactly one correct answer option and can be answered only once.
+     * A poll in quiz mode, which has predefined correct answers.
      */
     public static class PollTypeQuiz extends PollType {
         /**
-         * 0-based identifier of the correct answer option; -1 for a yet unanswered poll.
+         * Increasing list of 0-based identifiers of the correct answer options; empty for a yet unanswered poll.
          */
-        public int correctOptionId;
+        public int[] correctOptionIds;
         /**
-         * Text that is shown when the user chooses an incorrect answer or taps on the lamp icon; 0-200 characters with at most 2 line feeds; empty for a yet unanswered poll.
+         * Text that is shown when the user chooses an incorrect answer or taps on the lamp icon; empty for a yet unanswered poll.
          */
         public FormattedText explanation;
+        /**
+         * Media that is shown when the user chooses an incorrect answer or taps on the lamp icon; may be null if none or the poll is unanswered yet. If present, currently, can be only of the types messageAnimation, messageAudio, messageDocument, messageLocation, messagePhoto, messageVenue, or messageVideo without caption.
+         */
+        @Nullable public MessageContent explanationMedia;
 
         /**
-         * A poll in quiz mode, which has exactly one correct answer option and can be answered only once.
+         * A poll in quiz mode, which has predefined correct answers.
          */
         public PollTypeQuiz() {
         }
 
         /**
-         * A poll in quiz mode, which has exactly one correct answer option and can be answered only once.
+         * A poll in quiz mode, which has predefined correct answers.
          *
-         * @param correctOptionId 0-based identifier of the correct answer option; -1 for a yet unanswered poll.
-         * @param explanation Text that is shown when the user chooses an incorrect answer or taps on the lamp icon; 0-200 characters with at most 2 line feeds; empty for a yet unanswered poll.
+         * @param correctOptionIds Increasing list of 0-based identifiers of the correct answer options; empty for a yet unanswered poll.
+         * @param explanation Text that is shown when the user chooses an incorrect answer or taps on the lamp icon; empty for a yet unanswered poll.
+         * @param explanationMedia Media that is shown when the user chooses an incorrect answer or taps on the lamp icon; may be null if none or the poll is unanswered yet. If present, currently, can be only of the types messageAnimation, messageAudio, messageDocument, messageLocation, messagePhoto, messageVenue, or messageVideo without caption.
          */
-        public PollTypeQuiz(int correctOptionId, FormattedText explanation) {
-            this.correctOptionId = correctOptionId;
+        public PollTypeQuiz(int[] correctOptionIds, FormattedText explanation, MessageContent explanationMedia) {
+            this.correctOptionIds = correctOptionIds;
             this.explanation = explanation;
+            this.explanationMedia = explanationMedia;
         }
 
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = 657013913;
+        public static final int CONSTRUCTOR = -1205882530;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * This class is an abstract base class.
+     * Reason of vote restriction in the poll for the current user.
+     */
+    public abstract static class PollVoteRestrictionReason extends Object {
+        /**
+         * Describes possible values returned by getConstructor().
+         */
+        @Retention(RetentionPolicy.SOURCE)
+        @IntDef({
+            PollVoteRestrictionReasonClosed.CONSTRUCTOR,
+            PollVoteRestrictionReasonYetUnsent.CONSTRUCTOR,
+            PollVoteRestrictionReasonScheduled.CONSTRUCTOR,
+            PollVoteRestrictionReasonCountryRestricted.CONSTRUCTOR,
+            PollVoteRestrictionReasonMembershipRequired.CONSTRUCTOR,
+            PollVoteRestrictionReasonOther.CONSTRUCTOR
+        })
+        public @interface Constructors {}
+
+        /**
+         * @return identifier uniquely determining type of the object.
+         */
+        @Constructors
+        @Override
+        public abstract int getConstructor();
+        /**
+         * Default class constructor.
+         */
+        public PollVoteRestrictionReason() {
+        }
+    }
+
+    /**
+     * The poll is closed.
+     */
+    public static class PollVoteRestrictionReasonClosed extends PollVoteRestrictionReason {
+
+        /**
+         * The poll is closed.
+         */
+        public PollVoteRestrictionReasonClosed() {
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 650593758;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * The poll isn't sent yet.
+     */
+    public static class PollVoteRestrictionReasonYetUnsent extends PollVoteRestrictionReason {
+
+        /**
+         * The poll isn't sent yet.
+         */
+        public PollVoteRestrictionReasonYetUnsent() {
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -1322383969;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * The poll is from a scheduled message.
+     */
+    public static class PollVoteRestrictionReasonScheduled extends PollVoteRestrictionReason {
+
+        /**
+         * The poll is from a scheduled message.
+         */
+        public PollVoteRestrictionReasonScheduled() {
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -693222354;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * The user is from a country, users from which aren't allowed to vote.
+     */
+    public static class PollVoteRestrictionReasonCountryRestricted extends PollVoteRestrictionReason {
+        /**
+         * Two-letter ISO 3166-1 alpha-2 code of the current user's country.
+         */
+        public String countryCode;
+
+        /**
+         * The user is from a country, users from which aren't allowed to vote.
+         */
+        public PollVoteRestrictionReasonCountryRestricted() {
+        }
+
+        /**
+         * The user is from a country, users from which aren't allowed to vote.
+         *
+         * @param countryCode Two-letter ISO 3166-1 alpha-2 code of the current user's country.
+         */
+        public PollVoteRestrictionReasonCountryRestricted(String countryCode) {
+            this.countryCode = countryCode;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -1009950456;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * The user must be a member of the chat for at least a day to vote.
+     */
+    public static class PollVoteRestrictionReasonMembershipRequired extends PollVoteRestrictionReason {
+        /**
+         * Identifier of the chat which must be joined for at least a day before the user can vote.
+         */
+        public long chatId;
+
+        /**
+         * The user must be a member of the chat for at least a day to vote.
+         */
+        public PollVoteRestrictionReasonMembershipRequired() {
+        }
+
+        /**
+         * The user must be a member of the chat for at least a day to vote.
+         *
+         * @param chatId Identifier of the chat which must be joined for at least a day before the user can vote.
+         */
+        public PollVoteRestrictionReasonMembershipRequired(long chatId) {
+            this.chatId = chatId;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 1231796287;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * The poll can't be voted by the user due to some other reason.
+     */
+    public static class PollVoteRestrictionReasonOther extends PollVoteRestrictionReason {
+
+        /**
+         * The poll can't be voted by the user due to some other reason.
+         */
+        public PollVoteRestrictionReasonOther() {
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -1479377401;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * A detailed statistics about poll votes.
+     */
+    public static class PollVoteStatistics extends Object {
+        /**
+         * A graph containing distribution of votes in the poll.
+         */
+        public StatisticalGraph voteGraph;
+
+        /**
+         * A detailed statistics about poll votes.
+         */
+        public PollVoteStatistics() {
+        }
+
+        /**
+         * A detailed statistics about poll votes.
+         *
+         * @param voteGraph A graph containing distribution of votes in the poll.
+         */
+        public PollVoteStatistics(StatisticalGraph voteGraph) {
+            this.voteGraph = voteGraph;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 323339087;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Represents a poll voter.
+     */
+    public static class PollVoter extends Object {
+        /**
+         * The voter identifier.
+         */
+        public MessageSender voterId;
+        /**
+         * Point in time (Unix timestamp) when the vote was added.
+         */
+        public int date;
+
+        /**
+         * Represents a poll voter.
+         */
+        public PollVoter() {
+        }
+
+        /**
+         * Represents a poll voter.
+         *
+         * @param voterId The voter identifier.
+         * @param date Point in time (Unix timestamp) when the vote was added.
+         */
+        public PollVoter(MessageSender voterId, int date) {
+            this.voterId = voterId;
+            this.date = date;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -1354417305;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Represents a list of poll voters.
+     */
+    public static class PollVoters extends Object {
+        /**
+         * Approximate total number of poll voters found.
+         */
+        public int totalCount;
+        /**
+         * List of poll voters.
+         */
+        public PollVoter[] voters;
+
+        /**
+         * Represents a list of poll voters.
+         */
+        public PollVoters() {
+        }
+
+        /**
+         * Represents a list of poll voters.
+         *
+         * @param totalCount Approximate total number of poll voters found.
+         * @param voters List of poll voters.
+         */
+        public PollVoters(int totalCount, PollVoter[] voters) {
+            this.totalCount = totalCount;
+            this.voters = voters;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -1255612789;
 
         /**
          * @return this.CONSTRUCTOR
@@ -57279,7 +59610,9 @@ public class TdApi {
             PremiumFeatureBusiness.CONSTRUCTOR,
             PremiumFeatureMessageEffects.CONSTRUCTOR,
             PremiumFeatureChecklists.CONSTRUCTOR,
-            PremiumFeaturePaidMessages.CONSTRUCTOR
+            PremiumFeaturePaidMessages.CONSTRUCTOR,
+            PremiumFeatureProtectPrivateChatContent.CONSTRUCTOR,
+            PremiumFeatureTextComposition.CONSTRUCTOR
         })
         public @interface Constructors {}
 
@@ -57947,6 +60280,56 @@ public class TdApi {
     }
 
     /**
+     * The ability to enable content protection in private chats.
+     */
+    public static class PremiumFeatureProtectPrivateChatContent extends PremiumFeature {
+
+        /**
+         * The ability to enable content protection in private chats.
+         */
+        public PremiumFeatureProtectPrivateChatContent() {
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -565938675;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * The ability to compose text with AI.
+     */
+    public static class PremiumFeatureTextComposition extends PremiumFeature {
+
+        /**
+         * The ability to compose text with AI.
+         */
+        public PremiumFeatureTextComposition() {
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 210899877;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
      * Describes a promotion animation for a Premium feature.
      */
     public static class PremiumFeaturePromotionAnimation extends Object {
@@ -58416,7 +60799,9 @@ public class TdApi {
             PremiumLimitTypeMonthlyPostedStoryCount.CONSTRUCTOR,
             PremiumLimitTypeStoryCaptionLength.CONSTRUCTOR,
             PremiumLimitTypeStorySuggestedReactionAreaCount.CONSTRUCTOR,
-            PremiumLimitTypeSimilarChatCount.CONSTRUCTOR
+            PremiumLimitTypeSimilarChatCount.CONSTRUCTOR,
+            PremiumLimitTypeOwnedBotCount.CONSTRUCTOR,
+            PremiumLimitTypeCustomTextCompositionStyleCount.CONSTRUCTOR
         })
         public @interface Constructors {}
 
@@ -58898,6 +61283,56 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = -1563549935;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * The maximum number of owned bots.
+     */
+    public static class PremiumLimitTypeOwnedBotCount extends PremiumLimitType {
+
+        /**
+         * The maximum number of owned bots.
+         */
+        public PremiumLimitTypeOwnedBotCount() {
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -595906175;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * The maximum number of added text composition styles.
+     */
+    public static class PremiumLimitTypeCustomTextCompositionStyleCount extends PremiumLimitType {
+
+        /**
+         * The maximum number of added text composition styles.
+         */
+        public PremiumLimitTypeCustomTextCompositionStyleCount() {
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -652894162;
 
         /**
          * @return this.CONSTRUCTOR
@@ -60721,6 +63156,7 @@ public class TdApi {
             PushMessageContentProximityAlertTriggered.CONSTRUCTOR,
             PushMessageContentChecklistTasksAdded.CONSTRUCTOR,
             PushMessageContentChecklistTasksDone.CONSTRUCTOR,
+            PushMessageContentPollOptionAdded.CONSTRUCTOR,
             PushMessageContentMessageForwards.CONSTRUCTOR,
             PushMessageContentMediaAlbum.CONSTRUCTOR
         })
@@ -62461,6 +64897,44 @@ public class TdApi {
     }
 
     /**
+     * An option was added to a poll.
+     */
+    public static class PushMessageContentPollOptionAdded extends PushMessageContent {
+        /**
+         * Text of the option.
+         */
+        public String text;
+
+        /**
+         * An option was added to a poll.
+         */
+        public PushMessageContentPollOptionAdded() {
+        }
+
+        /**
+         * An option was added to a poll.
+         *
+         * @param text Text of the option.
+         */
+        public PushMessageContentPollOptionAdded(String text) {
+            this.text = text;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -86122207;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
      * A forwarded messages.
      */
     public static class PushMessageContentMessageForwards extends PushMessageContent {
@@ -62773,7 +65247,7 @@ public class TdApi {
     }
 
     /**
-     * Contains information about notification settings for reactions.
+     * Contains information about notification settings for reactions and poll votes.
      */
     public static class ReactionNotificationSettings extends Object {
         /**
@@ -62785,7 +65259,11 @@ public class TdApi {
          */
         public ReactionNotificationSource storyReactionSource;
         /**
-         * Identifier of the notification sound to be played; 0 if sound is disabled.
+         * Source of poll votes for which notifications are shown.
+         */
+        public ReactionNotificationSource pollVoteSource;
+        /**
+         * Identifier of the notification sound to be played; 0 if sound is disabled; pass -1 to use the app-dependent default sound.
          */
         public long soundId;
         /**
@@ -62794,22 +65272,24 @@ public class TdApi {
         public boolean showPreview;
 
         /**
-         * Contains information about notification settings for reactions.
+         * Contains information about notification settings for reactions and poll votes.
          */
         public ReactionNotificationSettings() {
         }
 
         /**
-         * Contains information about notification settings for reactions.
+         * Contains information about notification settings for reactions and poll votes.
          *
          * @param messageReactionSource Source of message reactions for which notifications are shown.
          * @param storyReactionSource Source of story reactions for which notifications are shown.
-         * @param soundId Identifier of the notification sound to be played; 0 if sound is disabled.
+         * @param pollVoteSource Source of poll votes for which notifications are shown.
+         * @param soundId Identifier of the notification sound to be played; 0 if sound is disabled; pass -1 to use the app-dependent default sound.
          * @param showPreview True, if reaction sender and emoji must be displayed in notifications.
          */
-        public ReactionNotificationSettings(ReactionNotificationSource messageReactionSource, ReactionNotificationSource storyReactionSource, long soundId, boolean showPreview) {
+        public ReactionNotificationSettings(ReactionNotificationSource messageReactionSource, ReactionNotificationSource storyReactionSource, ReactionNotificationSource pollVoteSource, long soundId, boolean showPreview) {
             this.messageReactionSource = messageReactionSource;
             this.storyReactionSource = storyReactionSource;
+            this.pollVoteSource = pollVoteSource;
             this.soundId = soundId;
             this.showPreview = showPreview;
         }
@@ -62817,7 +65297,7 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = 733017684;
+        public static final int CONSTRUCTOR = 2074932258;
 
         /**
          * @return this.CONSTRUCTOR
@@ -63073,7 +65553,8 @@ public class TdApi {
         @Retention(RetentionPolicy.SOURCE)
         @IntDef({
             ReactionUnavailabilityReasonAnonymousAdministrator.CONSTRUCTOR,
-            ReactionUnavailabilityReasonGuest.CONSTRUCTOR
+            ReactionUnavailabilityReasonGuest.CONSTRUCTOR,
+            ReactionUnavailabilityReasonRestricted.CONSTRUCTOR
         })
         public @interface Constructors {}
 
@@ -63130,6 +65611,31 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = 1357861444;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * The user is restricted in the chat.
+     */
+    public static class ReactionUnavailabilityReasonRestricted extends ReactionUnavailabilityReason {
+
+        /**
+         * The user is restricted in the chat.
+         */
+        public ReactionUnavailabilityReasonRestricted() {
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -1836882716;
 
         /**
          * @return this.CONSTRUCTOR
@@ -63617,7 +66123,7 @@ public class TdApi {
     }
 
     /**
-     * Instructs application to remove the keyboard once this message has been received. This kind of keyboard can't be received in an incoming message; instead, updateChatReplyMarkup with messageId == 0 will be sent.
+     * Instructs application to remove the keyboard once this message has been received. This kind of keyboard can't be received in an incoming message; instead, updateChatReplyMarkup with replyMarkupMessage == null will be sent.
      */
     public static class ReplyMarkupRemoveKeyboard extends ReplyMarkup {
         /**
@@ -63626,13 +66132,13 @@ public class TdApi {
         public boolean isPersonal;
 
         /**
-         * Instructs application to remove the keyboard once this message has been received. This kind of keyboard can't be received in an incoming message; instead, updateChatReplyMarkup with messageId == 0 will be sent.
+         * Instructs application to remove the keyboard once this message has been received. This kind of keyboard can't be received in an incoming message; instead, updateChatReplyMarkup with replyMarkupMessage == null will be sent.
          */
         public ReplyMarkupRemoveKeyboard() {
         }
 
         /**
-         * Instructs application to remove the keyboard once this message has been received. This kind of keyboard can't be received in an incoming message; instead, updateChatReplyMarkup with messageId == 0 will be sent.
+         * Instructs application to remove the keyboard once this message has been received. This kind of keyboard can't be received in an incoming message; instead, updateChatReplyMarkup with replyMarkupMessage == null will be sent.
          *
          * @param isPersonal True, if the keyboard is removed only for the mentioned users or the target user of a reply.
          */
@@ -66176,7 +68682,7 @@ public class TdApi {
          */
         public int muteFor;
         /**
-         * Identifier of the notification sound to be played; 0 if sound is disabled.
+         * Identifier of the notification sound to be played; 0 if sound is disabled; pass -1 to use the app-dependent default sound.
          */
         public long soundId;
         /**
@@ -66192,7 +68698,7 @@ public class TdApi {
          */
         public boolean muteStories;
         /**
-         * Identifier of the notification sound to be played for stories; 0 if sound is disabled.
+         * Identifier of the notification sound to be played for stories; 0 if sound is disabled; pass -1 to use the app-dependent default sound.
          */
         public long storySoundId;
         /**
@@ -66218,11 +68724,11 @@ public class TdApi {
          * Contains information about notification settings for several chats.
          *
          * @param muteFor Time left before notifications will be unmuted, in seconds.
-         * @param soundId Identifier of the notification sound to be played; 0 if sound is disabled.
+         * @param soundId Identifier of the notification sound to be played; 0 if sound is disabled; pass -1 to use the app-dependent default sound.
          * @param showPreview True, if message content must be displayed in notifications.
          * @param useDefaultMuteStories If true, story notifications are received only for the first 5 chats from topChatCategoryUsers regardless of the value of muteStories.
          * @param muteStories True, if story notifications are disabled.
-         * @param storySoundId Identifier of the notification sound to be played for stories; 0 if sound is disabled.
+         * @param storySoundId Identifier of the notification sound to be played for stories; 0 if sound is disabled; pass -1 to use the app-dependent default sound.
          * @param showStoryPoster True, if the chat that posted a story must be displayed in notifications.
          * @param disablePinnedMessageNotifications True, if notifications for incoming pinned messages will be created as for an ordinary unread message.
          * @param disableMentionNotifications True, if notifications for messages with mentions will be created as for an ordinary unread message.
@@ -66372,6 +68878,7 @@ public class TdApi {
             SearchMessagesFilterAudio.CONSTRUCTOR,
             SearchMessagesFilterDocument.CONSTRUCTOR,
             SearchMessagesFilterPhoto.CONSTRUCTOR,
+            SearchMessagesFilterPoll.CONSTRUCTOR,
             SearchMessagesFilterVideo.CONSTRUCTOR,
             SearchMessagesFilterVoiceNote.CONSTRUCTOR,
             SearchMessagesFilterPhotoAndVideo.CONSTRUCTOR,
@@ -66382,6 +68889,7 @@ public class TdApi {
             SearchMessagesFilterMention.CONSTRUCTOR,
             SearchMessagesFilterUnreadMention.CONSTRUCTOR,
             SearchMessagesFilterUnreadReaction.CONSTRUCTOR,
+            SearchMessagesFilterUnreadPollVote.CONSTRUCTOR,
             SearchMessagesFilterFailedToSend.CONSTRUCTOR,
             SearchMessagesFilterPinned.CONSTRUCTOR
         })
@@ -66515,6 +69023,31 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = 925932293;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Returns only poll messages.
+     */
+    public static class SearchMessagesFilterPoll extends SearchMessagesFilter {
+
+        /**
+         * Returns only poll messages.
+         */
+        public SearchMessagesFilterPoll() {
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -891598785;
 
         /**
          * @return this.CONSTRUCTOR
@@ -66726,12 +69259,12 @@ public class TdApi {
     }
 
     /**
-     * Returns only messages with unread mentions of the current user, or messages that are replies to their messages. When using this filter the results can't be additionally filtered by a query, a message thread or by the sending user.
+     * Returns only messages with unread mentions of the current user, or messages that are replies to their messages. When using this filter the results can't be additionally filtered by a query or by the sending user.
      */
     public static class SearchMessagesFilterUnreadMention extends SearchMessagesFilter {
 
         /**
-         * Returns only messages with unread mentions of the current user, or messages that are replies to their messages. When using this filter the results can't be additionally filtered by a query, a message thread or by the sending user.
+         * Returns only messages with unread mentions of the current user, or messages that are replies to their messages. When using this filter the results can't be additionally filtered by a query or by the sending user.
          */
         public SearchMessagesFilterUnreadMention() {
         }
@@ -66751,12 +69284,12 @@ public class TdApi {
     }
 
     /**
-     * Returns only messages with unread reactions for the current user. When using this filter the results can't be additionally filtered by a query, a message thread or by the sending user.
+     * Returns only messages with unread reactions for the current user. When using this filter the results can't be additionally filtered by a query or by the sending user.
      */
     public static class SearchMessagesFilterUnreadReaction extends SearchMessagesFilter {
 
         /**
-         * Returns only messages with unread reactions for the current user. When using this filter the results can't be additionally filtered by a query, a message thread or by the sending user.
+         * Returns only messages with unread reactions for the current user. When using this filter the results can't be additionally filtered by a query or by the sending user.
          */
         public SearchMessagesFilterUnreadReaction() {
         }
@@ -66765,6 +69298,31 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = -1379651328;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Returns only messages with unread poll votes for the current user. When using this filter the results can't be additionally filtered by a query or by the sending user.
+     */
+    public static class SearchMessagesFilterUnreadPollVote extends SearchMessagesFilter {
+
+        /**
+         * Returns only messages with unread poll votes for the current user. When using this filter the results can't be additionally filtered by a query or by the sending user.
+         */
+        public SearchMessagesFilterUnreadPollVote() {
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -161318950;
 
         /**
          * @return this.CONSTRUCTOR
@@ -67129,44 +69687,6 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = 627524736;
-
-        /**
-         * @return this.CONSTRUCTOR
-         */
-        @Override
-        public int getConstructor() {
-            return CONSTRUCTOR;
-        }
-    }
-
-    /**
-     * Information about the message sent by answerWebAppQuery.
-     */
-    public static class SentWebAppMessage extends Object {
-        /**
-         * Identifier of the sent inline message, if known.
-         */
-        public String inlineMessageId;
-
-        /**
-         * Information about the message sent by answerWebAppQuery.
-         */
-        public SentWebAppMessage() {
-        }
-
-        /**
-         * Information about the message sent by answerWebAppQuery.
-         *
-         * @param inlineMessageId Identifier of the sent inline message, if known.
-         */
-        public SentWebAppMessage(String inlineMessageId) {
-            this.inlineMessageId = inlineMessageId;
-        }
-
-        /**
-         * Identifier uniquely determining type of the object.
-         */
-        public static final int CONSTRUCTOR = 1243934400;
 
         /**
          * @return this.CONSTRUCTOR
@@ -69005,7 +71525,7 @@ public class TdApi {
          */
         public boolean canBeReported;
         /**
-         * Content of the message. Currently, can be only of the types messageText, messageAnimation, messagePhoto, or messageVideo. Video messages can be viewed fullscreen.
+         * Content of the message. Currently, can be only of the types messageText, messageAnimation, messagePhoto, or messageVideo. Video messages can be viewed fullscreen. The content must be fully downloaded before the message is shown.
          */
         public MessageContent content;
         /**
@@ -69045,7 +71565,7 @@ public class TdApi {
          * @param messageId Message identifier; unique for the chat to which the sponsored message belongs among both ordinary and sponsored messages.
          * @param isRecommended True, if the message needs to be labeled as &quot;recommended&quot; instead of &quot;sponsored&quot;.
          * @param canBeReported True, if the message can be reported to Telegram moderators through reportChatSponsoredMessage.
-         * @param content Content of the message. Currently, can be only of the types messageText, messageAnimation, messagePhoto, or messageVideo. Video messages can be viewed fullscreen.
+         * @param content Content of the message. Currently, can be only of the types messageText, messageAnimation, messagePhoto, or messageVideo. Video messages can be viewed fullscreen. The content must be fully downloaded before the message is shown.
          * @param sponsor Information about the sponsor of the message.
          * @param title Title of the sponsored message.
          * @param buttonText Text for the message action button.
@@ -73424,7 +75944,7 @@ public class TdApi {
          */
         public long userId;
         /**
-         * Text to show along with the gift codes; 0-getOption(&quot;gift_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, and CustomEmoji entities are allowed.
+         * Text to show along with the gift codes; 0-getOption(&quot;gift_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities are allowed.
          */
         public FormattedText text;
 
@@ -73440,7 +75960,7 @@ public class TdApi {
          * @param currency ISO 4217 currency code of the payment currency.
          * @param amount Paid amount, in the smallest units of the currency.
          * @param userId Identifiers of the user which will receive Telegram Premium.
-         * @param text Text to show along with the gift codes; 0-getOption(&quot;gift_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, and CustomEmoji entities are allowed.
+         * @param text Text to show along with the gift codes; 0-getOption(&quot;gift_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities are allowed.
          */
         public StorePaymentPurposePremiumGift(String currency, long amount, long userId, FormattedText text) {
             this.currency = currency;
@@ -73484,7 +76004,7 @@ public class TdApi {
          */
         public long[] userIds;
         /**
-         * Text to show along with the gift codes; 0-getOption(&quot;gift_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, and CustomEmoji entities are allowed.
+         * Text to show along with the gift codes; 0-getOption(&quot;gift_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities are allowed.
          */
         public FormattedText text;
 
@@ -73501,7 +76021,7 @@ public class TdApi {
          * @param currency ISO 4217 currency code of the payment currency.
          * @param amount Paid amount, in the smallest units of the currency.
          * @param userIds Identifiers of the users which can activate the gift codes.
-         * @param text Text to show along with the gift codes; 0-getOption(&quot;gift_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, and CustomEmoji entities are allowed.
+         * @param text Text to show along with the gift codes; 0-getOption(&quot;gift_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities are allowed.
          */
         public StorePaymentPurposePremiumGiftCodes(long boostedChatId, String currency, long amount, long[] userIds, FormattedText text) {
             this.boostedChatId = boostedChatId;
@@ -76414,7 +78934,7 @@ public class TdApi {
      */
     public static class SuggestedActionSetLoginEmailAddress extends SuggestedAction {
         /**
-         * True, if the suggested action can be hidden using hideSuggestedAction. Otherwise, the user must not be able to use the app without setting up the email address.
+         * True, if the suggested action can be hidden using hideSuggestedAction. Otherwise, the user must not be able to use the application without setting up the email address.
          */
         public boolean canBeHidden;
 
@@ -76427,7 +78947,7 @@ public class TdApi {
         /**
          * Suggests the user to add login email address. Call isLoginEmailAddressRequired, and then setLoginEmailAddress or checkLoginEmailAddressCode to change the login email address.
          *
-         * @param canBeHidden True, if the suggested action can be hidden using hideSuggestedAction. Otherwise, the user must not be able to use the app without setting up the email address.
+         * @param canBeHidden True, if the suggested action can be hidden using hideSuggestedAction. Otherwise, the user must not be able to use the application without setting up the email address.
          */
         public SuggestedActionSetLoginEmailAddress(boolean canBeHidden) {
             this.canBeHidden = canBeHidden;
@@ -76837,7 +79357,7 @@ public class TdApi {
          */
         public int date;
         /**
-         * Status of the current user in the supergroup or channel; custom title will always be empty.
+         * Status of the current user in the supergroup or channel.
          */
         public ChatMemberStatus status;
         /**
@@ -76937,7 +79457,7 @@ public class TdApi {
          * @param id Supergroup or channel identifier.
          * @param usernames Usernames of the supergroup or channel; may be null.
          * @param date Point in time (Unix timestamp) when the current user joined, or the point in time when the supergroup or channel was created, in case the user is not a member.
-         * @param status Status of the current user in the supergroup or channel; custom title will always be empty.
+         * @param status Status of the current user in the supergroup or channel.
          * @param memberCount Number of members in the supergroup or channel; 0 if unknown. Currently, it is guaranteed to be known only if the supergroup or channel was received through getChatSimilarChats, getChatsToPostStories, getCreatedPublicChats, getGroupsInCommon, getInactiveSupergroupChats, getRecommendedChats, getSuitableDiscussionChats, getUserPrivacySettingRules, getVideoChatAvailableParticipants, searchPublicChats, or in chatFolderInviteLinkInfo.missingChatIds, or in userFullInfo.personalChatId, or for chats with messages or stories from publicForwards and foundStories.
          * @param boostLevel Approximate boost level for the chat.
          * @param hasAutomaticTranslation True, if automatic translation of messages is enabled in the channel.
@@ -78083,7 +80603,7 @@ public class TdApi {
          */
         public int monthCount;
         /**
-         * Text to show to the user receiving Telegram Premium; 0-getOption(&quot;gift_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, and CustomEmoji entities are allowed.
+         * Text to show to the user receiving Telegram Premium; 0-getOption(&quot;gift_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities are allowed.
          */
         public FormattedText text;
 
@@ -78100,7 +80620,7 @@ public class TdApi {
          * @param amount Paid amount, in the smallest units of the currency.
          * @param userId Identifier of the user which will receive Telegram Premium.
          * @param monthCount Number of months the Telegram Premium subscription will be active for the user.
-         * @param text Text to show to the user receiving Telegram Premium; 0-getOption(&quot;gift_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, and CustomEmoji entities are allowed.
+         * @param text Text to show to the user receiving Telegram Premium; 0-getOption(&quot;gift_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities are allowed.
          */
         public TelegramPaymentPurposePremiumGift(String currency, long amount, long userId, int monthCount, FormattedText text) {
             this.currency = currency;
@@ -78149,7 +80669,7 @@ public class TdApi {
          */
         public int monthCount;
         /**
-         * Text to show along with the gift codes; 0-getOption(&quot;gift_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, and CustomEmoji entities are allowed.
+         * Text to show along with the gift codes; 0-getOption(&quot;gift_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities are allowed.
          */
         public FormattedText text;
 
@@ -78167,7 +80687,7 @@ public class TdApi {
          * @param amount Paid amount, in the smallest units of the currency.
          * @param userIds Identifiers of the users which can activate the gift codes.
          * @param monthCount Number of months the Telegram Premium subscription will be active for the users.
-         * @param text Text to show along with the gift codes; 0-getOption(&quot;gift_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, and CustomEmoji entities are allowed.
+         * @param text Text to show along with the gift codes; 0-getOption(&quot;gift_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities are allowed.
          */
         public TelegramPaymentPurposePremiumGiftCodes(long boostedChatId, String currency, long amount, long[] userIds, int monthCount, FormattedText text) {
             this.boostedChatId = boostedChatId;
@@ -78865,6 +81385,136 @@ public class TdApi {
     }
 
     /**
+     * Describes a style that can be used to compose a text.
+     */
+    public static class TextCompositionStyle extends Object {
+        /**
+         * Name of the style.
+         */
+        public String name;
+        /**
+         * Identifier of the custom emoji corresponding to the style; 0 if none.
+         */
+        public long customEmojiId;
+        /**
+         * Title of the style in the user application's language.
+         */
+        public String title;
+        /**
+         * True, if the style is created by a user.
+         */
+        public boolean isCustom;
+        /**
+         * True, if the user is creator of the style.
+         */
+        public boolean isCreator;
+        /**
+         * Number of users that installed the style; for created custom styles only; 0 if unknown.
+         */
+        public int installCount;
+        /**
+         * Prompt of the style; for created custom styles only.
+         */
+        public String prompt;
+        /**
+         * User identifier of the creator of the style; 0 if none of unknown.
+         */
+        public long creatorUserId;
+        /**
+         * Example of the style usage in English; may be null if unknown.
+         */
+        @Nullable public TextCompositionStyleExample englishExample;
+
+        /**
+         * Describes a style that can be used to compose a text.
+         */
+        public TextCompositionStyle() {
+        }
+
+        /**
+         * Describes a style that can be used to compose a text.
+         *
+         * @param name Name of the style.
+         * @param customEmojiId Identifier of the custom emoji corresponding to the style; 0 if none.
+         * @param title Title of the style in the user application's language.
+         * @param isCustom True, if the style is created by a user.
+         * @param isCreator True, if the user is creator of the style.
+         * @param installCount Number of users that installed the style; for created custom styles only; 0 if unknown.
+         * @param prompt Prompt of the style; for created custom styles only.
+         * @param creatorUserId User identifier of the creator of the style; 0 if none of unknown.
+         * @param englishExample Example of the style usage in English; may be null if unknown.
+         */
+        public TextCompositionStyle(String name, long customEmojiId, String title, boolean isCustom, boolean isCreator, int installCount, String prompt, long creatorUserId, TextCompositionStyleExample englishExample) {
+            this.name = name;
+            this.customEmojiId = customEmojiId;
+            this.title = title;
+            this.isCustom = isCustom;
+            this.isCreator = isCreator;
+            this.installCount = installCount;
+            this.prompt = prompt;
+            this.creatorUserId = creatorUserId;
+            this.englishExample = englishExample;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -171516397;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Contains an example of text composition style usage.
+     */
+    public static class TextCompositionStyleExample extends Object {
+        /**
+         * Source text.
+         */
+        public FormattedText sourceText;
+        /**
+         * The text after the style was applied to the source text.
+         */
+        public FormattedText resultText;
+
+        /**
+         * Contains an example of text composition style usage.
+         */
+        public TextCompositionStyleExample() {
+        }
+
+        /**
+         * Contains an example of text composition style usage.
+         *
+         * @param sourceText Source text.
+         * @param resultText The text after the style was applied to the source text.
+         */
+        public TextCompositionStyleExample(FormattedText sourceText, FormattedText resultText) {
+            this.sourceText = sourceText;
+            this.resultText = resultText;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -43329922;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
      * Contains a list of text entities.
      */
     public static class TextEntities extends Object {
@@ -78983,7 +81633,8 @@ public class TdApi {
             TextEntityTypeTextUrl.CONSTRUCTOR,
             TextEntityTypeMentionName.CONSTRUCTOR,
             TextEntityTypeCustomEmoji.CONSTRUCTOR,
-            TextEntityTypeMediaTimestamp.CONSTRUCTOR
+            TextEntityTypeMediaTimestamp.CONSTRUCTOR,
+            TextEntityTypeDateTime.CONSTRUCTOR
         })
         public @interface Constructors {}
 
@@ -79616,6 +82267,50 @@ public class TdApi {
     }
 
     /**
+     * A date and time.
+     */
+    public static class TextEntityTypeDateTime extends TextEntityType {
+        /**
+         * Point in time (Unix timestamp) representing the date and time.
+         */
+        public int unixTime;
+        /**
+         * Date and time formatting type; may be null if none and the original text must not be changed.
+         */
+        @Nullable public DateTimeFormattingType formattingType;
+
+        /**
+         * A date and time.
+         */
+        public TextEntityTypeDateTime() {
+        }
+
+        /**
+         * A date and time.
+         *
+         * @param unixTime Point in time (Unix timestamp) representing the date and time.
+         * @param formattingType Date and time formatting type; may be null if none and the original text must not be changed.
+         */
+        public TextEntityTypeDateTime(int unixTime, DateTimeFormattingType formattingType) {
+            this.unixTime = unixTime;
+            this.formattingType = formattingType;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -1544268588;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
      * This class is an abstract base class.
      * Describes the way the text needs to be parsed for text entities.
      */
@@ -79711,7 +82406,7 @@ public class TdApi {
      */
     public static class TextQuote extends Object {
         /**
-         * Text of the quote. Only Bold, Italic, Underline, Strikethrough, Spoiler, and CustomEmoji entities can be present in the text.
+         * Text of the quote. Only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities can be present in the text.
          */
         public FormattedText text;
         /**
@@ -79732,7 +82427,7 @@ public class TdApi {
         /**
          * Describes manually or automatically chosen quote from another message.
          *
-         * @param text Text of the quote. Only Bold, Italic, Underline, Strikethrough, Spoiler, and CustomEmoji entities can be present in the text.
+         * @param text Text of the quote. Only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities can be present in the text.
          * @param position Approximate quote position in the original message in UTF-16 code units as specified by the message sender.
          * @param isManual True, if the quote was manually chosen by the message sender.
          */
@@ -80905,6 +83600,7 @@ public class TdApi {
             TopChatCategoryGroups.CONSTRUCTOR,
             TopChatCategoryChannels.CONSTRUCTOR,
             TopChatCategoryInlineBots.CONSTRUCTOR,
+            TopChatCategoryGuestBots.CONSTRUCTOR,
             TopChatCategoryWebAppBots.CONSTRUCTOR,
             TopChatCategoryCalls.CONSTRUCTOR,
             TopChatCategoryForwardChats.CONSTRUCTOR
@@ -81039,6 +83735,31 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = 377023356;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * A category containing frequently used chats with bots, which were used as guest bots.
+     */
+    public static class TopChatCategoryGuestBots extends TopChatCategory {
+
+        /**
+         * A category containing frequently used chats with bots, which were used as guest bots.
+         */
+        public TopChatCategoryGuestBots() {
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -1792882579;
 
         /**
          * @return this.CONSTRUCTOR
@@ -81380,6 +84101,7 @@ public class TdApi {
             UpdateMessageContentOpened.CONSTRUCTOR,
             UpdateMessageMentionRead.CONSTRUCTOR,
             UpdateMessageUnreadReactions.CONSTRUCTOR,
+            UpdateMessageContainsUnreadPollVotes.CONSTRUCTOR,
             UpdateMessageFactCheck.CONSTRUCTOR,
             UpdateMessageSuggestedPostInfo.CONSTRUCTOR,
             UpdateMessageLiveLocationViewed.CONSTRUCTOR,
@@ -81409,6 +84131,7 @@ public class TdApi {
             UpdateChatTheme.CONSTRUCTOR,
             UpdateChatUnreadMentionCount.CONSTRUCTOR,
             UpdateChatUnreadReactionCount.CONSTRUCTOR,
+            UpdateChatUnreadPollVoteCount.CONSTRUCTOR,
             UpdateChatVideoChat.CONSTRUCTOR,
             UpdateChatDefaultDisableNotification.CONSTRUCTOR,
             UpdateChatHasProtectedContent.CONSTRUCTOR,
@@ -81447,6 +84170,7 @@ public class TdApi {
             UpdateBasicGroupFullInfo.CONSTRUCTOR,
             UpdateSupergroupFullInfo.CONSTRUCTOR,
             UpdateServiceNotification.CONSTRUCTOR,
+            UpdateNewOauthRequest.CONSTRUCTOR,
             UpdateFile.CONSTRUCTOR,
             UpdateFileGenerationStart.CONSTRUCTOR,
             UpdateFileGenerationStop.CONSTRUCTOR,
@@ -81517,6 +84241,7 @@ public class TdApi {
             UpdateStakeDiceState.CONSTRUCTOR,
             UpdateAnimatedEmojiMessageClicked.CONSTRUCTOR,
             UpdateAnimationSearchParameters.CONSTRUCTOR,
+            UpdateTextCompositionStyles.CONSTRUCTOR,
             UpdateSuggestedActions.CONSTRUCTOR,
             UpdateSpeedLimitNotification.CONSTRUCTOR,
             UpdateContactCloseBirthdays.CONSTRUCTOR,
@@ -81527,6 +84252,7 @@ public class TdApi {
             UpdateBusinessMessagesDeleted.CONSTRUCTOR,
             UpdateNewInlineQuery.CONSTRUCTOR,
             UpdateNewChosenInlineResult.CONSTRUCTOR,
+            UpdateNewGuestQuery.CONSTRUCTOR,
             UpdateNewCallbackQuery.CONSTRUCTOR,
             UpdateNewInlineCallbackQuery.CONSTRUCTOR,
             UpdateNewBusinessCallbackQuery.CONSTRUCTOR,
@@ -81536,6 +84262,7 @@ public class TdApi {
             UpdateNewCustomQuery.CONSTRUCTOR,
             UpdatePoll.CONSTRUCTOR,
             UpdatePollAnswer.CONSTRUCTOR,
+            UpdateManagedBot.CONSTRUCTOR,
             UpdateChatMember.CONSTRUCTOR,
             UpdateNewChatJoinRequest.CONSTRUCTOR,
             UpdateChatBoost.CONSTRUCTOR,
@@ -82089,7 +84816,7 @@ public class TdApi {
          */
         public UnreadReaction[] unreadReactions;
         /**
-         * The new number of messages with unread reactions left in the chat.
+         * The new number of messages with unread reactions in the chat.
          */
         public int unreadReactionCount;
 
@@ -82105,7 +84832,7 @@ public class TdApi {
          * @param chatId Chat identifier.
          * @param messageId Message identifier.
          * @param unreadReactions The new list of unread reactions.
-         * @param unreadReactionCount The new number of messages with unread reactions left in the chat.
+         * @param unreadReactionCount The new number of messages with unread reactions in the chat.
          */
         public UpdateMessageUnreadReactions(long chatId, long messageId, UnreadReaction[] unreadReactions, int unreadReactionCount) {
             this.chatId = chatId;
@@ -82118,6 +84845,62 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = 942840008;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Unread votes were added or removed from a poll message.
+     */
+    public static class UpdateMessageContainsUnreadPollVotes extends Update {
+        /**
+         * Chat identifier.
+         */
+        public long chatId;
+        /**
+         * Message identifier.
+         */
+        public long messageId;
+        /**
+         * True, if the message is a poll message with unread votes.
+         */
+        public boolean containsUnreadPollVotes;
+        /**
+         * The new number of messages with unread poll votes in the chat.
+         */
+        public int unreadPollVoteCount;
+
+        /**
+         * Unread votes were added or removed from a poll message.
+         */
+        public UpdateMessageContainsUnreadPollVotes() {
+        }
+
+        /**
+         * Unread votes were added or removed from a poll message.
+         *
+         * @param chatId Chat identifier.
+         * @param messageId Message identifier.
+         * @param containsUnreadPollVotes True, if the message is a poll message with unread votes.
+         * @param unreadPollVoteCount The new number of messages with unread poll votes in the chat.
+         */
+        public UpdateMessageContainsUnreadPollVotes(long chatId, long messageId, boolean containsUnreadPollVotes, int unreadPollVoteCount) {
+            this.chatId = chatId;
+            this.messageId = messageId;
+            this.containsUnreadPollVotes = containsUnreadPollVotes;
+            this.unreadPollVoteCount = unreadPollVoteCount;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 1708270285;
 
         /**
          * @return this.CONSTRUCTOR
@@ -83233,7 +86016,7 @@ public class TdApi {
     }
 
     /**
-     * The default chat reply markup was changed. Can occur because new messages with reply markup were received or because an old reply markup was hidden by the user.
+     * The chat reply markup was changed.
      */
     public static class UpdateChatReplyMarkup extends Update {
         /**
@@ -83241,31 +86024,31 @@ public class TdApi {
          */
         public long chatId;
         /**
-         * Identifier of the message from which reply markup needs to be used; 0 if there is no default custom reply markup in the chat.
+         * The message from which the reply markup must be used; may be null if there is no default reply markup in the chat.
          */
-        public long replyMarkupMessageId;
+        @Nullable public Message replyMarkupMessage;
 
         /**
-         * The default chat reply markup was changed. Can occur because new messages with reply markup were received or because an old reply markup was hidden by the user.
+         * The chat reply markup was changed.
          */
         public UpdateChatReplyMarkup() {
         }
 
         /**
-         * The default chat reply markup was changed. Can occur because new messages with reply markup were received or because an old reply markup was hidden by the user.
+         * The chat reply markup was changed.
          *
          * @param chatId Chat identifier.
-         * @param replyMarkupMessageId Identifier of the message from which reply markup needs to be used; 0 if there is no default custom reply markup in the chat.
+         * @param replyMarkupMessage The message from which the reply markup must be used; may be null if there is no default reply markup in the chat.
          */
-        public UpdateChatReplyMarkup(long chatId, long replyMarkupMessageId) {
+        public UpdateChatReplyMarkup(long chatId, Message replyMarkupMessage) {
             this.chatId = chatId;
-            this.replyMarkupMessageId = replyMarkupMessageId;
+            this.replyMarkupMessage = replyMarkupMessage;
         }
 
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = 1309386144;
+        public static final int CONSTRUCTOR = -714111887;
 
         /**
          * @return this.CONSTRUCTOR
@@ -83442,6 +86225,50 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = -2124399395;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * The chat unreadPollVoteCount has changed.
+     */
+    public static class UpdateChatUnreadPollVoteCount extends Update {
+        /**
+         * Chat identifier.
+         */
+        public long chatId;
+        /**
+         * The number of messages with unread poll votes left in the chat.
+         */
+        public int unreadPollVoteCount;
+
+        /**
+         * The chat unreadPollVoteCount has changed.
+         */
+        public UpdateChatUnreadPollVoteCount() {
+        }
+
+        /**
+         * The chat unreadPollVoteCount has changed.
+         *
+         * @param chatId Chat identifier.
+         * @param unreadPollVoteCount The number of messages with unread poll votes left in the chat.
+         */
+        public UpdateChatUnreadPollVoteCount(long chatId, int unreadPollVoteCount) {
+            this.chatId = chatId;
+            this.unreadPollVoteCount = unreadPollVoteCount;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -1720127450;
 
         /**
          * @return this.CONSTRUCTOR
@@ -84291,6 +87118,10 @@ public class TdApi {
          */
         public int unreadReactionCount;
         /**
+         * Number of messages with unread poll votes in the topic.
+         */
+        public int unreadPollVoteCount;
+        /**
          * Notification settings for the topic.
          */
         public ChatNotificationSettings notificationSettings;
@@ -84315,10 +87146,11 @@ public class TdApi {
          * @param lastReadOutboxMessageId Identifier of the last read outgoing message.
          * @param unreadMentionCount Number of unread messages with a mention/reply in the topic.
          * @param unreadReactionCount Number of messages with unread reactions in the topic.
+         * @param unreadPollVoteCount Number of messages with unread poll votes in the topic.
          * @param notificationSettings Notification settings for the topic.
          * @param draftMessage A draft of a message in the topic; may be null if none.
          */
-        public UpdateForumTopic(long chatId, int forumTopicId, boolean isPinned, long lastReadInboxMessageId, long lastReadOutboxMessageId, int unreadMentionCount, int unreadReactionCount, ChatNotificationSettings notificationSettings, DraftMessage draftMessage) {
+        public UpdateForumTopic(long chatId, int forumTopicId, boolean isPinned, long lastReadInboxMessageId, long lastReadOutboxMessageId, int unreadMentionCount, int unreadReactionCount, int unreadPollVoteCount, ChatNotificationSettings notificationSettings, DraftMessage draftMessage) {
             this.chatId = chatId;
             this.forumTopicId = forumTopicId;
             this.isPinned = isPinned;
@@ -84326,6 +87158,7 @@ public class TdApi {
             this.lastReadOutboxMessageId = lastReadOutboxMessageId;
             this.unreadMentionCount = unreadMentionCount;
             this.unreadReactionCount = unreadReactionCount;
+            this.unreadPollVoteCount = unreadPollVoteCount;
             this.notificationSettings = notificationSettings;
             this.draftMessage = draftMessage;
         }
@@ -84333,7 +87166,7 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = 1803842990;
+        public static final int CONSTRUCTOR = -1851967925;
 
         /**
          * @return this.CONSTRUCTOR
@@ -85162,6 +87995,56 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = 1318622637;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * An OAuth authorization request was received.
+     */
+    public static class UpdateNewOauthRequest extends Update {
+        /**
+         * A domain of the URL where the user authorizes.
+         */
+        public String domain;
+        /**
+         * Human-readable description of a country and a region from which the authorization is performed, based on the IP address.
+         */
+        public String location;
+        /**
+         * The URL to pass to getOauthLinkInfo; the link is valid for 60 seconds.
+         */
+        public String url;
+
+        /**
+         * An OAuth authorization request was received.
+         */
+        public UpdateNewOauthRequest() {
+        }
+
+        /**
+         * An OAuth authorization request was received.
+         *
+         * @param domain A domain of the URL where the user authorizes.
+         * @param location Human-readable description of a country and a region from which the authorization is performed, based on the IP address.
+         * @param url The URL to pass to getOauthLinkInfo; the link is valid for 60 seconds.
+         */
+        public UpdateNewOauthRequest(String domain, String location, String url) {
+            this.domain = domain;
+            this.location = location;
+            this.url = url;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 248383005;
 
         /**
          * @return this.CONSTRUCTOR
@@ -87081,7 +89964,7 @@ public class TdApi {
      */
     public static class UpdateAccentColors extends Update {
         /**
-         * Information about supported colors; colors with identifiers 0 (red), 1 (orange), 2 (purple/violet), 3 (green), 4 (cyan), 5 (blue), 6 (pink) must always be supported and aren't included in the list. The exact colors for the accent colors with identifiers 0-6 must be taken from the app theme.
+         * Information about supported colors; colors with identifiers 0 (red), 1 (orange), 2 (purple/violet), 3 (green), 4 (cyan), 5 (blue), 6 (pink) must always be supported and aren't included in the list. The exact colors for the accent colors with identifiers 0-6 must be taken from the application theme.
          */
         public AccentColor[] colors;
         /**
@@ -87098,7 +89981,7 @@ public class TdApi {
         /**
          * The list of supported accent colors has changed.
          *
-         * @param colors Information about supported colors; colors with identifiers 0 (red), 1 (orange), 2 (purple/violet), 3 (green), 4 (cyan), 5 (blue), 6 (pink) must always be supported and aren't included in the list. The exact colors for the accent colors with identifiers 0-6 must be taken from the app theme.
+         * @param colors Information about supported colors; colors with identifiers 0 (red), 1 (orange), 2 (purple/violet), 3 (green), 4 (cyan), 5 (blue), 6 (pink) must always be supported and aren't included in the list. The exact colors for the accent colors with identifiers 0-6 must be taken from the application theme.
          * @param availableAccentColorIds The list of accent color identifiers, which can be set through setAccentColor and setChatAccentColor. The colors must be shown in the specified order.
          */
         public UpdateAccentColors(AccentColor[] colors, int[] availableAccentColorIds) {
@@ -88211,6 +91094,44 @@ public class TdApi {
     }
 
     /**
+     * The styles supported for text composition have changed.
+     */
+    public static class UpdateTextCompositionStyles extends Update {
+        /**
+         * The new list of supported styles.
+         */
+        public TextCompositionStyle[] styles;
+
+        /**
+         * The styles supported for text composition have changed.
+         */
+        public UpdateTextCompositionStyles() {
+        }
+
+        /**
+         * The styles supported for text composition have changed.
+         *
+         * @param styles The new list of supported styles.
+         */
+        public UpdateTextCompositionStyles(TextCompositionStyle[] styles) {
+            this.styles = styles;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -481267771;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
      * The list of suggested to the user actions has changed.
      */
     public static class UpdateSuggestedActions extends Update {
@@ -88670,6 +91591,56 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = -884191395;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * A new incoming guest query; for bots only.
+     */
+    public static class UpdateNewGuestQuery extends Update {
+        /**
+         * Unique query identifier.
+         */
+        public long id;
+        /**
+         * The message with the query.
+         */
+        public Message message;
+        /**
+         * The list of reference messages.
+         */
+        public Message[] referenceMessages;
+
+        /**
+         * A new incoming guest query; for bots only.
+         */
+        public UpdateNewGuestQuery() {
+        }
+
+        /**
+         * A new incoming guest query; for bots only.
+         *
+         * @param id Unique query identifier.
+         * @param message The message with the query.
+         * @param referenceMessages The list of reference messages.
+         */
+        public UpdateNewGuestQuery(long id, Message message, Message[] referenceMessages) {
+            this.id = id;
+            this.message = message;
+            this.referenceMessages = referenceMessages;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 1489540905;
 
         /**
          * @return this.CONSTRUCTOR
@@ -89147,9 +92118,13 @@ public class TdApi {
          */
         public MessageSender voterId;
         /**
-         * 0-based identifiers of answer options, chosen by the user.
+         * Unique identifiers of answer options, that were chosen by the user.
          */
-        public int[] optionIds;
+        public String[] optionIds;
+        /**
+         * 0-based identifiers of answer options, that were chosen by the user.
+         */
+        public int[] optionPositions;
 
         /**
          * A user changed the answer to a poll; for bots only.
@@ -89162,18 +92137,64 @@ public class TdApi {
          *
          * @param pollId Unique poll identifier.
          * @param voterId Identifier of the message sender that changed the answer to the poll.
-         * @param optionIds 0-based identifiers of answer options, chosen by the user.
+         * @param optionIds Unique identifiers of answer options, that were chosen by the user.
+         * @param optionPositions 0-based identifiers of answer options, that were chosen by the user.
          */
-        public UpdatePollAnswer(long pollId, MessageSender voterId, int[] optionIds) {
+        public UpdatePollAnswer(long pollId, MessageSender voterId, String[] optionIds, int[] optionPositions) {
             this.pollId = pollId;
             this.voterId = voterId;
             this.optionIds = optionIds;
+            this.optionPositions = optionPositions;
         }
 
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = 1104905219;
+        public static final int CONSTRUCTOR = 1334893971;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * A bot that can be managed by the current bot was created or updated; for bots only.
+     */
+    public static class UpdateManagedBot extends Update {
+        /**
+         * Identifier of the user who created the bot.
+         */
+        public long userId;
+        /**
+         * Identifier of the created managed bot.
+         */
+        public long botUserId;
+
+        /**
+         * A bot that can be managed by the current bot was created or updated; for bots only.
+         */
+        public UpdateManagedBot() {
+        }
+
+        /**
+         * A bot that can be managed by the current bot was created or updated; for bots only.
+         *
+         * @param userId Identifier of the user who created the bot.
+         * @param botUserId Identifier of the created managed bot.
+         */
+        public UpdateManagedBot(long userId, long botUserId) {
+            this.userId = userId;
+            this.botUserId = botUserId;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 1388678066;
 
         /**
          * @return this.CONSTRUCTOR
@@ -90037,7 +93058,7 @@ public class TdApi {
     }
 
     /**
-     * The rarity is represented as the numeric frequence of the model.
+     * The rarity is represented as the numeric frequency of the model.
      */
     public static class UpgradedGiftAttributeRarityPerMille extends UpgradedGiftAttributeRarity {
         /**
@@ -90046,13 +93067,13 @@ public class TdApi {
         public int perMille;
 
         /**
-         * The rarity is represented as the numeric frequence of the model.
+         * The rarity is represented as the numeric frequency of the model.
          */
         public UpgradedGiftAttributeRarityPerMille() {
         }
 
         /**
-         * The rarity is represented as the numeric frequence of the model.
+         * The rarity is represented as the numeric frequency of the model.
          *
          * @param perMille The number of upgraded gifts that receive this attribute for each 1000 gifts upgraded; if 0, then it can be shown as &quot;&lt;0.1%&quot;.
          */
@@ -91330,6 +94351,10 @@ public class TdApi {
          */
         public boolean setChatBackground;
         /**
+         * True, if the user uses an unofficial application that poses a security risk.
+         */
+        public boolean usesUnofficialApp;
+        /**
          * A short user bio; may be null for bots.
          */
         @Nullable public FormattedText bio;
@@ -91420,6 +94445,7 @@ public class TdApi {
          * @param hasSponsoredMessagesEnabled True, if the user always enabled sponsored messages; known only for the current user.
          * @param needPhoneNumberPrivacyException True, if the current user needs to explicitly allow to share their phone number with the user when the method addContact is used.
          * @param setChatBackground True, if the user set chat background for both chat users and it wasn't reverted yet.
+         * @param usesUnofficialApp True, if the user uses an unofficial application that poses a security risk.
          * @param bio A short user bio; may be null for bots.
          * @param birthdate Birthdate of the user; may be null if unknown.
          * @param personalChatId Identifier of the personal chat of the user; 0 if none.
@@ -91438,7 +94464,7 @@ public class TdApi {
          * @param businessInfo Information about business settings for Telegram Business accounts; may be null if none.
          * @param botInfo For bots, information about the bot; may be null if the user isn't a bot.
          */
-        public UserFullInfo(ChatPhoto personalPhoto, ChatPhoto photo, ChatPhoto publicPhoto, BlockList blockList, boolean canBeCalled, boolean supportsVideoCalls, boolean hasPrivateCalls, boolean hasPrivateForwards, boolean hasRestrictedVoiceAndVideoNoteMessages, boolean hasPostedToProfileStories, boolean hasSponsoredMessagesEnabled, boolean needPhoneNumberPrivacyException, boolean setChatBackground, FormattedText bio, Birthdate birthdate, long personalChatId, int giftCount, int groupInCommonCount, long incomingPaidMessageStarCount, long outgoingPaidMessageStarCount, GiftSettings giftSettings, BotVerification botVerification, ProfileTab mainProfileTab, Audio firstProfileAudio, UserRating rating, UserRating pendingRating, int pendingRatingDate, FormattedText note, BusinessInfo businessInfo, BotInfo botInfo) {
+        public UserFullInfo(ChatPhoto personalPhoto, ChatPhoto photo, ChatPhoto publicPhoto, BlockList blockList, boolean canBeCalled, boolean supportsVideoCalls, boolean hasPrivateCalls, boolean hasPrivateForwards, boolean hasRestrictedVoiceAndVideoNoteMessages, boolean hasPostedToProfileStories, boolean hasSponsoredMessagesEnabled, boolean needPhoneNumberPrivacyException, boolean setChatBackground, boolean usesUnofficialApp, FormattedText bio, Birthdate birthdate, long personalChatId, int giftCount, int groupInCommonCount, long incomingPaidMessageStarCount, long outgoingPaidMessageStarCount, GiftSettings giftSettings, BotVerification botVerification, ProfileTab mainProfileTab, Audio firstProfileAudio, UserRating rating, UserRating pendingRating, int pendingRatingDate, FormattedText note, BusinessInfo businessInfo, BotInfo botInfo) {
             this.personalPhoto = personalPhoto;
             this.photo = photo;
             this.publicPhoto = publicPhoto;
@@ -91452,6 +94478,7 @@ public class TdApi {
             this.hasSponsoredMessagesEnabled = hasSponsoredMessagesEnabled;
             this.needPhoneNumberPrivacyException = needPhoneNumberPrivacyException;
             this.setChatBackground = setChatBackground;
+            this.usesUnofficialApp = usesUnofficialApp;
             this.bio = bio;
             this.birthdate = birthdate;
             this.personalChatId = personalChatId;
@@ -91474,7 +94501,7 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = 2128551190;
+        public static final int CONSTRUCTOR = -1176229971;
 
         /**
          * @return this.CONSTRUCTOR
@@ -92789,6 +95816,10 @@ public class TdApi {
          */
         public boolean allowsUsersToCreateTopics;
         /**
+         * True, if the bot can manage other bots.
+         */
+        public boolean canManageBots;
+        /**
          * True, if the bot supports inline queries.
          */
         public boolean isInline;
@@ -92797,11 +95828,15 @@ public class TdApi {
          */
         public String inlineQueryPlaceholder;
         /**
+         * True, if the bot can be queried by username from any non-secret chat.
+         */
+        public boolean supportsGuestQueries;
+        /**
          * True, if the location of the user is expected to be sent with every inline query to this bot.
          */
         public boolean needLocation;
         /**
-         * True, if the bot supports connection to Telegram Business accounts.
+         * True, if the bot supports connection to user accounts for chat automation.
          */
         public boolean canConnectToBusiness;
         /**
@@ -92828,22 +95863,26 @@ public class TdApi {
          * @param hasMainWebApp True, if the bot has the main Web App.
          * @param hasTopics True, if the bot has topics.
          * @param allowsUsersToCreateTopics True, if users can create and delete topics in the chat with the bot.
+         * @param canManageBots True, if the bot can manage other bots.
          * @param isInline True, if the bot supports inline queries.
          * @param inlineQueryPlaceholder Placeholder for inline queries (displayed on the application input field).
+         * @param supportsGuestQueries True, if the bot can be queried by username from any non-secret chat.
          * @param needLocation True, if the location of the user is expected to be sent with every inline query to this bot.
-         * @param canConnectToBusiness True, if the bot supports connection to Telegram Business accounts.
+         * @param canConnectToBusiness True, if the bot supports connection to user accounts for chat automation.
          * @param canBeAddedToAttachmentMenu True, if the bot can be added to attachment or side menu.
          * @param activeUserCount The number of recently active users of the bot.
          */
-        public UserTypeBot(boolean canBeEdited, boolean canJoinGroups, boolean canReadAllGroupMessages, boolean hasMainWebApp, boolean hasTopics, boolean allowsUsersToCreateTopics, boolean isInline, String inlineQueryPlaceholder, boolean needLocation, boolean canConnectToBusiness, boolean canBeAddedToAttachmentMenu, int activeUserCount) {
+        public UserTypeBot(boolean canBeEdited, boolean canJoinGroups, boolean canReadAllGroupMessages, boolean hasMainWebApp, boolean hasTopics, boolean allowsUsersToCreateTopics, boolean canManageBots, boolean isInline, String inlineQueryPlaceholder, boolean supportsGuestQueries, boolean needLocation, boolean canConnectToBusiness, boolean canBeAddedToAttachmentMenu, int activeUserCount) {
             this.canBeEdited = canBeEdited;
             this.canJoinGroups = canJoinGroups;
             this.canReadAllGroupMessages = canReadAllGroupMessages;
             this.hasMainWebApp = hasMainWebApp;
             this.hasTopics = hasTopics;
             this.allowsUsersToCreateTopics = allowsUsersToCreateTopics;
+            this.canManageBots = canManageBots;
             this.isInline = isInline;
             this.inlineQueryPlaceholder = inlineQueryPlaceholder;
+            this.supportsGuestQueries = supportsGuestQueries;
             this.needLocation = needLocation;
             this.canConnectToBusiness = canConnectToBusiness;
             this.canBeAddedToAttachmentMenu = canBeAddedToAttachmentMenu;
@@ -92853,7 +95892,7 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = -890772118;
+        public static final int CONSTRUCTOR = -1040936013;
 
         /**
          * @return this.CONSTRUCTOR
@@ -93416,7 +96455,7 @@ public class TdApi {
     }
 
     /**
-     * Describes an advertisent to be shown while a video from a message is watched.
+     * Describes an advertisement to be shown while a video from a message is watched.
      */
     public static class VideoMessageAdvertisement extends Object {
         /**
@@ -93453,13 +96492,13 @@ public class TdApi {
         public String additionalInfo;
 
         /**
-         * Describes an advertisent to be shown while a video from a message is watched.
+         * Describes an advertisement to be shown while a video from a message is watched.
          */
         public VideoMessageAdvertisement() {
         }
 
         /**
-         * Describes an advertisent to be shown while a video from a message is watched.
+         * Describes an advertisement to be shown while a video from a message is watched.
          *
          * @param uniqueId Unique identifier of this result.
          * @param text Text of the advertisement.
@@ -94105,6 +97144,68 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = -646618416;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Accepts an OAuth authorization request. Returns an HTTP URL to open after successful authorization. May return an empty link if just a toast about successful login has to be shown.
+     *
+     * <p> Returns {@link HttpUrl HttpUrl} </p>
+     */
+    public static class AcceptOauthRequest extends Function<HttpUrl> {
+        /**
+         * URL of the OAuth deep link.
+         */
+        public String url;
+        /**
+         * The matching code chosen by the user.
+         */
+        public String matchCode;
+        /**
+         * Pass true if the current user allowed the bot that was returned in getOauthLinkInfo, to send them messages.
+         */
+        public boolean allowWriteAccess;
+        /**
+         * Pass true if the current user allowed the bot that was returned in getOauthLinkInfo, to access their phone number.
+         */
+        public boolean allowPhoneNumberAccess;
+
+        /**
+         * Default constructor for a function, which accepts an OAuth authorization request. Returns an HTTP URL to open after successful authorization. May return an empty link if just a toast about successful login has to be shown.
+         *
+         * <p> Returns {@link HttpUrl HttpUrl} </p>
+         */
+        public AcceptOauthRequest() {
+        }
+
+        /**
+         * Creates a function, which accepts an OAuth authorization request. Returns an HTTP URL to open after successful authorization. May return an empty link if just a toast about successful login has to be shown.
+         *
+         * <p> Returns {@link HttpUrl HttpUrl} </p>
+         *
+         * @param url URL of the OAuth deep link.
+         * @param matchCode The matching code chosen by the user.
+         * @param allowWriteAccess Pass true if the current user allowed the bot that was returned in getOauthLinkInfo, to send them messages.
+         * @param allowPhoneNumberAccess Pass true if the current user allowed the bot that was returned in getOauthLinkInfo, to access their phone number.
+         */
+        public AcceptOauthRequest(String url, String matchCode, boolean allowWriteAccess, boolean allowPhoneNumberAccess) {
+            this.url = url;
+            this.matchCode = matchCode;
+            this.allowWriteAccess = allowWriteAccess;
+            this.allowPhoneNumberAccess = allowPhoneNumberAccess;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -427442108;
 
         /**
          * @return this.CONSTRUCTOR
@@ -95217,15 +98318,83 @@ public class TdApi {
     }
 
     /**
+     * Adds an option to a poll.
+     *
+     * <p> Returns {@link Ok Ok} </p>
+     */
+    public static class AddPollOption extends Function<Ok> {
+        /**
+         * Identifier of the chat to which the poll belongs.
+         */
+        public long chatId;
+        /**
+         * Identifier of the message containing the poll. Use messagePoll.canAddOption to check whether an option can be added.
+         */
+        public long messageId;
+        /**
+         * The new option.
+         */
+        public InputPollOption option;
+
+        /**
+         * Default constructor for a function, which adds an option to a poll.
+         *
+         * <p> Returns {@link Ok Ok} </p>
+         */
+        public AddPollOption() {
+        }
+
+        /**
+         * Creates a function, which adds an option to a poll.
+         *
+         * <p> Returns {@link Ok Ok} </p>
+         *
+         * @param chatId Identifier of the chat to which the poll belongs.
+         * @param messageId Identifier of the message containing the poll. Use messagePoll.canAddOption to check whether an option can be added.
+         * @param option The new option.
+         */
+        public AddPollOption(long chatId, long messageId, InputPollOption option) {
+            this.chatId = chatId;
+            this.messageId = messageId;
+            this.option = option;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -382845167;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
      * Adds an audio file to the beginning of the profile audio files of the current user.
      *
      * <p> Returns {@link Ok Ok} </p>
      */
     public static class AddProfileAudio extends Function<Ok> {
         /**
-         * Identifier of the audio file to be added. The file must have been uploaded to the server.
+         * The audio file to be added.
          */
-        public int fileId;
+        public InputFile audio;
+        /**
+         * Duration of the audio, in seconds; may be replaced by the server; ignored for already uploaded files.
+         */
+        public int duration;
+        /**
+         * Title of the audio; 0-64 characters; may be replaced by the server; ignored for already uploaded files.
+         */
+        public String title;
+        /**
+         * Performer of the audio; 0-64 characters, may be replaced by the server; ignored for already uploaded files.
+         */
+        public String performer;
 
         /**
          * Default constructor for a function, which adds an audio file to the beginning of the profile audio files of the current user.
@@ -95240,16 +98409,22 @@ public class TdApi {
          *
          * <p> Returns {@link Ok Ok} </p>
          *
-         * @param fileId Identifier of the audio file to be added. The file must have been uploaded to the server.
+         * @param audio The audio file to be added.
+         * @param duration Duration of the audio, in seconds; may be replaced by the server; ignored for already uploaded files.
+         * @param title Title of the audio; 0-64 characters; may be replaced by the server; ignored for already uploaded files.
+         * @param performer Performer of the audio; 0-64 characters, may be replaced by the server; ignored for already uploaded files.
          */
-        public AddProfileAudio(int fileId) {
-            this.fileId = fileId;
+        public AddProfileAudio(InputFile audio, int duration, String title, String performer) {
+            this.audio = audio;
+            this.duration = duration;
+            this.title = title;
+            this.performer = performer;
         }
 
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = 393218847;
+        public static final int CONSTRUCTOR = 919192907;
 
         /**
          * @return this.CONSTRUCTOR
@@ -95274,6 +98449,10 @@ public class TdApi {
          * Pass true to immediately enable the proxy.
          */
         public boolean enable;
+        /**
+         * Comment to set for the proxy.
+         */
+        public String comment;
 
         /**
          * Default constructor for a function, which adds a proxy server for network requests. Can be called before authorization.
@@ -95290,16 +98469,18 @@ public class TdApi {
          *
          * @param proxy The proxy to add.
          * @param enable Pass true to immediately enable the proxy.
+         * @param comment Comment to set for the proxy.
          */
-        public AddProxy(Proxy proxy, boolean enable) {
+        public AddProxy(Proxy proxy, boolean enable, String comment) {
             this.proxy = proxy;
             this.enable = enable;
+            this.comment = comment;
         }
 
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = 471098860;
+        public static final int CONSTRUCTOR = 267660616;
 
         /**
          * @return this.CONSTRUCTOR
@@ -95785,6 +98966,50 @@ public class TdApi {
     }
 
     /**
+     * Adds a custom text composition style to the list of used by the user styles. May return an error with a message &quot;TONES_SAVED_TOO_MANY&quot; if the maximum number of added custom styles has been reached.
+     *
+     * <p> Returns {@link Ok Ok} </p>
+     */
+    public static class AddTextCompositionStyle extends Function<Ok> {
+        /**
+         * Name of the style.
+         */
+        public String name;
+
+        /**
+         * Default constructor for a function, which adds a custom text composition style to the list of used by the user styles. May return an error with a message &quot;TONES_SAVED_TOO_MANY&quot; if the maximum number of added custom styles has been reached.
+         *
+         * <p> Returns {@link Ok Ok} </p>
+         */
+        public AddTextCompositionStyle() {
+        }
+
+        /**
+         * Creates a function, which adds a custom text composition style to the list of used by the user styles. May return an error with a message &quot;TONES_SAVED_TOO_MANY&quot; if the maximum number of added custom styles has been reached.
+         *
+         * <p> Returns {@link Ok Ok} </p>
+         *
+         * @param name Name of the style.
+         */
+        public AddTextCompositionStyle(String name) {
+            this.name = name;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 1478640138;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
      * Allows the specified bot to send messages to the user.
      *
      * <p> Returns {@link Ok Ok} </p>
@@ -95997,6 +99222,56 @@ public class TdApi {
     }
 
     /**
+     * Sets the result of a guest query; for bots only.
+     *
+     * <p> Returns {@link InlineMessageId InlineMessageId} </p>
+     */
+    public static class AnswerGuestQuery extends Function<InlineMessageId> {
+        /**
+         * Identifier of the guest query.
+         */
+        public long guestQueryId;
+        /**
+         * The result of the query.
+         */
+        public InputInlineQueryResult result;
+
+        /**
+         * Default constructor for a function, which sets the result of a guest query; for bots only.
+         *
+         * <p> Returns {@link InlineMessageId InlineMessageId} </p>
+         */
+        public AnswerGuestQuery() {
+        }
+
+        /**
+         * Creates a function, which sets the result of a guest query; for bots only.
+         *
+         * <p> Returns {@link InlineMessageId InlineMessageId} </p>
+         *
+         * @param guestQueryId Identifier of the guest query.
+         * @param result The result of the query.
+         */
+        public AnswerGuestQuery(long guestQueryId, InputInlineQueryResult result) {
+            this.guestQueryId = guestQueryId;
+            this.result = result;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -41729622;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
      * Sets the result of an inline query; for bots only.
      *
      * <p> Returns {@link Ok Ok} </p>
@@ -96179,9 +99454,9 @@ public class TdApi {
     /**
      * Sets the result of interaction with a Web App and sends corresponding message on behalf of the user to the chat from which the query originated; for bots only.
      *
-     * <p> Returns {@link SentWebAppMessage SentWebAppMessage} </p>
+     * <p> Returns {@link InlineMessageId InlineMessageId} </p>
      */
-    public static class AnswerWebAppQuery extends Function<SentWebAppMessage> {
+    public static class AnswerWebAppQuery extends Function<InlineMessageId> {
         /**
          * Identifier of the Web App query.
          */
@@ -96194,7 +99469,7 @@ public class TdApi {
         /**
          * Default constructor for a function, which sets the result of interaction with a Web App and sends corresponding message on behalf of the user to the chat from which the query originated; for bots only.
          *
-         * <p> Returns {@link SentWebAppMessage SentWebAppMessage} </p>
+         * <p> Returns {@link InlineMessageId InlineMessageId} </p>
          */
         public AnswerWebAppQuery() {
         }
@@ -96202,7 +99477,7 @@ public class TdApi {
         /**
          * Creates a function, which sets the result of interaction with a Web App and sends corresponding message on behalf of the user to the chat from which the query originated; for bots only.
          *
-         * <p> Returns {@link SentWebAppMessage SentWebAppMessage} </p>
+         * <p> Returns {@link InlineMessageId InlineMessageId} </p>
          *
          * @param webAppQueryId Identifier of the Web App query.
          * @param result The result of the query.
@@ -96215,7 +99490,7 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = -1598776079;
+        public static final int CONSTRUCTOR = -1447316391;
 
         /**
          * @return this.CONSTRUCTOR
@@ -97458,6 +100733,10 @@ public class TdApi {
      */
     public static class CheckAuthenticationPremiumPurchase extends Function<Ok> {
         /**
+         * The number of days for which the Telegram Premium subscription will be granted.
+         */
+        public int premiumDayCount;
+        /**
          * ISO 4217 currency code of the payment currency.
          */
         public String currency;
@@ -97479,10 +100758,12 @@ public class TdApi {
          *
          * <p> Returns {@link Ok Ok} </p>
          *
+         * @param premiumDayCount The number of days for which the Telegram Premium subscription will be granted.
          * @param currency ISO 4217 currency code of the payment currency.
          * @param amount Paid amount, in the smallest units of the currency.
          */
-        public CheckAuthenticationPremiumPurchase(String currency, long amount) {
+        public CheckAuthenticationPremiumPurchase(int premiumDayCount, String currency, long amount) {
+            this.premiumDayCount = premiumDayCount;
             this.currency = currency;
             this.amount = amount;
         }
@@ -97490,7 +100771,51 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = 1588959934;
+        public static final int CONSTRUCTOR = 876306570;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Checks whether a username can be set for a new bot. Use checkChatUsername to check username for other chat types.
+     *
+     * <p> Returns {@link CheckChatUsernameResult CheckChatUsernameResult} </p>
+     */
+    public static class CheckBotUsername extends Function<CheckChatUsernameResult> {
+        /**
+         * Username to be checked.
+         */
+        public String username;
+
+        /**
+         * Default constructor for a function, which checks whether a username can be set for a new bot. Use checkChatUsername to check username for other chat types.
+         *
+         * <p> Returns {@link CheckChatUsernameResult CheckChatUsernameResult} </p>
+         */
+        public CheckBotUsername() {
+        }
+
+        /**
+         * Creates a function, which checks whether a username can be set for a new bot. Use checkChatUsername to check username for other chat types.
+         *
+         * <p> Returns {@link CheckChatUsernameResult CheckChatUsernameResult} </p>
+         *
+         * @param username Username to be checked.
+         */
+        public CheckBotUsername(String username) {
+            this.username = username;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -1358454679;
 
         /**
          * @return this.CONSTRUCTOR
@@ -97761,6 +101086,56 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = -1454244766;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Checks a match-code for an OAuth authorization request. If fails, then the authorization request has failed. Otherwise, authorization confirmation dialog must be shown and the link must be processed using acceptOauthRequest or declineOauthRequest.
+     *
+     * <p> Returns {@link Ok Ok} </p>
+     */
+    public static class CheckOauthRequestMatchCode extends Function<Ok> {
+        /**
+         * URL of the OAuth deep link.
+         */
+        public String url;
+        /**
+         * The matching code chosen by the user.
+         */
+        public String matchCode;
+
+        /**
+         * Default constructor for a function, which checks a match-code for an OAuth authorization request. If fails, then the authorization request has failed. Otherwise, authorization confirmation dialog must be shown and the link must be processed using acceptOauthRequest or declineOauthRequest.
+         *
+         * <p> Returns {@link Ok Ok} </p>
+         */
+        public CheckOauthRequestMatchCode() {
+        }
+
+        /**
+         * Creates a function, which checks a match-code for an OAuth authorization request. If fails, then the authorization request has failed. Otherwise, authorization confirmation dialog must be shown and the link must be processed using acceptOauthRequest or declineOauthRequest.
+         *
+         * <p> Returns {@link Ok Ok} </p>
+         *
+         * @param url URL of the OAuth deep link.
+         * @param matchCode The matching code chosen by the user.
+         */
+        public CheckOauthRequestMatchCode(String url, String matchCode) {
+            this.url = url;
+            this.matchCode = matchCode;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -1383896724;
 
         /**
          * @return this.CONSTRUCTOR
@@ -98947,6 +102322,68 @@ public class TdApi {
     }
 
     /**
+     * Changes text using an AI model; must not be used in secret chats. May return an error with a message &quot;AICOMPOSE_FLOOD_PREMIUM&quot; if Telegram Premium is required to send further requests.
+     *
+     * <p> Returns {@link FormattedText FormattedText} </p>
+     */
+    public static class ComposeTextWithAi extends Function<FormattedText> {
+        /**
+         * The original text.
+         */
+        public FormattedText text;
+        /**
+         * Pass a language code to which the text will be translated; pass an empty string if translation isn't needed. See translateText.toLanguageCode for the list of supported values.
+         */
+        public String translateToLanguageCode;
+        /**
+         * Name of the style of the resulted text; handle updateTextCompositionStyles to get the list of supported styles; pass an empty string to keep the current style of the text.
+         */
+        public String styleName;
+        /**
+         * Pass true to add emoji to the text.
+         */
+        public boolean addEmojis;
+
+        /**
+         * Default constructor for a function, which changes text using an AI model; must not be used in secret chats. May return an error with a message &quot;AICOMPOSE_FLOOD_PREMIUM&quot; if Telegram Premium is required to send further requests.
+         *
+         * <p> Returns {@link FormattedText FormattedText} </p>
+         */
+        public ComposeTextWithAi() {
+        }
+
+        /**
+         * Creates a function, which changes text using an AI model; must not be used in secret chats. May return an error with a message &quot;AICOMPOSE_FLOOD_PREMIUM&quot; if Telegram Premium is required to send further requests.
+         *
+         * <p> Returns {@link FormattedText FormattedText} </p>
+         *
+         * @param text The original text.
+         * @param translateToLanguageCode Pass a language code to which the text will be translated; pass an empty string if translation isn't needed. See translateText.toLanguageCode for the list of supported values.
+         * @param styleName Name of the style of the resulted text; handle updateTextCompositionStyles to get the list of supported styles; pass an empty string to keep the current style of the text.
+         * @param addEmojis Pass true to add emoji to the text.
+         */
+        public ComposeTextWithAi(FormattedText text, String translateToLanguageCode, String styleName, boolean addEmojis) {
+            this.text = text;
+            this.translateToLanguageCode = translateToLanguageCode;
+            this.styleName = styleName;
+            this.addEmojis = addEmojis;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 1121392794;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
      * Confirms QR code authentication on another device. Returns created session on success.
      *
      * <p> Returns {@link Session Session} </p>
@@ -99091,7 +102528,7 @@ public class TdApi {
      */
     public static class CraftGift extends Function<CraftGiftResult> {
         /**
-         * Identifier of the gifts to use for crafting.
+         * Identifier of the gifts to use for crafting. In the case of a successful craft, the resulting gift will have the number of the first gift. Consequently, the first gift must not have been withdrawn to the TON blockchain as an NFT and must have an empty giftAddress.
          */
         public String[] receivedGiftIds;
 
@@ -99108,7 +102545,7 @@ public class TdApi {
          *
          * <p> Returns {@link CraftGiftResult CraftGiftResult} </p>
          *
-         * @param receivedGiftIds Identifier of the gifts to use for crafting.
+         * @param receivedGiftIds Identifier of the gifts to use for crafting. In the case of a successful craft, the resulting gift will have the number of the first gift. Consequently, the first gift must not have been withdrawn to the TON blockchain as an NFT and must have an empty giftAddress.
          */
         public CraftGift(String[] receivedGiftIds) {
             this.receivedGiftIds = receivedGiftIds;
@@ -99168,6 +102605,68 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = 1972024548;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Creates a bot which will be managed by another bot. Returns the created bot. May return an error with a message &quot;BOT_CREATE_LIMIT_EXCEEDED&quot; if the user already owns the maximum allowed number of bots as per premiumLimitTypeOwnedBotCount. An internal link &quot;https://t.me/BotFather?start=deletebot&quot; can be processed to handle the error.
+     *
+     * <p> Returns {@link User User} </p>
+     */
+    public static class CreateBot extends Function<User> {
+        /**
+         * Identifier of the bot that will manage the created bot.
+         */
+        public long managerBotUserId;
+        /**
+         * Name of the bot; 1-64 characters.
+         */
+        public String name;
+        /**
+         * Username of the bot. The username must end with &quot;bot&quot;. Use checkBotUsername to find whether the name is suitable.
+         */
+        public String username;
+        /**
+         * Pass true if the bot is created from an internalLinkTypeRequestManagedBot link.
+         */
+        public boolean viaLink;
+
+        /**
+         * Default constructor for a function, which creates a bot which will be managed by another bot. Returns the created bot. May return an error with a message &quot;BOT_CREATE_LIMIT_EXCEEDED&quot; if the user already owns the maximum allowed number of bots as per premiumLimitTypeOwnedBotCount. An internal link &quot;https://t.me/BotFather?start=deletebot&quot; can be processed to handle the error.
+         *
+         * <p> Returns {@link User User} </p>
+         */
+        public CreateBot() {
+        }
+
+        /**
+         * Creates a function, which creates a bot which will be managed by another bot. Returns the created bot. May return an error with a message &quot;BOT_CREATE_LIMIT_EXCEEDED&quot; if the user already owns the maximum allowed number of bots as per premiumLimitTypeOwnedBotCount. An internal link &quot;https://t.me/BotFather?start=deletebot&quot; can be processed to handle the error.
+         *
+         * <p> Returns {@link User User} </p>
+         *
+         * @param managerBotUserId Identifier of the bot that will manage the created bot.
+         * @param name Name of the bot; 1-64 characters.
+         * @param username Username of the bot. The username must end with &quot;bot&quot;. Use checkBotUsername to find whether the name is suitable.
+         * @param viaLink Pass true if the bot is created from an internalLinkTypeRequestManagedBot link.
+         */
+        public CreateBot(long managerBotUserId, String name, String username, boolean viaLink) {
+            this.managerBotUserId = managerBotUserId;
+            this.name = name;
+            this.username = username;
+            this.viaLink = viaLink;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -1890858327;
 
         /**
          * @return this.CONSTRUCTOR
@@ -100225,7 +103724,69 @@ public class TdApi {
     }
 
     /**
-     * Creates a video chat (a group call bound to a chat). Available only for basic groups, supergroups and channels; requires canManageVideoChats administrator right.
+     * Creates a custom text composition style. May return an error with a message &quot;TONES_SAVED_TOO_MANY&quot; if the maximum number of added custom styles has been reached.
+     *
+     * <p> Returns {@link TextCompositionStyle TextCompositionStyle} </p>
+     */
+    public static class CreateTextCompositionStyle extends Function<TextCompositionStyle> {
+        /**
+         * Title of the style; 1-getOption(&quot;text_composition_style_title_length_max&quot;) characters.
+         */
+        public String title;
+        /**
+         * Identifier of the custom emoji corresponding to the style.
+         */
+        public long customEmojiId;
+        /**
+         * Prompt that will be used for text composition; 1-getOption(&quot;text_composition_style_prompt_length_max&quot;) characters.
+         */
+        public String prompt;
+        /**
+         * Pass true if the current user must be shown as the creator of the style.
+         */
+        public boolean showCreator;
+
+        /**
+         * Default constructor for a function, which creates a custom text composition style. May return an error with a message &quot;TONES_SAVED_TOO_MANY&quot; if the maximum number of added custom styles has been reached.
+         *
+         * <p> Returns {@link TextCompositionStyle TextCompositionStyle} </p>
+         */
+        public CreateTextCompositionStyle() {
+        }
+
+        /**
+         * Creates a function, which creates a custom text composition style. May return an error with a message &quot;TONES_SAVED_TOO_MANY&quot; if the maximum number of added custom styles has been reached.
+         *
+         * <p> Returns {@link TextCompositionStyle TextCompositionStyle} </p>
+         *
+         * @param title Title of the style; 1-getOption(&quot;text_composition_style_title_length_max&quot;) characters.
+         * @param customEmojiId Identifier of the custom emoji corresponding to the style.
+         * @param prompt Prompt that will be used for text composition; 1-getOption(&quot;text_composition_style_prompt_length_max&quot;) characters.
+         * @param showCreator Pass true if the current user must be shown as the creator of the style.
+         */
+        public CreateTextCompositionStyle(String title, long customEmojiId, String prompt, boolean showCreator) {
+            this.title = title;
+            this.customEmojiId = customEmojiId;
+            this.prompt = prompt;
+            this.showCreator = showCreator;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -1549417869;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Creates a video chat (a group call bound to a chat); for basic groups, supergroups and channels only; requires canManageVideoChats administrator right.
      *
      * <p> Returns {@link GroupCallId GroupCallId} </p>
      */
@@ -100248,7 +103809,7 @@ public class TdApi {
         public boolean isRtmpStream;
 
         /**
-         * Default constructor for a function, which creates a video chat (a group call bound to a chat). Available only for basic groups, supergroups and channels; requires canManageVideoChats administrator right.
+         * Default constructor for a function, which creates a video chat (a group call bound to a chat); for basic groups, supergroups and channels only; requires canManageVideoChats administrator right.
          *
          * <p> Returns {@link GroupCallId GroupCallId} </p>
          */
@@ -100256,7 +103817,7 @@ public class TdApi {
         }
 
         /**
-         * Creates a function, which creates a video chat (a group call bound to a chat). Available only for basic groups, supergroups and channels; requires canManageVideoChats administrator right.
+         * Creates a function, which creates a video chat (a group call bound to a chat); for basic groups, supergroups and channels only; requires canManageVideoChats administrator right.
          *
          * <p> Returns {@link GroupCallId GroupCallId} </p>
          *
@@ -100326,6 +103887,50 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = 1843919377;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Declines an OAuth authorization request.
+     *
+     * <p> Returns {@link Ok Ok} </p>
+     */
+    public static class DeclineOauthRequest extends Function<Ok> {
+        /**
+         * URL of the OAuth deep link.
+         */
+        public String url;
+
+        /**
+         * Default constructor for a function, which declines an OAuth authorization request.
+         *
+         * <p> Returns {@link Ok Ok} </p>
+         */
+        public DeclineOauthRequest() {
+        }
+
+        /**
+         * Creates a function, which declines an OAuth authorization request.
+         *
+         * <p> Returns {@link Ok Ok} </p>
+         *
+         * @param url URL of the OAuth deep link.
+         */
+        public DeclineOauthRequest(String url) {
+            this.url = url;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 420650996;
 
         /**
          * @return this.CONSTRUCTOR
@@ -100538,6 +104143,56 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = -1466445325;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Deletes all recent reactions added by the specified sender in a chat. Supported only for basic groups and supergroups; requires canDeleteMessages administrator right.
+     *
+     * <p> Returns {@link Ok Ok} </p>
+     */
+    public static class DeleteAllRecentMessageReactionsFromSender extends Function<Ok> {
+        /**
+         * Chat identifier.
+         */
+        public long chatId;
+        /**
+         * Identifier of the sender of reactions to delete.
+         */
+        public MessageSender senderId;
+
+        /**
+         * Default constructor for a function, which deletes all recent reactions added by the specified sender in a chat. Supported only for basic groups and supergroups; requires canDeleteMessages administrator right.
+         *
+         * <p> Returns {@link Ok Ok} </p>
+         */
+        public DeleteAllRecentMessageReactionsFromSender() {
+        }
+
+        /**
+         * Creates a function, which deletes all recent reactions added by the specified sender in a chat. Supported only for basic groups and supergroups; requires canDeleteMessages administrator right.
+         *
+         * <p> Returns {@link Ok Ok} </p>
+         *
+         * @param chatId Chat identifier.
+         * @param senderId Identifier of the sender of reactions to delete.
+         */
+        public DeleteAllRecentMessageReactionsFromSender(long chatId, MessageSender senderId) {
+            this.chatId = chatId;
+            this.senderId = senderId;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -699051658;
 
         /**
          * @return this.CONSTRUCTOR
@@ -101761,6 +105416,62 @@ public class TdApi {
     }
 
     /**
+     * Deletes all reactions added by the specified sender on a message.
+     *
+     * <p> Returns {@link Ok Ok} </p>
+     */
+    public static class DeleteMessageReactionsFromSender extends Function<Ok> {
+        /**
+         * Chat identifier.
+         */
+        public long chatId;
+        /**
+         * Identifier of the message containing the reactions. Use messageProperties.canDeleteReactions to check whether the method can be used for a message.
+         */
+        public long messageId;
+        /**
+         * Identifier of the sender of reactions to delete.
+         */
+        public MessageSender senderId;
+
+        /**
+         * Default constructor for a function, which deletes all reactions added by the specified sender on a message.
+         *
+         * <p> Returns {@link Ok Ok} </p>
+         */
+        public DeleteMessageReactionsFromSender() {
+        }
+
+        /**
+         * Creates a function, which deletes all reactions added by the specified sender on a message.
+         *
+         * <p> Returns {@link Ok Ok} </p>
+         *
+         * @param chatId Chat identifier.
+         * @param messageId Identifier of the message containing the reactions. Use messageProperties.canDeleteReactions to check whether the method can be used for a message.
+         * @param senderId Identifier of the sender of reactions to delete.
+         */
+        public DeleteMessageReactionsFromSender(long chatId, long messageId, MessageSender senderId) {
+            this.chatId = chatId;
+            this.messageId = messageId;
+            this.senderId = senderId;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 780354493;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
      * Deletes messages.
      *
      * <p> Returns {@link Ok Ok} </p>
@@ -101850,6 +105561,62 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = -1719555468;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Deletes an option from a poll.
+     *
+     * <p> Returns {@link Ok Ok} </p>
+     */
+    public static class DeletePollOption extends Function<Ok> {
+        /**
+         * Identifier of the chat to which the poll belongs.
+         */
+        public long chatId;
+        /**
+         * Identifier of the message containing the poll.
+         */
+        public long messageId;
+        /**
+         * Unique identifier of the option. Use pollOptionProperties.canBeDeleted to check whether the option can be deleted by the user.
+         */
+        public String optionId;
+
+        /**
+         * Default constructor for a function, which deletes an option from a poll.
+         *
+         * <p> Returns {@link Ok Ok} </p>
+         */
+        public DeletePollOption() {
+        }
+
+        /**
+         * Creates a function, which deletes an option from a poll.
+         *
+         * <p> Returns {@link Ok Ok} </p>
+         *
+         * @param chatId Identifier of the chat to which the poll belongs.
+         * @param messageId Identifier of the message containing the poll.
+         * @param optionId Unique identifier of the option. Use pollOptionProperties.canBeDeleted to check whether the option can be deleted by the user.
+         */
+        public DeletePollOption(long chatId, long messageId, String optionId) {
+            this.chatId = chatId;
+            this.messageId = messageId;
+            this.optionId = optionId;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -1459634839;
 
         /**
          * @return this.CONSTRUCTOR
@@ -102340,6 +106107,50 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = -658327628;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Deletes a custom text composition style that was created by the current user.
+     *
+     * <p> Returns {@link Ok Ok} </p>
+     */
+    public static class DeleteTextCompositionStyle extends Function<Ok> {
+        /**
+         * Name of the style.
+         */
+        public String name;
+
+        /**
+         * Default constructor for a function, which deletes a custom text composition style that was created by the current user.
+         *
+         * <p> Returns {@link Ok Ok} </p>
+         */
+        public DeleteTextCompositionStyle() {
+        }
+
+        /**
+         * Creates a function, which deletes a custom text composition style that was created by the current user.
+         *
+         * <p> Returns {@link Ok Ok} </p>
+         *
+         * @param name Name of the style.
+         */
+        public DeleteTextCompositionStyle(String name) {
+            this.name = name;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -1239832880;
 
         /**
          * @return this.CONSTRUCTOR
@@ -104495,6 +108306,10 @@ public class TdApi {
          * Pass true to immediately enable the proxy.
          */
         public boolean enable;
+        /**
+         * New comment for the proxy.
+         */
+        public String comment;
 
         /**
          * Default constructor for a function, which edits an existing proxy server for network requests. Can be called before authorization.
@@ -104512,17 +108327,19 @@ public class TdApi {
          * @param proxyId Proxy identifier.
          * @param proxy The new information about the proxy.
          * @param enable Pass true to immediately enable the proxy.
+         * @param comment New comment for the proxy.
          */
-        public EditProxy(int proxyId, Proxy proxy, boolean enable) {
+        public EditProxy(int proxyId, Proxy proxy, boolean enable, String comment) {
             this.proxyId = proxyId;
             this.proxy = proxy;
             this.enable = enable;
+            this.comment = comment;
         }
 
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = -1648824814;
+        public static final int CONSTRUCTOR = 349913011;
 
         /**
          * @return this.CONSTRUCTOR
@@ -104753,6 +108570,74 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = -1035823266;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Edits a custom text composition style that was created by the current user.
+     *
+     * <p> Returns {@link TextCompositionStyle TextCompositionStyle} </p>
+     */
+    public static class EditTextCompositionStyle extends Function<TextCompositionStyle> {
+        /**
+         * Name of the style.
+         */
+        public String name;
+        /**
+         * Title of the style; 1-getOption(&quot;text_composition_style_title_length_max&quot;) characters.
+         */
+        public String title;
+        /**
+         * Identifier of the custom emoji corresponding to the style.
+         */
+        public long customEmojiId;
+        /**
+         * Prompt that will be used for text composition; 1-getOption(&quot;text_composition_style_prompt_length_max&quot;) characters.
+         */
+        public String prompt;
+        /**
+         * Pass true if the current user must be shown as the creator of the style.
+         */
+        public boolean showCreator;
+
+        /**
+         * Default constructor for a function, which edits a custom text composition style that was created by the current user.
+         *
+         * <p> Returns {@link TextCompositionStyle TextCompositionStyle} </p>
+         */
+        public EditTextCompositionStyle() {
+        }
+
+        /**
+         * Creates a function, which edits a custom text composition style that was created by the current user.
+         *
+         * <p> Returns {@link TextCompositionStyle TextCompositionStyle} </p>
+         *
+         * @param name Name of the style.
+         * @param title Title of the style; 1-getOption(&quot;text_composition_style_title_length_max&quot;) characters.
+         * @param customEmojiId Identifier of the custom emoji corresponding to the style.
+         * @param prompt Prompt that will be used for text composition; 1-getOption(&quot;text_composition_style_prompt_length_max&quot;) characters.
+         * @param showCreator Pass true if the current user must be shown as the creator of the style.
+         */
+        public EditTextCompositionStyle(String name, String title, long customEmojiId, String prompt, boolean showCreator) {
+            this.name = name;
+            this.title = title;
+            this.customEmojiId = customEmojiId;
+            this.prompt = prompt;
+            this.showCreator = showCreator;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 1251035657;
 
         /**
          * @return this.CONSTRUCTOR
@@ -105097,6 +108982,50 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = -1055060835;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Fixes text using an AI model; must not be used in secret chats. May return an error with a message &quot;AICOMPOSE_FLOOD_PREMIUM&quot; if Telegram Premium is required to send further requests.
+     *
+     * <p> Returns {@link FixedText FixedText} </p>
+     */
+    public static class FixTextWithAi extends Function<FixedText> {
+        /**
+         * The original text.
+         */
+        public FormattedText text;
+
+        /**
+         * Default constructor for a function, which fixes text using an AI model; must not be used in secret chats. May return an error with a message &quot;AICOMPOSE_FLOOD_PREMIUM&quot; if Telegram Premium is required to send further requests.
+         *
+         * <p> Returns {@link FixedText FixedText} </p>
+         */
+        public FixTextWithAi() {
+        }
+
+        /**
+         * Creates a function, which fixes text using an AI model; must not be used in secret chats. May return an error with a message &quot;AICOMPOSE_FLOOD_PREMIUM&quot; if Telegram Premium is required to send further requests.
+         *
+         * <p> Returns {@link FixedText FixedText} </p>
+         *
+         * @param text The original text.
+         */
+        public FixTextWithAi(FormattedText text) {
+            this.text = text;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -2139647563;
 
         /**
          * @return this.CONSTRUCTOR
@@ -108155,7 +112084,7 @@ public class TdApi {
          */
         public MessageTopic topicId;
         /**
-         * Filter for message content. Filters searchMessagesFilterEmpty, searchMessagesFilterMention, searchMessagesFilterUnreadMention, and searchMessagesFilterUnreadReaction are unsupported in this function.
+         * Filter for message content. Filters searchMessagesFilterEmpty, searchMessagesFilterMention, searchMessagesFilterUnreadMention, searchMessagesFilterUnreadReaction, and searchMessagesFilterUnreadPollVote are unsupported in this function.
          */
         public SearchMessagesFilter filter;
         /**
@@ -108178,7 +112107,7 @@ public class TdApi {
          *
          * @param chatId Identifier of the chat in which to return information about messages.
          * @param topicId Pass topic identifier to get the result only in specific topic; pass null to get the result in all topics; forum topics and message threads aren't supported.
-         * @param filter Filter for message content. Filters searchMessagesFilterEmpty, searchMessagesFilterMention, searchMessagesFilterUnreadMention, and searchMessagesFilterUnreadReaction are unsupported in this function.
+         * @param filter Filter for message content. Filters searchMessagesFilterEmpty, searchMessagesFilterMention, searchMessagesFilterUnreadMention, searchMessagesFilterUnreadReaction, and searchMessagesFilterUnreadPollVote are unsupported in this function.
          * @param fromMessageId The message identifier from which to return information about messages; use 0 to get results from the last message.
          */
         public GetChatMessageCalendar(long chatId, MessageTopic topicId, SearchMessagesFilter filter, long fromMessageId) {
@@ -108279,7 +112208,7 @@ public class TdApi {
          */
         public MessageTopic topicId;
         /**
-         * Filter for message content; searchMessagesFilterEmpty, searchMessagesFilterUnreadMention, searchMessagesFilterUnreadReaction, and searchMessagesFilterFailedToSend are unsupported in this function.
+         * Filter for message content; searchMessagesFilterEmpty, searchMessagesFilterUnreadMention, searchMessagesFilterUnreadReaction, searchMessagesFilterUnreadPollVote, and searchMessagesFilterFailedToSend are unsupported in this function.
          */
         public SearchMessagesFilter filter;
         /**
@@ -108302,7 +112231,7 @@ public class TdApi {
          *
          * @param chatId Identifier of the chat in which to find message position.
          * @param topicId Pass topic identifier to get position among messages only in specific topic; pass null to get position among all chat messages; message threads aren't supported.
-         * @param filter Filter for message content; searchMessagesFilterEmpty, searchMessagesFilterUnreadMention, searchMessagesFilterUnreadReaction, and searchMessagesFilterFailedToSend are unsupported in this function.
+         * @param filter Filter for message content; searchMessagesFilterEmpty, searchMessagesFilterUnreadMention, searchMessagesFilterUnreadReaction, searchMessagesFilterUnreadPollVote, and searchMessagesFilterFailedToSend are unsupported in this function.
          * @param messageId Message identifier.
          */
         public GetChatMessagePosition(long chatId, MessageTopic topicId, SearchMessagesFilter filter, long messageId) {
@@ -108377,7 +112306,7 @@ public class TdApi {
     }
 
     /**
-     * Returns the user who will become the owner of the chat after 7 days if the current user does not return to the chat during that period; requires owner privileges in the chat. Available only for supergroups and channel chats.
+     * Returns the user who will become the owner of the chat after 7 days if the current user does not return to the supergroup or channel during that period or immediately for basic groups; requires owner privileges in the chat. Available only for basic groups, supergroups, and channel chats.
      *
      * <p> Returns {@link User User} </p>
      */
@@ -108388,7 +112317,7 @@ public class TdApi {
         public long chatId;
 
         /**
-         * Default constructor for a function, which returns the user who will become the owner of the chat after 7 days if the current user does not return to the chat during that period; requires owner privileges in the chat. Available only for supergroups and channel chats.
+         * Default constructor for a function, which returns the user who will become the owner of the chat after 7 days if the current user does not return to the supergroup or channel during that period or immediately for basic groups; requires owner privileges in the chat. Available only for basic groups, supergroups, and channel chats.
          *
          * <p> Returns {@link User User} </p>
          */
@@ -108396,7 +112325,7 @@ public class TdApi {
         }
 
         /**
-         * Creates a function, which returns the user who will become the owner of the chat after 7 days if the current user does not return to the chat during that period; requires owner privileges in the chat. Available only for supergroups and channel chats.
+         * Creates a function, which returns the user who will become the owner of the chat after 7 days if the current user does not return to the supergroup or channel during that period or immediately for basic groups; requires owner privileges in the chat. Available only for basic groups, supergroups, and channel chats.
          *
          * <p> Returns {@link User User} </p>
          *
@@ -108825,7 +112754,7 @@ public class TdApi {
          */
         public long chatId;
         /**
-         * Filter for message content. Filters searchMessagesFilterEmpty, searchMessagesFilterMention, searchMessagesFilterUnreadMention, and searchMessagesFilterUnreadReaction are unsupported in this function.
+         * Filter for message content. Filters searchMessagesFilterEmpty, searchMessagesFilterMention, searchMessagesFilterUnreadMention, searchMessagesFilterUnreadReaction, and searchMessagesFilterUnreadPollVote are unsupported in this function.
          */
         public SearchMessagesFilter filter;
         /**
@@ -108855,7 +112784,7 @@ public class TdApi {
          * <p> Returns {@link MessagePositions MessagePositions} </p>
          *
          * @param chatId Identifier of the chat in which to return information about message positions.
-         * @param filter Filter for message content. Filters searchMessagesFilterEmpty, searchMessagesFilterMention, searchMessagesFilterUnreadMention, and searchMessagesFilterUnreadReaction are unsupported in this function.
+         * @param filter Filter for message content. Filters searchMessagesFilterEmpty, searchMessagesFilterMention, searchMessagesFilterUnreadMention, searchMessagesFilterUnreadReaction, and searchMessagesFilterUnreadPollVote are unsupported in this function.
          * @param fromMessageId The message identifier from which to return information about message positions.
          * @param limit The expected number of message positions to be returned; 50-2000. A smaller number of positions can be returned, if there are not enough appropriate messages.
          * @param savedMessagesTopicId If not 0, only messages in the specified Saved Messages topic will be considered; pass 0 to consider all messages, or for chats other than Saved Messages.
@@ -110442,10 +114371,6 @@ public class TdApi {
          * Pass true if the current user allowed the bot that was returned in getExternalLinkInfo, to send them messages.
          */
         public boolean allowWriteAccess;
-        /**
-         * Pass true if the current user allowed the bot that was returned in getExternalLinkInfo, to access their phone number.
-         */
-        public boolean allowPhoneNumberAccess;
 
         /**
          * Default constructor for a function, which returns an HTTP URL which can be used to automatically authorize the current user on a website after clicking an HTTP link. Use the method getExternalLinkInfo to find whether a prior user confirmation is needed. May return an empty link if just a toast about successful login has to be shown.
@@ -110462,18 +114387,16 @@ public class TdApi {
          *
          * @param link The HTTP link.
          * @param allowWriteAccess Pass true if the current user allowed the bot that was returned in getExternalLinkInfo, to send them messages.
-         * @param allowPhoneNumberAccess Pass true if the current user allowed the bot that was returned in getExternalLinkInfo, to access their phone number.
          */
-        public GetExternalLink(String link, boolean allowWriteAccess, boolean allowPhoneNumberAccess) {
+        public GetExternalLink(String link, boolean allowWriteAccess) {
             this.link = link;
             this.allowWriteAccess = allowWriteAccess;
-            this.allowPhoneNumberAccess = allowPhoneNumberAccess;
         }
 
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = -752042166;
+        public static final int CONSTRUCTOR = 1586688235;
 
         /**
          * @return this.CONSTRUCTOR
@@ -113002,6 +116925,100 @@ public class TdApi {
     }
 
     /**
+     * Returns access settings of a managed bot; for bots only.
+     *
+     * <p> Returns {@link BotAccessSettings BotAccessSettings} </p>
+     */
+    public static class GetManagedBotAccessSettings extends Function<BotAccessSettings> {
+        /**
+         * Identifier of the managed bot.
+         */
+        public long botUserId;
+
+        /**
+         * Default constructor for a function, which returns access settings of a managed bot; for bots only.
+         *
+         * <p> Returns {@link BotAccessSettings BotAccessSettings} </p>
+         */
+        public GetManagedBotAccessSettings() {
+        }
+
+        /**
+         * Creates a function, which returns access settings of a managed bot; for bots only.
+         *
+         * <p> Returns {@link BotAccessSettings BotAccessSettings} </p>
+         *
+         * @param botUserId Identifier of the managed bot.
+         */
+        public GetManagedBotAccessSettings(long botUserId) {
+            this.botUserId = botUserId;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -867390575;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Returns token of a managed bot; for bots only.
+     *
+     * <p> Returns {@link Text Text} </p>
+     */
+    public static class GetManagedBotToken extends Function<Text> {
+        /**
+         * Identifier of the managed bot.
+         */
+        public long botUserId;
+        /**
+         * Pass true to revoke the current token and create a new one.
+         */
+        public boolean revoke;
+
+        /**
+         * Default constructor for a function, which returns token of a managed bot; for bots only.
+         *
+         * <p> Returns {@link Text Text} </p>
+         */
+        public GetManagedBotToken() {
+        }
+
+        /**
+         * Creates a function, which returns token of a managed bot; for bots only.
+         *
+         * <p> Returns {@link Text Text} </p>
+         *
+         * @param botUserId Identifier of the managed bot.
+         * @param revoke Pass true to revoke the current token and create a new one.
+         */
+        public GetManagedBotToken(long botUserId, boolean revoke) {
+            this.botUserId = botUserId;
+            this.revoke = revoke;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -938215629;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
      * Returns information about a file with a map thumbnail in PNG format. Only map thumbnail files with size less than 1MB can be downloaded.
      *
      * <p> Returns {@link File File} </p>
@@ -113623,6 +117640,14 @@ public class TdApi {
          */
         public int mediaTimestamp;
         /**
+         * If not 0, identifier of the checklist task in the message to be linked.
+         */
+        public int checklistTaskId;
+        /**
+         * If not empty, identifier of the poll option in the message to be linked.
+         */
+        public String pollOptionId;
+        /**
          * Pass true to create a link for the whole media album.
          */
         public boolean forAlbum;
@@ -113647,13 +117672,17 @@ public class TdApi {
          * @param chatId Identifier of the chat to which the message belongs.
          * @param messageId Identifier of the message.
          * @param mediaTimestamp If not 0, timestamp from which the video/audio/video note/voice note/story playing must start, in seconds. The media can be in the message content or in its link preview.
+         * @param checklistTaskId If not 0, identifier of the checklist task in the message to be linked.
+         * @param pollOptionId If not empty, identifier of the poll option in the message to be linked.
          * @param forAlbum Pass true to create a link for the whole media album.
          * @param inMessageThread Pass true to create a link to the message as a channel post comment, in a message thread, or a forum topic.
          */
-        public GetMessageLink(long chatId, long messageId, int mediaTimestamp, boolean forAlbum, boolean inMessageThread) {
+        public GetMessageLink(long chatId, long messageId, int mediaTimestamp, int checklistTaskId, String pollOptionId, boolean forAlbum, boolean inMessageThread) {
             this.chatId = chatId;
             this.messageId = messageId;
             this.mediaTimestamp = mediaTimestamp;
+            this.checklistTaskId = checklistTaskId;
+            this.pollOptionId = pollOptionId;
             this.forAlbum = forAlbum;
             this.inMessageThread = inMessageThread;
         }
@@ -113661,7 +117690,7 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = -984158342;
+        public static final int CONSTRUCTOR = -498469915;
 
         /**
          * @return this.CONSTRUCTOR
@@ -114276,6 +118305,56 @@ public class TdApi {
     }
 
     /**
+     * Returns information about an OAuth deep link. Use checkOauthRequestMatchCode, acceptOauthRequest or declineOauthRequest to process the link.
+     *
+     * <p> Returns {@link OauthLinkInfo OauthLinkInfo} </p>
+     */
+    public static class GetOauthLinkInfo extends Function<OauthLinkInfo> {
+        /**
+         * URL of the link.
+         */
+        public String url;
+        /**
+         * Origin of the OAuth request if the request was received from the in-app browser; pass an empty string otherwise.
+         */
+        public String inAppOrigin;
+
+        /**
+         * Default constructor for a function, which returns information about an OAuth deep link. Use checkOauthRequestMatchCode, acceptOauthRequest or declineOauthRequest to process the link.
+         *
+         * <p> Returns {@link OauthLinkInfo OauthLinkInfo} </p>
+         */
+        public GetOauthLinkInfo() {
+        }
+
+        /**
+         * Creates a function, which returns information about an OAuth deep link. Use checkOauthRequestMatchCode, acceptOauthRequest or declineOauthRequest to process the link.
+         *
+         * <p> Returns {@link OauthLinkInfo OauthLinkInfo} </p>
+         *
+         * @param url URL of the link.
+         * @param inAppOrigin Origin of the OAuth request if the request was received from the in-app browser; pass an empty string otherwise.
+         */
+        public GetOauthLinkInfo(String url, String inAppOrigin) {
+            this.url = url;
+            this.inAppOrigin = inAppOrigin;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -1235634833;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
      * Returns the value of an option by its name. (Check the list of available options on https://core.telegram.org/tdlib/options.) Can be called before authorization. Can be called synchronously for options &quot;version&quot; and &quot;commit_hash&quot;.
      *
      * <p> Returns {@link OptionValue OptionValue} </p>
@@ -114763,6 +118842,56 @@ public class TdApi {
     }
 
     /**
+     * Returns messages in the personal chat of a given user; for bots only.
+     *
+     * <p> Returns {@link Messages Messages} </p>
+     */
+    public static class GetPersonalChatHistory extends Function<Messages> {
+        /**
+         * User identifier.
+         */
+        public long userId;
+        /**
+         * The maximum number of messages to be returned; 1-20.
+         */
+        public int limit;
+
+        /**
+         * Default constructor for a function, which returns messages in the personal chat of a given user; for bots only.
+         *
+         * <p> Returns {@link Messages Messages} </p>
+         */
+        public GetPersonalChatHistory() {
+        }
+
+        /**
+         * Creates a function, which returns messages in the personal chat of a given user; for bots only.
+         *
+         * <p> Returns {@link Messages Messages} </p>
+         *
+         * @param userId User identifier.
+         * @param limit The maximum number of messages to be returned; 1-20.
+         */
+        public GetPersonalChatHistory(long userId, int limit) {
+            this.userId = userId;
+            this.limit = limit;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -1727554525;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
      * Returns information about a phone number by its prefix. Can be called before authorization.
      *
      * <p> Returns {@link PhoneNumberInfo PhoneNumberInfo} </p>
@@ -114857,11 +118986,123 @@ public class TdApi {
     }
 
     /**
-     * Returns message senders voted for the specified option in a non-anonymous polls. For optimal performance, the number of returned users is chosen by TDLib.
+     * Returns properties of a poll option. This is an offline method.
      *
-     * <p> Returns {@link MessageSenders MessageSenders} </p>
+     * <p> Returns {@link PollOptionProperties PollOptionProperties} </p>
      */
-    public static class GetPollVoters extends Function<MessageSenders> {
+    public static class GetPollOptionProperties extends Function<PollOptionProperties> {
+        /**
+         * Chat identifier.
+         */
+        public long chatId;
+        /**
+         * Identifier of the message.
+         */
+        public long messageId;
+        /**
+         * Unique identifier of the answer option, which properties will be returned.
+         */
+        public String pollOptionId;
+
+        /**
+         * Default constructor for a function, which returns properties of a poll option. This is an offline method.
+         *
+         * <p> Returns {@link PollOptionProperties PollOptionProperties} </p>
+         */
+        public GetPollOptionProperties() {
+        }
+
+        /**
+         * Creates a function, which returns properties of a poll option. This is an offline method.
+         *
+         * <p> Returns {@link PollOptionProperties PollOptionProperties} </p>
+         *
+         * @param chatId Chat identifier.
+         * @param messageId Identifier of the message.
+         * @param pollOptionId Unique identifier of the answer option, which properties will be returned.
+         */
+        public GetPollOptionProperties(long chatId, long messageId, String pollOptionId) {
+            this.chatId = chatId;
+            this.messageId = messageId;
+            this.pollOptionId = pollOptionId;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -1191094872;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Returns statistics of poll votes in a poll.
+     *
+     * <p> Returns {@link PollVoteStatistics PollVoteStatistics} </p>
+     */
+    public static class GetPollVoteStatistics extends Function<PollVoteStatistics> {
+        /**
+         * Identifier of the chat to which the poll belongs.
+         */
+        public long chatId;
+        /**
+         * Identifier of the message containing the poll. Use messageProperties.canGetPollVoteStatistics to check whether the method can be used for a message.
+         */
+        public long messageId;
+        /**
+         * Pass true if a dark theme is used by the application.
+         */
+        public boolean isDark;
+
+        /**
+         * Default constructor for a function, which returns statistics of poll votes in a poll.
+         *
+         * <p> Returns {@link PollVoteStatistics PollVoteStatistics} </p>
+         */
+        public GetPollVoteStatistics() {
+        }
+
+        /**
+         * Creates a function, which returns statistics of poll votes in a poll.
+         *
+         * <p> Returns {@link PollVoteStatistics PollVoteStatistics} </p>
+         *
+         * @param chatId Identifier of the chat to which the poll belongs.
+         * @param messageId Identifier of the message containing the poll. Use messageProperties.canGetPollVoteStatistics to check whether the method can be used for a message.
+         * @param isDark Pass true if a dark theme is used by the application.
+         */
+        public GetPollVoteStatistics(long chatId, long messageId, boolean isDark) {
+            this.chatId = chatId;
+            this.messageId = messageId;
+            this.isDark = isDark;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -379637947;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Returns message senders voted for the specified option in a poll; use poll.canGetVoters to check whether the method can be used. For optimal performance, the number of returned users is chosen by TDLib.
+     *
+     * <p> Returns {@link PollVoters PollVoters} </p>
+     */
+    public static class GetPollVoters extends Function<PollVoters> {
         /**
          * Identifier of the chat to which the poll belongs.
          */
@@ -114884,17 +119125,17 @@ public class TdApi {
         public int limit;
 
         /**
-         * Default constructor for a function, which returns message senders voted for the specified option in a non-anonymous polls. For optimal performance, the number of returned users is chosen by TDLib.
+         * Default constructor for a function, which returns message senders voted for the specified option in a poll; use poll.canGetVoters to check whether the method can be used. For optimal performance, the number of returned users is chosen by TDLib.
          *
-         * <p> Returns {@link MessageSenders MessageSenders} </p>
+         * <p> Returns {@link PollVoters PollVoters} </p>
          */
         public GetPollVoters() {
         }
 
         /**
-         * Creates a function, which returns message senders voted for the specified option in a non-anonymous polls. For optimal performance, the number of returned users is chosen by TDLib.
+         * Creates a function, which returns message senders voted for the specified option in a poll; use poll.canGetVoters to check whether the method can be used. For optimal performance, the number of returned users is chosen by TDLib.
          *
-         * <p> Returns {@link MessageSenders MessageSenders} </p>
+         * <p> Returns {@link PollVoters PollVoters} </p>
          *
          * @param chatId Identifier of the chat to which the poll belongs.
          * @param messageId Identifier of the message containing the poll.
@@ -114913,7 +119154,7 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = -1000625748;
+        public static final int CONSTRUCTOR = -1602915575;
 
         /**
          * @return this.CONSTRUCTOR
@@ -115315,6 +119556,56 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = -83179701;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Returns a keyboard button prepared by the bot for the user. The button will be of the type keyboardButtonTypeRequestUsers, keyboardButtonTypeRequestChat, or keyboardButtonTypeRequestManagedBot.
+     *
+     * <p> Returns {@link KeyboardButton KeyboardButton} </p>
+     */
+    public static class GetPreparedKeyboardButton extends Function<KeyboardButton> {
+        /**
+         * Identifier of the bot that created the button.
+         */
+        public long botUserId;
+        /**
+         * Identifier of the prepared button.
+         */
+        public String preparedButtonId;
+
+        /**
+         * Default constructor for a function, which returns a keyboard button prepared by the bot for the user. The button will be of the type keyboardButtonTypeRequestUsers, keyboardButtonTypeRequestChat, or keyboardButtonTypeRequestManagedBot.
+         *
+         * <p> Returns {@link KeyboardButton KeyboardButton} </p>
+         */
+        public GetPreparedKeyboardButton() {
+        }
+
+        /**
+         * Creates a function, which returns a keyboard button prepared by the bot for the user. The button will be of the type keyboardButtonTypeRequestUsers, keyboardButtonTypeRequestChat, or keyboardButtonTypeRequestManagedBot.
+         *
+         * <p> Returns {@link KeyboardButton KeyboardButton} </p>
+         *
+         * @param botUserId Identifier of the bot that created the button.
+         * @param preparedButtonId Identifier of the prepared button.
+         */
+        public GetPreparedKeyboardButton(long botUserId, String preparedButtonId) {
+            this.botUserId = botUserId;
+            this.preparedButtonId = preparedButtonId;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 1162619742;
 
         /**
          * @return this.CONSTRUCTOR
@@ -115980,7 +120271,7 @@ public class TdApi {
     }
 
     /**
-     * Returns information about a non-bundled message that is replied by a given message. Also, returns the pinned message for messagePinMessage, the game message for messageGameScore, the invoice message for messagePaymentSuccessful, the message with a previously set same background for messageChatSetBackground, the giveaway message for messageGiveawayCompleted, the checklist message for messageChecklistTasksDone, messageChecklistTasksAdded, the message with suggested post information for messageSuggestedPostApprovalFailed, messageSuggestedPostApproved, messageSuggestedPostDeclined, messageSuggestedPostPaid, messageSuggestedPostRefunded, the message with the regular gift that was upgraded for messageUpgradedGift with origin of the type upgradedGiftOriginUpgrade, the message with gift purchase offer for messageUpgradedGiftPurchaseOfferRejected, and the topic creation message for topic messages without non-bundled replied message. Returns a 404 error if the message doesn't exist.
+     * Returns information about a non-bundled message that is replied by a given message. Also, returns the pinned message for messagePinMessage, the game message for messageGameScore, the invoice message for messagePaymentSuccessful, the message with a previously set same background for messageChatSetBackground, the giveaway message for messageGiveawayCompleted, the checklist message for messageChecklistTasksDone, messageChecklistTasksAdded, the message with suggested post information for messageSuggestedPostApprovalFailed, messageSuggestedPostApproved, messageSuggestedPostDeclined, messageSuggestedPostPaid, messageSuggestedPostRefunded, the message with the regular gift that was upgraded for messageUpgradedGift with origin of the type upgradedGiftOriginUpgrade, the message with gift purchase offer for messageUpgradedGiftPurchaseOfferRejected, the message with the request to disable content protection for messageChatHasProtectedContentToggled, the message with the poll for messagePollOptionAdded and messagePollOptionDeleted, and the topic creation message for topic messages without non-bundled replied message. Returns a 404 error if the message doesn't exist.
      *
      * <p> Returns {@link Message Message} </p>
      */
@@ -115995,7 +120286,7 @@ public class TdApi {
         public long messageId;
 
         /**
-         * Default constructor for a function, which returns information about a non-bundled message that is replied by a given message. Also, returns the pinned message for messagePinMessage, the game message for messageGameScore, the invoice message for messagePaymentSuccessful, the message with a previously set same background for messageChatSetBackground, the giveaway message for messageGiveawayCompleted, the checklist message for messageChecklistTasksDone, messageChecklistTasksAdded, the message with suggested post information for messageSuggestedPostApprovalFailed, messageSuggestedPostApproved, messageSuggestedPostDeclined, messageSuggestedPostPaid, messageSuggestedPostRefunded, the message with the regular gift that was upgraded for messageUpgradedGift with origin of the type upgradedGiftOriginUpgrade, the message with gift purchase offer for messageUpgradedGiftPurchaseOfferRejected, and the topic creation message for topic messages without non-bundled replied message. Returns a 404 error if the message doesn't exist.
+         * Default constructor for a function, which returns information about a non-bundled message that is replied by a given message. Also, returns the pinned message for messagePinMessage, the game message for messageGameScore, the invoice message for messagePaymentSuccessful, the message with a previously set same background for messageChatSetBackground, the giveaway message for messageGiveawayCompleted, the checklist message for messageChecklistTasksDone, messageChecklistTasksAdded, the message with suggested post information for messageSuggestedPostApprovalFailed, messageSuggestedPostApproved, messageSuggestedPostDeclined, messageSuggestedPostPaid, messageSuggestedPostRefunded, the message with the regular gift that was upgraded for messageUpgradedGift with origin of the type upgradedGiftOriginUpgrade, the message with gift purchase offer for messageUpgradedGiftPurchaseOfferRejected, the message with the request to disable content protection for messageChatHasProtectedContentToggled, the message with the poll for messagePollOptionAdded and messagePollOptionDeleted, and the topic creation message for topic messages without non-bundled replied message. Returns a 404 error if the message doesn't exist.
          *
          * <p> Returns {@link Message Message} </p>
          */
@@ -116003,7 +120294,7 @@ public class TdApi {
         }
 
         /**
-         * Creates a function, which returns information about a non-bundled message that is replied by a given message. Also, returns the pinned message for messagePinMessage, the game message for messageGameScore, the invoice message for messagePaymentSuccessful, the message with a previously set same background for messageChatSetBackground, the giveaway message for messageGiveawayCompleted, the checklist message for messageChecklistTasksDone, messageChecklistTasksAdded, the message with suggested post information for messageSuggestedPostApprovalFailed, messageSuggestedPostApproved, messageSuggestedPostDeclined, messageSuggestedPostPaid, messageSuggestedPostRefunded, the message with the regular gift that was upgraded for messageUpgradedGift with origin of the type upgradedGiftOriginUpgrade, the message with gift purchase offer for messageUpgradedGiftPurchaseOfferRejected, and the topic creation message for topic messages without non-bundled replied message. Returns a 404 error if the message doesn't exist.
+         * Creates a function, which returns information about a non-bundled message that is replied by a given message. Also, returns the pinned message for messagePinMessage, the game message for messageGameScore, the invoice message for messagePaymentSuccessful, the message with a previously set same background for messageChatSetBackground, the giveaway message for messageGiveawayCompleted, the checklist message for messageChecklistTasksDone, messageChecklistTasksAdded, the message with suggested post information for messageSuggestedPostApprovalFailed, messageSuggestedPostApproved, messageSuggestedPostDeclined, messageSuggestedPostPaid, messageSuggestedPostRefunded, the message with the regular gift that was upgraded for messageUpgradedGift with origin of the type upgradedGiftOriginUpgrade, the message with gift purchase offer for messageUpgradedGiftPurchaseOfferRejected, the message with the request to disable content protection for messageChatHasProtectedContentToggled, the message with the poll for messagePollOptionAdded and messagePollOptionDeleted, and the topic creation message for topic messages without non-bundled replied message. Returns a 404 error if the message doesn't exist.
          *
          * <p> Returns {@link Message Message} </p>
          *
@@ -116217,9 +120508,9 @@ public class TdApi {
     /**
      * Returns saved notification sound by its identifier. Returns a 404 error if there is no saved notification sound with the specified identifier.
      *
-     * <p> Returns {@link NotificationSounds NotificationSounds} </p>
+     * <p> Returns {@link NotificationSound NotificationSound} </p>
      */
-    public static class GetSavedNotificationSound extends Function<NotificationSounds> {
+    public static class GetSavedNotificationSound extends Function<NotificationSound> {
         /**
          * Identifier of the notification sound.
          */
@@ -116228,7 +120519,7 @@ public class TdApi {
         /**
          * Default constructor for a function, which returns saved notification sound by its identifier. Returns a 404 error if there is no saved notification sound with the specified identifier.
          *
-         * <p> Returns {@link NotificationSounds NotificationSounds} </p>
+         * <p> Returns {@link NotificationSound NotificationSound} </p>
          */
         public GetSavedNotificationSound() {
         }
@@ -116236,7 +120527,7 @@ public class TdApi {
         /**
          * Creates a function, which returns saved notification sound by its identifier. Returns a 404 error if there is no saved notification sound with the specified identifier.
          *
-         * <p> Returns {@link NotificationSounds NotificationSounds} </p>
+         * <p> Returns {@link NotificationSound NotificationSound} </p>
          *
          * @param notificationSoundId Identifier of the notification sound.
          */
@@ -116247,7 +120538,7 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = 459569431;
+        public static final int CONSTRUCTOR = 1790319616;
 
         /**
          * @return this.CONSTRUCTOR
@@ -118111,6 +122402,56 @@ public class TdApi {
     }
 
     /**
+     * Returns an example of usage of a custom text composition style.
+     *
+     * <p> Returns {@link TextCompositionStyleExample TextCompositionStyleExample} </p>
+     */
+    public static class GetTextCompositionStyleExample extends Function<TextCompositionStyleExample> {
+        /**
+         * Name of the style.
+         */
+        public String name;
+        /**
+         * 0-based unique number of the requested example; must be non-negative and less than getOption(&quot;text_composition_style_example_count&quot;).
+         */
+        public int exampleNumber;
+
+        /**
+         * Default constructor for a function, which returns an example of usage of a custom text composition style.
+         *
+         * <p> Returns {@link TextCompositionStyleExample TextCompositionStyleExample} </p>
+         */
+        public GetTextCompositionStyleExample() {
+        }
+
+        /**
+         * Creates a function, which returns an example of usage of a custom text composition style.
+         *
+         * <p> Returns {@link TextCompositionStyleExample TextCompositionStyleExample} </p>
+         *
+         * @param name Name of the style.
+         * @param exampleNumber 0-based unique number of the requested example; must be non-negative and less than getOption(&quot;text_composition_style_example_count&quot;).
+         */
+        public GetTextCompositionStyleExample(String name, int exampleNumber) {
+            this.name = name;
+            this.exampleNumber = exampleNumber;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -1657648173;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
      * Returns all entities (mentions, hashtags, cashtags, bot commands, bank card numbers, URLs, and email addresses) found in the text. Can be called synchronously.
      *
      * <p> Returns {@link TextEntities TextEntities} </p>
@@ -118759,14 +123100,14 @@ public class TdApi {
     }
 
     /**
-     * Returns promotional anumation for upgraded gifts.
+     * Returns promotional animation for upgraded gifts.
      *
      * <p> Returns {@link Animation Animation} </p>
      */
     public static class GetUpgradedGiftsPromotionalAnimation extends Function<Animation> {
 
         /**
-         * Default constructor for a function, which returns promotional anumation for upgraded gifts.
+         * Default constructor for a function, which returns promotional animation for upgraded gifts.
          *
          * <p> Returns {@link Animation Animation} </p>
          */
@@ -119585,7 +123926,7 @@ public class TdApi {
          */
         public int monthCount;
         /**
-         * Text to show to the user receiving Telegram Premium; 0-getOption(&quot;gift_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, and CustomEmoji entities are allowed.
+         * Text to show to the user receiving Telegram Premium; 0-getOption(&quot;gift_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities are allowed.
          */
         public FormattedText text;
 
@@ -119605,7 +123946,7 @@ public class TdApi {
          * @param userId Identifier of the user which will receive Telegram Premium.
          * @param starCount The number of Telegram Stars to pay for subscription.
          * @param monthCount Number of months the Telegram Premium subscription will be active for the user.
-         * @param text Text to show to the user receiving Telegram Premium; 0-getOption(&quot;gift_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, and CustomEmoji entities are allowed.
+         * @param text Text to show to the user receiving Telegram Premium; 0-getOption(&quot;gift_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities are allowed.
          */
         public GiftPremiumWithStars(long userId, long starCount, int monthCount, FormattedText text) {
             this.userId = userId;
@@ -119746,7 +124087,7 @@ public class TdApi {
     }
 
     /**
-     * Imports messages exported from another app.
+     * Imports messages exported from another application.
      *
      * <p> Returns {@link Ok Ok} </p>
      */
@@ -119765,7 +124106,7 @@ public class TdApi {
         public InputFile[] attachedFiles;
 
         /**
-         * Default constructor for a function, which imports messages exported from another app.
+         * Default constructor for a function, which imports messages exported from another application.
          *
          * <p> Returns {@link Ok Ok} </p>
          */
@@ -119773,7 +124114,7 @@ public class TdApi {
         }
 
         /**
-         * Creates a function, which imports messages exported from another app.
+         * Creates a function, which imports messages exported from another application.
          *
          * <p> Returns {@link Ok Ok} </p>
          *
@@ -120420,6 +124761,56 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = 980152233;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Informs TDLib that an audio was listened by the user.
+     *
+     * <p> Returns {@link Ok Ok} </p>
+     */
+    public static class ListenToAudio extends Function<Ok> {
+        /**
+         * Identifier of the file with an audio.
+         */
+        public int audioFileId;
+        /**
+         * Duration of the listening to the audio, in seconds.
+         */
+        public int duration;
+
+        /**
+         * Default constructor for a function, which informs TDLib that an audio was listened by the user.
+         *
+         * <p> Returns {@link Ok Ok} </p>
+         */
+        public ListenToAudio() {
+        }
+
+        /**
+         * Creates a function, which informs TDLib that an audio was listened by the user.
+         *
+         * <p> Returns {@link Ok Ok} </p>
+         *
+         * @param audioFileId Identifier of the file with an audio.
+         * @param duration Duration of the listening to the audio, in seconds.
+         */
+        public ListenToAudio(int audioFileId, int duration) {
+            this.audioFileId = audioFileId;
+            this.duration = duration;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 589191881;
 
         /**
          * @return this.CONSTRUCTOR
@@ -121375,7 +125766,7 @@ public class TdApi {
     }
 
     /**
-     * Parses Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, BlockQuote, ExpandableBlockQuote, Code, Pre, PreCode, TextUrl and MentionName entities from a marked-up text. Can be called synchronously.
+     * Parses Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, BlockQuote, ExpandableBlockQuote, Code, Pre, PreCode, TextUrl, MentionName, and DateTime entities from a marked-up text. Can be called synchronously.
      *
      * <p> Returns {@link FormattedText FormattedText} </p>
      */
@@ -121390,7 +125781,7 @@ public class TdApi {
         public TextParseMode parseMode;
 
         /**
-         * Default constructor for a function, which parses Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, BlockQuote, ExpandableBlockQuote, Code, Pre, PreCode, TextUrl and MentionName entities from a marked-up text. Can be called synchronously.
+         * Default constructor for a function, which parses Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, BlockQuote, ExpandableBlockQuote, Code, Pre, PreCode, TextUrl, MentionName, and DateTime entities from a marked-up text. Can be called synchronously.
          *
          * <p> Returns {@link FormattedText FormattedText} </p>
          */
@@ -121398,7 +125789,7 @@ public class TdApi {
         }
 
         /**
-         * Creates a function, which parses Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, BlockQuote, ExpandableBlockQuote, Code, Pre, PreCode, TextUrl and MentionName entities from a marked-up text. Can be called synchronously.
+         * Creates a function, which parses Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, BlockQuote, ExpandableBlockQuote, Code, Pre, PreCode, TextUrl, MentionName, and DateTime entities from a marked-up text. Can be called synchronously.
          *
          * <p> Returns {@link FormattedText FormattedText} </p>
          *
@@ -121549,7 +125940,7 @@ public class TdApi {
          */
         public long userId;
         /**
-         * Text to show along with the gift; 0-getOption(&quot;gift_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, and CustomEmoji entities are allowed. Must be empty if the receiver enabled paid messages.
+         * Text to show along with the gift; 0-getOption(&quot;gift_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities are allowed. Must be empty if the receiver enabled paid messages.
          */
         public FormattedText text;
         /**
@@ -121573,7 +125964,7 @@ public class TdApi {
          * @param giftId Identifier of the gift to place the bid on.
          * @param starCount The number of Telegram Stars to place in the bid.
          * @param userId Identifier of the user who will receive the gift.
-         * @param text Text to show along with the gift; 0-getOption(&quot;gift_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, and CustomEmoji entities are allowed. Must be empty if the receiver enabled paid messages.
+         * @param text Text to show along with the gift; 0-getOption(&quot;gift_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities are allowed. Must be empty if the receiver enabled paid messages.
          * @param isPrivate Pass true to show gift text and sender only to the gift receiver; otherwise, everyone will be able to see them.
          */
         public PlaceGiftAuctionBid(long giftId, long starCount, long userId, FormattedText text, boolean isPrivate) {
@@ -121792,6 +126183,62 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = 1498280672;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Processes request to disable hasProtectedContent in a chat.
+     *
+     * <p> Returns {@link Ok Ok} </p>
+     */
+    public static class ProcessChatHasProtectedContentDisableRequest extends Function<Ok> {
+        /**
+         * Chat identifier.
+         */
+        public long chatId;
+        /**
+         * Identifier of the message with the request. The message must be incoming and has content of the type messageChatHasProtectedContentDisableRequested.
+         */
+        public long requestMessageId;
+        /**
+         * Pass true to approve the request; pass false to reject the request.
+         */
+        public boolean approve;
+
+        /**
+         * Default constructor for a function, which processes request to disable hasProtectedContent in a chat.
+         *
+         * <p> Returns {@link Ok Ok} </p>
+         */
+        public ProcessChatHasProtectedContentDisableRequest() {
+        }
+
+        /**
+         * Creates a function, which processes request to disable hasProtectedContent in a chat.
+         *
+         * <p> Returns {@link Ok Ok} </p>
+         *
+         * @param chatId Chat identifier.
+         * @param requestMessageId Identifier of the message with the request. The message must be incoming and has content of the type messageChatHasProtectedContentDisableRequested.
+         * @param approve Pass true to approve the request; pass false to reject the request.
+         */
+        public ProcessChatHasProtectedContentDisableRequest(long chatId, long requestMessageId, boolean approve) {
+            this.chatId = chatId;
+            this.requestMessageId = requestMessageId;
+            this.approve = approve;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -2078059411;
 
         /**
          * @return this.CONSTRUCTOR
@@ -122109,6 +126556,50 @@ public class TdApi {
     }
 
     /**
+     * Marks all poll votes in a chat as read.
+     *
+     * <p> Returns {@link Ok Ok} </p>
+     */
+    public static class ReadAllChatPollVotes extends Function<Ok> {
+        /**
+         * Chat identifier.
+         */
+        public long chatId;
+
+        /**
+         * Default constructor for a function, which marks all poll votes in a chat as read.
+         *
+         * <p> Returns {@link Ok Ok} </p>
+         */
+        public ReadAllChatPollVotes() {
+        }
+
+        /**
+         * Creates a function, which marks all poll votes in a chat as read.
+         *
+         * <p> Returns {@link Ok Ok} </p>
+         *
+         * @param chatId Chat identifier.
+         */
+        public ReadAllChatPollVotes(long chatId) {
+            this.chatId = chatId;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -1882393298;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
      * Marks all reactions in a chat as read.
      *
      * <p> Returns {@link Ok Ok} </p>
@@ -122242,6 +126733,56 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = -996864148;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Marks all poll votes in a topic in a forum supergroup chat as read.
+     *
+     * <p> Returns {@link Ok Ok} </p>
+     */
+    public static class ReadAllForumTopicPollVotes extends Function<Ok> {
+        /**
+         * Chat identifier.
+         */
+        public long chatId;
+        /**
+         * Forum topic identifier in which poll votes are marked as read.
+         */
+        public int forumTopicId;
+
+        /**
+         * Default constructor for a function, which marks all poll votes in a topic in a forum supergroup chat as read.
+         *
+         * <p> Returns {@link Ok Ok} </p>
+         */
+        public ReadAllForumTopicPollVotes() {
+        }
+
+        /**
+         * Creates a function, which marks all poll votes in a topic in a forum supergroup chat as read.
+         *
+         * <p> Returns {@link Ok Ok} </p>
+         *
+         * @param chatId Chat identifier.
+         * @param forumTopicId Forum topic identifier in which poll votes are marked as read.
+         */
+        public ReadAllForumTopicPollVotes(long chatId, int forumTopicId) {
+            this.chatId = chatId;
+            this.forumTopicId = forumTopicId;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 320081488;
 
         /**
          * @return this.CONSTRUCTOR
@@ -124000,6 +128541,50 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = 1901872465;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Removes a custom text composition style from the list of used by the user styles. If the style was created by the current user, then it can only be deleted.
+     *
+     * <p> Returns {@link Ok Ok} </p>
+     */
+    public static class RemoveTextCompositionStyle extends Function<Ok> {
+        /**
+         * Name of the style.
+         */
+        public String name;
+
+        /**
+         * Default constructor for a function, which removes a custom text composition style from the list of used by the user styles. If the style was created by the current user, then it can only be deleted.
+         *
+         * <p> Returns {@link Ok Ok} </p>
+         */
+        public RemoveTextCompositionStyle() {
+        }
+
+        /**
+         * Creates a function, which removes a custom text composition style from the list of used by the user styles. If the style was created by the current user, then it can only be deleted.
+         *
+         * <p> Returns {@link Ok Ok} </p>
+         *
+         * @param name Name of the style.
+         */
+        public RemoveTextCompositionStyle(String name) {
+            this.name = name;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -543700866;
 
         /**
          * @return this.CONSTRUCTOR
@@ -126131,6 +130716,56 @@ public class TdApi {
     }
 
     /**
+     * Saves a keyboard button to be shown to the given user; for bots only.
+     *
+     * <p> Returns {@link Text Text} </p>
+     */
+    public static class SavePreparedKeyboardButton extends Function<Text> {
+        /**
+         * Identifier of the user.
+         */
+        public long userId;
+        /**
+         * The button; must be of the type keyboardButtonTypeRequestUsers, keyboardButtonTypeRequestChat, or keyboardButtonTypeRequestManagedBot.
+         */
+        public KeyboardButton button;
+
+        /**
+         * Default constructor for a function, which saves a keyboard button to be shown to the given user; for bots only.
+         *
+         * <p> Returns {@link Text Text} </p>
+         */
+        public SavePreparedKeyboardButton() {
+        }
+
+        /**
+         * Creates a function, which saves a keyboard button to be shown to the given user; for bots only.
+         *
+         * <p> Returns {@link Text Text} </p>
+         *
+         * @param userId Identifier of the user.
+         * @param button The button; must be of the type keyboardButtonTypeRequestUsers, keyboardButtonTypeRequestChat, or keyboardButtonTypeRequestManagedBot.
+         */
+        public SavePreparedKeyboardButton(long userId, KeyboardButton button) {
+            this.userId = userId;
+            this.button = button;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -894817192;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
      * Searches affiliate programs that can be connected to the given affiliate.
      *
      * <p> Returns {@link FoundAffiliatePrograms FoundAffiliatePrograms} </p>
@@ -126827,6 +131462,10 @@ public class TdApi {
          */
         public boolean forCrafting;
         /**
+         * Pass true to get only gifts that can be bought using Telegram Stars.
+         */
+        public boolean forStars;
+        /**
          * Attributes used to filter received gifts. If multiple attributes of the same type are specified, then all of them are allowed. If none attributes of specific type are specified, then all values for this attribute type are allowed.
          */
         public UpgradedGiftAttributeId[] attributes;
@@ -126855,14 +131494,16 @@ public class TdApi {
          * @param giftId Identifier of the regular gift that was upgraded to a unique gift.
          * @param order Order in which the results will be sorted.
          * @param forCrafting Pass true to get only gifts suitable for crafting.
+         * @param forStars Pass true to get only gifts that can be bought using Telegram Stars.
          * @param attributes Attributes used to filter received gifts. If multiple attributes of the same type are specified, then all of them are allowed. If none attributes of specific type are specified, then all values for this attribute type are allowed.
          * @param offset Offset of the first entry to return as received from the previous request with the same order and attributes; use empty string to get the first chunk of results.
          * @param limit The maximum number of gifts to return.
          */
-        public SearchGiftsForResale(long giftId, GiftForResaleOrder order, boolean forCrafting, UpgradedGiftAttributeId[] attributes, String offset, int limit) {
+        public SearchGiftsForResale(long giftId, GiftForResaleOrder order, boolean forCrafting, boolean forStars, UpgradedGiftAttributeId[] attributes, String offset, int limit) {
             this.giftId = giftId;
             this.order = order;
             this.forCrafting = forCrafting;
+            this.forStars = forStars;
             this.attributes = attributes;
             this.offset = offset;
             this.limit = limit;
@@ -126871,7 +131512,7 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = -1886868338;
+        public static final int CONSTRUCTOR = 1947702322;
 
         /**
          * @return this.CONSTRUCTOR
@@ -127011,7 +131652,7 @@ public class TdApi {
          */
         public int limit;
         /**
-         * Additional filter for messages to search; pass null to search for all messages. Filters searchMessagesFilterMention, searchMessagesFilterUnreadMention, searchMessagesFilterUnreadReaction, searchMessagesFilterFailedToSend, and searchMessagesFilterPinned are unsupported in this function.
+         * Additional filter for messages to search; pass null to search for all messages. Filters searchMessagesFilterMention, searchMessagesFilterUnreadMention, searchMessagesFilterUnreadReaction, searchMessagesFilterUnreadPollVote, searchMessagesFilterFailedToSend, and searchMessagesFilterPinned are unsupported in this function.
          */
         public SearchMessagesFilter filter;
         /**
@@ -127044,7 +131685,7 @@ public class TdApi {
          * @param query Query to search for.
          * @param offset Offset of the first entry to return as received from the previous request; use empty string to get the first chunk of results.
          * @param limit The maximum number of messages to be returned; up to 100. For optimal performance, the number of returned messages is chosen by TDLib and can be smaller than the specified limit.
-         * @param filter Additional filter for messages to search; pass null to search for all messages. Filters searchMessagesFilterMention, searchMessagesFilterUnreadMention, searchMessagesFilterUnreadReaction, searchMessagesFilterFailedToSend, and searchMessagesFilterPinned are unsupported in this function.
+         * @param filter Additional filter for messages to search; pass null to search for all messages. Filters searchMessagesFilterMention, searchMessagesFilterUnreadMention, searchMessagesFilterUnreadReaction, searchMessagesFilterUnreadPollVote, searchMessagesFilterFailedToSend, and searchMessagesFilterPinned are unsupported in this function.
          * @param chatTypeFilter Additional filter for type of the chat of the searched messages; pass null to search for messages in all chats.
          * @param minDate If not 0, the minimum date of the messages to return.
          * @param maxDate If not 0, the maximum date of the messages to return.
@@ -127995,6 +132636,50 @@ public class TdApi {
     }
 
     /**
+     * Searches a custom text composition style by its name.
+     *
+     * <p> Returns {@link TextCompositionStyle TextCompositionStyle} </p>
+     */
+    public static class SearchTextCompositionStyle extends Function<TextCompositionStyle> {
+        /**
+         * Name of the style.
+         */
+        public String name;
+
+        /**
+         * Default constructor for a function, which searches a custom text composition style by its name.
+         *
+         * <p> Returns {@link TextCompositionStyle TextCompositionStyle} </p>
+         */
+        public SearchTextCompositionStyle() {
+        }
+
+        /**
+         * Creates a function, which searches a custom text composition style by its name.
+         *
+         * <p> Returns {@link TextCompositionStyle TextCompositionStyle} </p>
+         *
+         * @param name Name of the style.
+         */
+        public SearchTextCompositionStyle(String name) {
+            this.name = name;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -704463202;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
      * Searches a user by their phone number. Returns a 404 error if the user can't be found.
      *
      * <p> Returns {@link User User} </p>
@@ -128463,7 +133148,7 @@ public class TdApi {
         /**
          * Call identifier.
          */
-        public int callId;
+        public InputCall callId;
         /**
          * Debug information in application-specific format.
          */
@@ -128485,7 +133170,7 @@ public class TdApi {
          * @param callId Call identifier.
          * @param debugInformation Debug information in application-specific format.
          */
-        public SendCallDebugInformation(int callId, String debugInformation) {
+        public SendCallDebugInformation(InputCall callId, String debugInformation) {
             this.callId = callId;
             this.debugInformation = debugInformation;
         }
@@ -128493,7 +133178,7 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = 2019243839;
+        public static final int CONSTRUCTOR = -1671879106;
 
         /**
          * @return this.CONSTRUCTOR
@@ -128513,7 +133198,7 @@ public class TdApi {
         /**
          * Call identifier.
          */
-        public int callId;
+        public InputCall callId;
         /**
          * Call log file. Only inputFileLocal and inputFileGenerated are supported.
          */
@@ -128535,7 +133220,7 @@ public class TdApi {
          * @param callId Call identifier.
          * @param logFile Call log file. Only inputFileLocal and inputFileGenerated are supported.
          */
-        public SendCallLog(int callId, InputFile logFile) {
+        public SendCallLog(InputCall callId, InputFile logFile) {
             this.callId = callId;
             this.logFile = logFile;
         }
@@ -128543,7 +133228,7 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = 1057638353;
+        public static final int CONSTRUCTOR = -608809175;
 
         /**
          * @return this.CONSTRUCTOR
@@ -128563,7 +133248,7 @@ public class TdApi {
         /**
          * Call identifier.
          */
-        public int callId;
+        public InputCall callId;
         /**
          * Call rating; 1-5.
          */
@@ -128595,7 +133280,7 @@ public class TdApi {
          * @param comment An optional user comment if the rating is less than 5.
          * @param problems List of the exact types of problems with the call, specified by the user.
          */
-        public SendCallRating(int callId, int rating, String comment, CallProblem[] problems) {
+        public SendCallRating(InputCall callId, int rating, String comment, CallProblem[] problems) {
             this.callId = callId;
             this.rating = rating;
             this.comment = comment;
@@ -128605,7 +133290,7 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = -1402719502;
+        public static final int CONSTRUCTOR = -158354447;
 
         /**
          * @return this.CONSTRUCTOR
@@ -128837,7 +133522,7 @@ public class TdApi {
          */
         public MessageSender ownerId;
         /**
-         * Text to show along with the gift; 0-getOption(&quot;gift_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, and CustomEmoji entities are allowed. Must be empty if the receiver enabled paid messages.
+         * Text to show along with the gift; 0-getOption(&quot;gift_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities are allowed. Must be empty if the receiver enabled paid messages.
          */
         public FormattedText text;
         /**
@@ -128864,7 +133549,7 @@ public class TdApi {
          *
          * @param giftId Identifier of the gift to send.
          * @param ownerId Identifier of the user or the channel chat that will receive the gift; limited gifts can't be sent to channel chats.
-         * @param text Text to show along with the gift; 0-getOption(&quot;gift_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, and CustomEmoji entities are allowed. Must be empty if the receiver enabled paid messages.
+         * @param text Text to show along with the gift; 0-getOption(&quot;gift_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities are allowed. Must be empty if the receiver enabled paid messages.
          * @param isPrivate Pass true to show gift text and sender only to the gift receiver; otherwise, everyone will be able to see them.
          * @param payForUpgrade Pass true to additionally pay for the gift upgrade and allow the receiver to upgrade it for free.
          */
@@ -128969,7 +133654,7 @@ public class TdApi {
          */
         public int groupCallId;
         /**
-         * Text of the message to send; 1-getOption(&quot;group_call_message_text_length_max&quot;) characters for non-live-stories; see updateGroupCallMessageLevels for live story restrictions, which depends on paidMessageStarCount. Can't contain line feeds for live stories.
+         * Text of the message to send; 1-getOption(&quot;group_call_message_text_length_max&quot;) characters for non-live-stories; see updateGroupCallMessageLevels for live story restrictions, which depends on paidMessageStarCount. Can't contain line feeds for live stories. Can contain only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities for live stories.
          */
         public FormattedText text;
         /**
@@ -128991,7 +133676,7 @@ public class TdApi {
          * <p> Returns {@link Ok Ok} </p>
          *
          * @param groupCallId Group call identifier.
-         * @param text Text of the message to send; 1-getOption(&quot;group_call_message_text_length_max&quot;) characters for non-live-stories; see updateGroupCallMessageLevels for live story restrictions, which depends on paidMessageStarCount. Can't contain line feeds for live stories.
+         * @param text Text of the message to send; 1-getOption(&quot;group_call_message_text_length_max&quot;) characters for non-live-stories; see updateGroupCallMessageLevels for live story restrictions, which depends on paidMessageStarCount. Can't contain line feeds for live stories. Can contain only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities for live stories.
          * @param paidMessageStarCount The number of Telegram Stars the user agreed to pay to send the message; for live stories only; 0-getOption(&quot;paid_group_call_message_star_count_max&quot;). Must be 0 for messages sent to live stories posted by the current user.
          */
         public SendGroupCallMessage(int groupCallId, FormattedText text, long paidMessageStarCount) {
@@ -129226,6 +133911,80 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = -1488607732;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Informs TDLib about details of a message view by the user from a chat, a message thread or a forum topic history. The method must be called if the message wasn't seen for more than 300 milliseconds, the viewport was destroyed, or the total view duration exceeded 5 minutes.
+     *
+     * <p> Returns {@link Ok Ok} </p>
+     */
+    public static class SendMessageViewMetrics extends Function<Ok> {
+        /**
+         * Chat identifier.
+         */
+        public long chatId;
+        /**
+         * The identifier of the message being viewed.
+         */
+        public long messageId;
+        /**
+         * The amount of time the message was seen by at least 1 pixel; in milliseconds.
+         */
+        public int timeInViewMs;
+        /**
+         * The amount of time the message was seen by at least 1 pixel within 15 seconds after any action from the user; in milliseconds.
+         */
+        public int activeTimeInViewMs;
+        /**
+         * The ratio of the post height to the viewport height in 1/1000 fractions.
+         */
+        public int heightToViewportRatioPerMille;
+        /**
+         * The ratio of the viewed post height to the full post height in 1/1000 fractions; 0-1000.
+         */
+        public int seenRangeRatioPerMille;
+
+        /**
+         * Default constructor for a function, which informs TDLib about details of a message view by the user from a chat, a message thread or a forum topic history. The method must be called if the message wasn't seen for more than 300 milliseconds, the viewport was destroyed, or the total view duration exceeded 5 minutes.
+         *
+         * <p> Returns {@link Ok Ok} </p>
+         */
+        public SendMessageViewMetrics() {
+        }
+
+        /**
+         * Creates a function, which informs TDLib about details of a message view by the user from a chat, a message thread or a forum topic history. The method must be called if the message wasn't seen for more than 300 milliseconds, the viewport was destroyed, or the total view duration exceeded 5 minutes.
+         *
+         * <p> Returns {@link Ok Ok} </p>
+         *
+         * @param chatId Chat identifier.
+         * @param messageId The identifier of the message being viewed.
+         * @param timeInViewMs The amount of time the message was seen by at least 1 pixel; in milliseconds.
+         * @param activeTimeInViewMs The amount of time the message was seen by at least 1 pixel within 15 seconds after any action from the user; in milliseconds.
+         * @param heightToViewportRatioPerMille The ratio of the post height to the viewport height in 1/1000 fractions.
+         * @param seenRangeRatioPerMille The ratio of the viewed post height to the full post height in 1/1000 fractions; 0-1000.
+         */
+        public SendMessageViewMetrics(long chatId, long messageId, int timeInViewMs, int activeTimeInViewMs, int heightToViewportRatioPerMille, int seenRangeRatioPerMille) {
+            this.chatId = chatId;
+            this.messageId = messageId;
+            this.timeInViewMs = timeInViewMs;
+            this.activeTimeInViewMs = activeTimeInViewMs;
+            this.heightToViewportRatioPerMille = heightToViewportRatioPerMille;
+            this.seenRangeRatioPerMille = seenRangeRatioPerMille;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 698012087;
 
         /**
          * @return this.CONSTRUCTOR
@@ -129591,7 +134350,7 @@ public class TdApi {
          */
         public long draftId;
         /**
-         * Draft text of the message.
+         * Draft text of the message; pass null to show a &quot;Thinking...&quot; placeholder.
          */
         public FormattedText text;
 
@@ -129611,7 +134370,7 @@ public class TdApi {
          * @param chatId Chat identifier.
          * @param forumTopicId The forum topic identifier in which the message will be sent; pass 0 if none.
          * @param draftId Unique identifier of the draft.
-         * @param text Draft text of the message.
+         * @param text Draft text of the message; pass null to show a &quot;Thinking...&quot; placeholder.
          */
         public SendTextMessageDraft(long chatId, int forumTopicId, long draftId, FormattedText text) {
             this.chatId = chatId;
@@ -130087,6 +134846,10 @@ public class TdApi {
          */
         public boolean isRestore;
         /**
+         * The number of days for which the Telegram Premium subscription will be granted.
+         */
+        public int premiumDayCount;
+        /**
          * ISO 4217 currency code of the payment currency.
          */
         public String currency;
@@ -130110,12 +134873,14 @@ public class TdApi {
          *
          * @param transaction Information about the transaction.
          * @param isRestore Pass true if this is a restore of a Telegram Premium purchase; only for App Store.
+         * @param premiumDayCount The number of days for which the Telegram Premium subscription will be granted.
          * @param currency ISO 4217 currency code of the payment currency.
          * @param amount Paid amount, in the smallest units of the currency.
          */
-        public SetAuthenticationPremiumPurchaseTransaction(StoreTransaction transaction, boolean isRestore, String currency, long amount) {
+        public SetAuthenticationPremiumPurchaseTransaction(StoreTransaction transaction, boolean isRestore, int premiumDayCount, String currency, long amount) {
             this.transaction = transaction;
             this.isRestore = isRestore;
+            this.premiumDayCount = premiumDayCount;
             this.currency = currency;
             this.amount = amount;
         }
@@ -130123,7 +134888,7 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = -450986887;
+        public static final int CONSTRUCTOR = 2014147806;
 
         /**
          * @return this.CONSTRUCTOR
@@ -131860,6 +136625,62 @@ public class TdApi {
          * Identifier uniquely determining type of the object.
          */
         public static final int CONSTRUCTOR = 81794847;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
+     * Changes the tag or custom title of a chat member; requires canManageTags administrator right to change tag of other users; for basic groups and supergroups only.
+     *
+     * <p> Returns {@link Ok Ok} </p>
+     */
+    public static class SetChatMemberTag extends Function<Ok> {
+        /**
+         * Chat identifier.
+         */
+        public long chatId;
+        /**
+         * Identifier of the user, which tag is changed. Chats can't have member tags.
+         */
+        public long userId;
+        /**
+         * The new tag of the member in the chat; 0-16 characters without emoji.
+         */
+        public String tag;
+
+        /**
+         * Default constructor for a function, which changes the tag or custom title of a chat member; requires canManageTags administrator right to change tag of other users; for basic groups and supergroups only.
+         *
+         * <p> Returns {@link Ok Ok} </p>
+         */
+        public SetChatMemberTag() {
+        }
+
+        /**
+         * Creates a function, which changes the tag or custom title of a chat member; requires canManageTags administrator right to change tag of other users; for basic groups and supergroups only.
+         *
+         * <p> Returns {@link Ok Ok} </p>
+         *
+         * @param chatId Chat identifier.
+         * @param userId Identifier of the user, which tag is changed. Chats can't have member tags.
+         * @param tag The new tag of the member in the chat; 0-16 characters without emoji.
+         */
+        public SetChatMemberTag(long chatId, long userId, String tag) {
+            this.chatId = chatId;
+            this.userId = userId;
+            this.tag = tag;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = 937859366;
 
         /**
          * @return this.CONSTRUCTOR
@@ -133939,6 +138760,56 @@ public class TdApi {
     }
 
     /**
+     * Sets access settings of a managed bot; for bots only.
+     *
+     * <p> Returns {@link Ok Ok} </p>
+     */
+    public static class SetManagedBotAccessSettings extends Function<Ok> {
+        /**
+         * Identifier of the managed bot.
+         */
+        public long botUserId;
+        /**
+         * New access settings.
+         */
+        public BotAccessSettings settings;
+
+        /**
+         * Default constructor for a function, which sets access settings of a managed bot; for bots only.
+         *
+         * <p> Returns {@link Ok Ok} </p>
+         */
+        public SetManagedBotAccessSettings() {
+        }
+
+        /**
+         * Creates a function, which sets access settings of a managed bot; for bots only.
+         *
+         * <p> Returns {@link Ok Ok} </p>
+         *
+         * @param botUserId Identifier of the managed bot.
+         * @param settings New access settings.
+         */
+        public SetManagedBotAccessSettings(long botUserId, BotAccessSettings settings) {
+            this.botUserId = botUserId;
+            this.settings = settings;
+        }
+
+        /**
+         * Identifier uniquely determining type of the object.
+         */
+        public static final int CONSTRUCTOR = -662104110;
+
+        /**
+         * @return this.CONSTRUCTOR
+         */
+        @Override
+        public int getConstructor() {
+            return CONSTRUCTOR;
+        }
+    }
+
+    /**
      * Sets menu button for the given user or for all users; for bots only.
      *
      * <p> Returns {@link Ok Ok} </p>
@@ -134863,7 +139734,7 @@ public class TdApi {
     }
 
     /**
-     * Changes the user answer to a poll. A poll in quiz mode can be answered only once.
+     * Changes the user answer to a poll.
      *
      * <p> Returns {@link Ok Ok} </p>
      */
@@ -134882,7 +139753,7 @@ public class TdApi {
         public int[] optionIds;
 
         /**
-         * Default constructor for a function, which changes the user answer to a poll. A poll in quiz mode can be answered only once.
+         * Default constructor for a function, which changes the user answer to a poll.
          *
          * <p> Returns {@link Ok Ok} </p>
          */
@@ -134890,7 +139761,7 @@ public class TdApi {
         }
 
         /**
-         * Creates a function, which changes the user answer to a poll. A poll in quiz mode can be answered only once.
+         * Creates a function, which changes the user answer to a poll.
          *
          * <p> Returns {@link Ok Ok} </p>
          *
@@ -136313,7 +141184,7 @@ public class TdApi {
          */
         public long userId;
         /**
-         * Note to set for the user; 0-getOption(&quot;user_note_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, and CustomEmoji entities are allowed.
+         * Note to set for the user; 0-getOption(&quot;user_note_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities are allowed.
          */
         public FormattedText note;
 
@@ -136331,7 +141202,7 @@ public class TdApi {
          * <p> Returns {@link Ok Ok} </p>
          *
          * @param userId User identifier.
-         * @param note Note to set for the user; 0-getOption(&quot;user_note_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, and CustomEmoji entities are allowed.
+         * @param note Note to set for the user; 0-getOption(&quot;user_note_text_length_max&quot;) characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities are allowed.
          */
         public SetUserNote(long userId, FormattedText note) {
             this.userId = userId;
@@ -136653,13 +141524,9 @@ public class TdApi {
      */
     public static class ShareChatWithBot extends Function<Ok> {
         /**
-         * Identifier of the chat with the bot.
+         * Source of the button.
          */
-        public long chatId;
-        /**
-         * Identifier of the message with the button.
-         */
-        public long messageId;
+        public KeyboardButtonSource source;
         /**
          * Identifier of the button.
          */
@@ -136686,15 +141553,13 @@ public class TdApi {
          *
          * <p> Returns {@link Ok Ok} </p>
          *
-         * @param chatId Identifier of the chat with the bot.
-         * @param messageId Identifier of the message with the button.
+         * @param source Source of the button.
          * @param buttonId Identifier of the button.
          * @param sharedChatId Identifier of the shared chat.
          * @param onlyCheck Pass true to check that the chat can be shared by the button instead of actually sharing it. Doesn't check botIsMember and botAdministratorRights restrictions. If the bot must be a member, then all chats from getGroupsInCommon and all chats, where the user can add the bot, are suitable. In the latter case the bot will be automatically added to the chat. If the bot must be an administrator, then all chats, where the bot already has requested rights or can be added to administrators by the user, are suitable. In the latter case the bot will be automatically granted requested rights.
          */
-        public ShareChatWithBot(long chatId, long messageId, int buttonId, long sharedChatId, boolean onlyCheck) {
-            this.chatId = chatId;
-            this.messageId = messageId;
+        public ShareChatWithBot(KeyboardButtonSource source, int buttonId, long sharedChatId, boolean onlyCheck) {
+            this.source = source;
             this.buttonId = buttonId;
             this.sharedChatId = sharedChatId;
             this.onlyCheck = onlyCheck;
@@ -136703,7 +141568,7 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = -1504507166;
+        public static final int CONSTRUCTOR = -917243698;
 
         /**
          * @return this.CONSTRUCTOR
@@ -136765,13 +141630,9 @@ public class TdApi {
      */
     public static class ShareUsersWithBot extends Function<Ok> {
         /**
-         * Identifier of the chat with the bot.
+         * Source of the button.
          */
-        public long chatId;
-        /**
-         * Identifier of the message with the button.
-         */
-        public long messageId;
+        public KeyboardButtonSource source;
         /**
          * Identifier of the button.
          */
@@ -136798,15 +141659,13 @@ public class TdApi {
          *
          * <p> Returns {@link Ok Ok} </p>
          *
-         * @param chatId Identifier of the chat with the bot.
-         * @param messageId Identifier of the message with the button.
+         * @param source Source of the button.
          * @param buttonId Identifier of the button.
          * @param sharedUserIds Identifiers of the shared users.
          * @param onlyCheck Pass true to check that the users can be shared by the button instead of actually sharing them.
          */
-        public ShareUsersWithBot(long chatId, long messageId, int buttonId, long[] sharedUserIds, boolean onlyCheck) {
-            this.chatId = chatId;
-            this.messageId = messageId;
+        public ShareUsersWithBot(KeyboardButtonSource source, int buttonId, long[] sharedUserIds, boolean onlyCheck) {
+            this.source = source;
             this.buttonId = buttonId;
             this.sharedUserIds = sharedUserIds;
             this.onlyCheck = onlyCheck;
@@ -136815,7 +141674,7 @@ public class TdApi {
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = -1574608333;
+        public static final int CONSTRUCTOR = 1154320179;
 
         /**
          * @return this.CONSTRUCTOR
@@ -137295,9 +142154,13 @@ public class TdApi {
          */
         public long messageId;
         /**
-         * Pass a language code to which the summary will be translated; may be empty if translation isn't needed. See translateText.toLanguageCode for the list of supported values.
+         * Pass a language code to which the summary will be translated; pass an empty string if translation isn't needed. See translateText.toLanguageCode for the list of supported values.
          */
         public String translateToLanguageCode;
+        /**
+         * Tone of the summarization; see translateText.tone for the list of supported values.
+         */
+        public String tone;
 
         /**
          * Default constructor for a function, which summarizes content of the message with non-empty summaryLanguageCode.
@@ -137314,18 +142177,20 @@ public class TdApi {
          *
          * @param chatId Identifier of the chat to which the message belongs.
          * @param messageId Identifier of the message.
-         * @param translateToLanguageCode Pass a language code to which the summary will be translated; may be empty if translation isn't needed. See translateText.toLanguageCode for the list of supported values.
+         * @param translateToLanguageCode Pass a language code to which the summary will be translated; pass an empty string if translation isn't needed. See translateText.toLanguageCode for the list of supported values.
+         * @param tone Tone of the summarization; see translateText.tone for the list of supported values.
          */
-        public SummarizeMessage(long chatId, long messageId, String translateToLanguageCode) {
+        public SummarizeMessage(long chatId, long messageId, String translateToLanguageCode, String tone) {
             this.chatId = chatId;
             this.messageId = messageId;
             this.translateToLanguageCode = translateToLanguageCode;
+            this.tone = tone;
         }
 
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = 1405194782;
+        public static final int CONSTRUCTOR = -1464885562;
 
         /**
          * @return this.CONSTRUCTOR
@@ -138378,7 +143243,7 @@ public class TdApi {
     }
 
     /**
-     * Changes the ability of users to save, forward, or copy chat content. Supported only for basic groups, supergroups and channels. Requires owner privileges.
+     * Changes the ability of users to save, forward, or copy chat content. Requires owner privileges in basic groups, supergroups and channels. Requires Telegram Premium to enable protected content in private chats. Not available in Saved Messages and private chats with bots or support accounts.
      *
      * <p> Returns {@link Ok Ok} </p>
      */
@@ -138393,7 +143258,7 @@ public class TdApi {
         public boolean hasProtectedContent;
 
         /**
-         * Default constructor for a function, which changes the ability of users to save, forward, or copy chat content. Supported only for basic groups, supergroups and channels. Requires owner privileges.
+         * Default constructor for a function, which changes the ability of users to save, forward, or copy chat content. Requires owner privileges in basic groups, supergroups and channels. Requires Telegram Premium to enable protected content in private chats. Not available in Saved Messages and private chats with bots or support accounts.
          *
          * <p> Returns {@link Ok Ok} </p>
          */
@@ -138401,7 +143266,7 @@ public class TdApi {
         }
 
         /**
-         * Creates a function, which changes the ability of users to save, forward, or copy chat content. Supported only for basic groups, supergroups and channels. Requires owner privileges.
+         * Creates a function, which changes the ability of users to save, forward, or copy chat content. Requires owner privileges in basic groups, supergroups and channels. Requires Telegram Premium to enable protected content in private chats. Not available in Saved Messages and private chats with bots or support accounts.
          *
          * <p> Returns {@link Ok Ok} </p>
          *
@@ -140282,7 +145147,7 @@ public class TdApi {
     }
 
     /**
-     * Changes the owner of a chat; requires owner privileges in the chat. Use the method canTransferOwnership to check whether the ownership can be transferred from the current session. Available only for supergroups and channel chats.
+     * Changes the owner of a chat; for basic groups, supergroups and channel chats only; requires owner privileges in the chat. Use the method canTransferOwnership to check whether the ownership can be transferred from the current session.
      *
      * <p> Returns {@link Ok Ok} </p>
      */
@@ -140301,7 +145166,7 @@ public class TdApi {
         public String password;
 
         /**
-         * Default constructor for a function, which changes the owner of a chat; requires owner privileges in the chat. Use the method canTransferOwnership to check whether the ownership can be transferred from the current session. Available only for supergroups and channel chats.
+         * Default constructor for a function, which changes the owner of a chat; for basic groups, supergroups and channel chats only; requires owner privileges in the chat. Use the method canTransferOwnership to check whether the ownership can be transferred from the current session.
          *
          * <p> Returns {@link Ok Ok} </p>
          */
@@ -140309,7 +145174,7 @@ public class TdApi {
         }
 
         /**
-         * Creates a function, which changes the owner of a chat; requires owner privileges in the chat. Use the method canTransferOwnership to check whether the ownership can be transferred from the current session. Available only for supergroups and channel chats.
+         * Creates a function, which changes the owner of a chat; for basic groups, supergroups and channel chats only; requires owner privileges in the chat. Use the method canTransferOwnership to check whether the ownership can be transferred from the current session.
          *
          * <p> Returns {@link Ok Ok} </p>
          *
@@ -140400,7 +145265,7 @@ public class TdApi {
     }
 
     /**
-     * Extracts text or caption of the given message and translates it to the given language. If the current user is a Telegram Premium user, then text formatting is preserved.
+     * Extracts text or caption of the given message and translates it to the given language; must not be used in secret chats. If the current user is a Telegram Premium user, then text formatting is preserved.
      *
      * <p> Returns {@link FormattedText FormattedText} </p>
      */
@@ -140417,9 +145282,13 @@ public class TdApi {
          * Language code of the language to which the message is translated. See translateText.toLanguageCode for the list of supported values.
          */
         public String toLanguageCode;
+        /**
+         * Tone of the translation; see translateText.tone for the list of supported values.
+         */
+        public String tone;
 
         /**
-         * Default constructor for a function, which extracts text or caption of the given message and translates it to the given language. If the current user is a Telegram Premium user, then text formatting is preserved.
+         * Default constructor for a function, which extracts text or caption of the given message and translates it to the given language; must not be used in secret chats. If the current user is a Telegram Premium user, then text formatting is preserved.
          *
          * <p> Returns {@link FormattedText FormattedText} </p>
          */
@@ -140427,24 +145296,26 @@ public class TdApi {
         }
 
         /**
-         * Creates a function, which extracts text or caption of the given message and translates it to the given language. If the current user is a Telegram Premium user, then text formatting is preserved.
+         * Creates a function, which extracts text or caption of the given message and translates it to the given language; must not be used in secret chats. If the current user is a Telegram Premium user, then text formatting is preserved.
          *
          * <p> Returns {@link FormattedText FormattedText} </p>
          *
          * @param chatId Identifier of the chat to which the message belongs.
          * @param messageId Identifier of the message.
          * @param toLanguageCode Language code of the language to which the message is translated. See translateText.toLanguageCode for the list of supported values.
+         * @param tone Tone of the translation; see translateText.tone for the list of supported values.
          */
-        public TranslateMessageText(long chatId, long messageId, String toLanguageCode) {
+        public TranslateMessageText(long chatId, long messageId, String toLanguageCode, String tone) {
             this.chatId = chatId;
             this.messageId = messageId;
             this.toLanguageCode = toLanguageCode;
+            this.tone = tone;
         }
 
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = 1405427410;
+        public static final int CONSTRUCTOR = -1995371403;
 
         /**
          * @return this.CONSTRUCTOR
@@ -140456,7 +145327,7 @@ public class TdApi {
     }
 
     /**
-     * Translates a text to the given language. If the current user is a Telegram Premium user, then text formatting is preserved.
+     * Translates a text to the given language; must not be used in secret chats. If the current user is a Telegram Premium user, then text formatting is preserved.
      *
      * <p> Returns {@link FormattedText FormattedText} </p>
      */
@@ -140466,12 +145337,16 @@ public class TdApi {
          */
         public FormattedText text;
         /**
-         * Language code of the language to which the message is translated. Must be one of &quot;af&quot;, &quot;sq&quot;, &quot;am&quot;, &quot;ar&quot;, &quot;hy&quot;, &quot;az&quot;, &quot;eu&quot;, &quot;be&quot;, &quot;bn&quot;, &quot;bs&quot;, &quot;bg&quot;, &quot;ca&quot;, &quot;ceb&quot;, &quot;zh-CN&quot;, &quot;zh&quot;, &quot;zh-Hans&quot;, &quot;zh-TW&quot;, &quot;zh-Hant&quot;, &quot;co&quot;, &quot;hr&quot;, &quot;cs&quot;, &quot;da&quot;, &quot;nl&quot;, &quot;en&quot;, &quot;eo&quot;, &quot;et&quot;, &quot;fi&quot;, &quot;fr&quot;, &quot;fy&quot;, &quot;gl&quot;, &quot;ka&quot;, &quot;de&quot;, &quot;el&quot;, &quot;gu&quot;, &quot;ht&quot;, &quot;ha&quot;, &quot;haw&quot;, &quot;he&quot;, &quot;iw&quot;, &quot;hi&quot;, &quot;hmn&quot;, &quot;hu&quot;, &quot;is&quot;, &quot;ig&quot;, &quot;id&quot;, &quot;in&quot;, &quot;ga&quot;, &quot;it&quot;, &quot;ja&quot;, &quot;jv&quot;, &quot;kn&quot;, &quot;kk&quot;, &quot;km&quot;, &quot;rw&quot;, &quot;ko&quot;, &quot;ku&quot;, &quot;ky&quot;, &quot;lo&quot;, &quot;la&quot;, &quot;lv&quot;, &quot;lt&quot;, &quot;lb&quot;, &quot;mk&quot;, &quot;mg&quot;, &quot;ms&quot;, &quot;ml&quot;, &quot;mt&quot;, &quot;mi&quot;, &quot;mr&quot;, &quot;mn&quot;, &quot;my&quot;, &quot;ne&quot;, &quot;no&quot;, &quot;ny&quot;, &quot;or&quot;, &quot;ps&quot;, &quot;fa&quot;, &quot;pl&quot;, &quot;pt&quot;, &quot;pa&quot;, &quot;ro&quot;, &quot;ru&quot;, &quot;sm&quot;, &quot;gd&quot;, &quot;sr&quot;, &quot;st&quot;, &quot;sn&quot;, &quot;sd&quot;, &quot;si&quot;, &quot;sk&quot;, &quot;sl&quot;, &quot;so&quot;, &quot;es&quot;, &quot;su&quot;, &quot;sw&quot;, &quot;sv&quot;, &quot;tl&quot;, &quot;tg&quot;, &quot;ta&quot;, &quot;tt&quot;, &quot;te&quot;, &quot;th&quot;, &quot;tr&quot;, &quot;tk&quot;, &quot;uk&quot;, &quot;ur&quot;, &quot;ug&quot;, &quot;uz&quot;, &quot;vi&quot;, &quot;cy&quot;, &quot;xh&quot;, &quot;yi&quot;, &quot;ji&quot;, &quot;yo&quot;, &quot;zu&quot;.
+         * Language code of the language to which the message is translated. Must be one of &quot;af&quot;, &quot;sq&quot;, &quot;am&quot;, &quot;ar&quot;, &quot;hy&quot;, &quot;az&quot;, &quot;eu&quot;, &quot;be&quot;, &quot;bn&quot;, &quot;bs&quot;, &quot;bg&quot;, &quot;ca&quot;, &quot;ceb&quot;, &quot;zh-CN&quot;, &quot;zh&quot;, &quot;zh-Hans&quot;, &quot;zh-TW&quot;, &quot;zh-Hant&quot;, &quot;co&quot;, &quot;hr&quot;, &quot;cs&quot;, &quot;da&quot;, &quot;nl&quot;, &quot;en&quot;, &quot;eo&quot;, &quot;et&quot;, &quot;fi&quot;, &quot;fr&quot;, &quot;fy&quot;, &quot;gl&quot;, &quot;ka&quot;, &quot;de&quot;, &quot;el&quot;, &quot;gu&quot;, &quot;ht&quot;, &quot;ha&quot;, &quot;haw&quot;, &quot;he&quot;, &quot;iw&quot;, &quot;hi&quot;, &quot;hmn&quot;, &quot;hu&quot;, &quot;is&quot;, &quot;ig&quot;, &quot;id&quot;, &quot;in&quot;, &quot;ga&quot;, &quot;it&quot;, &quot;ja&quot;, &quot;jv&quot;, &quot;kn&quot;, &quot;kk&quot;, &quot;km&quot;, &quot;rw&quot;, &quot;ko&quot;, &quot;ku&quot;, &quot;ky&quot;, &quot;lo&quot;, &quot;la&quot;, &quot;lv&quot;, &quot;lt&quot;, &quot;lb&quot;, &quot;mk&quot;, &quot;mg&quot;, &quot;ms&quot;, &quot;ml&quot;, &quot;mt&quot;, &quot;mi&quot;, &quot;mr&quot;, &quot;mn&quot;, &quot;my&quot;, &quot;ne&quot;, &quot;no&quot;, &quot;ny&quot;, &quot;or&quot;, &quot;ps&quot;, &quot;fa&quot;, &quot;pl&quot;, &quot;pt&quot;, &quot;pt-BR&quot;, &quot;pa&quot;, &quot;ro&quot;, &quot;ru&quot;, &quot;sm&quot;, &quot;gd&quot;, &quot;sr&quot;, &quot;st&quot;, &quot;sn&quot;, &quot;sd&quot;, &quot;si&quot;, &quot;sk&quot;, &quot;sl&quot;, &quot;so&quot;, &quot;es&quot;, &quot;su&quot;, &quot;sw&quot;, &quot;sv&quot;, &quot;tl&quot;, &quot;tg&quot;, &quot;ta&quot;, &quot;tt&quot;, &quot;te&quot;, &quot;th&quot;, &quot;tr&quot;, &quot;tk&quot;, &quot;uk&quot;, &quot;ur&quot;, &quot;ug&quot;, &quot;uz&quot;, &quot;vi&quot;, &quot;cy&quot;, &quot;xh&quot;, &quot;yi&quot;, &quot;ji&quot;, &quot;yo&quot;, &quot;zu&quot;.
          */
         public String toLanguageCode;
+        /**
+         * Tone of the translation; must be one of &quot;&quot;, &quot;formal&quot;, &quot;neutral&quot;, &quot;casual&quot;; defaults to &quot;neutral&quot;.
+         */
+        public String tone;
 
         /**
-         * Default constructor for a function, which translates a text to the given language. If the current user is a Telegram Premium user, then text formatting is preserved.
+         * Default constructor for a function, which translates a text to the given language; must not be used in secret chats. If the current user is a Telegram Premium user, then text formatting is preserved.
          *
          * <p> Returns {@link FormattedText FormattedText} </p>
          */
@@ -140479,22 +145354,24 @@ public class TdApi {
         }
 
         /**
-         * Creates a function, which translates a text to the given language. If the current user is a Telegram Premium user, then text formatting is preserved.
+         * Creates a function, which translates a text to the given language; must not be used in secret chats. If the current user is a Telegram Premium user, then text formatting is preserved.
          *
          * <p> Returns {@link FormattedText FormattedText} </p>
          *
          * @param text Text to translate.
-         * @param toLanguageCode Language code of the language to which the message is translated. Must be one of &quot;af&quot;, &quot;sq&quot;, &quot;am&quot;, &quot;ar&quot;, &quot;hy&quot;, &quot;az&quot;, &quot;eu&quot;, &quot;be&quot;, &quot;bn&quot;, &quot;bs&quot;, &quot;bg&quot;, &quot;ca&quot;, &quot;ceb&quot;, &quot;zh-CN&quot;, &quot;zh&quot;, &quot;zh-Hans&quot;, &quot;zh-TW&quot;, &quot;zh-Hant&quot;, &quot;co&quot;, &quot;hr&quot;, &quot;cs&quot;, &quot;da&quot;, &quot;nl&quot;, &quot;en&quot;, &quot;eo&quot;, &quot;et&quot;, &quot;fi&quot;, &quot;fr&quot;, &quot;fy&quot;, &quot;gl&quot;, &quot;ka&quot;, &quot;de&quot;, &quot;el&quot;, &quot;gu&quot;, &quot;ht&quot;, &quot;ha&quot;, &quot;haw&quot;, &quot;he&quot;, &quot;iw&quot;, &quot;hi&quot;, &quot;hmn&quot;, &quot;hu&quot;, &quot;is&quot;, &quot;ig&quot;, &quot;id&quot;, &quot;in&quot;, &quot;ga&quot;, &quot;it&quot;, &quot;ja&quot;, &quot;jv&quot;, &quot;kn&quot;, &quot;kk&quot;, &quot;km&quot;, &quot;rw&quot;, &quot;ko&quot;, &quot;ku&quot;, &quot;ky&quot;, &quot;lo&quot;, &quot;la&quot;, &quot;lv&quot;, &quot;lt&quot;, &quot;lb&quot;, &quot;mk&quot;, &quot;mg&quot;, &quot;ms&quot;, &quot;ml&quot;, &quot;mt&quot;, &quot;mi&quot;, &quot;mr&quot;, &quot;mn&quot;, &quot;my&quot;, &quot;ne&quot;, &quot;no&quot;, &quot;ny&quot;, &quot;or&quot;, &quot;ps&quot;, &quot;fa&quot;, &quot;pl&quot;, &quot;pt&quot;, &quot;pa&quot;, &quot;ro&quot;, &quot;ru&quot;, &quot;sm&quot;, &quot;gd&quot;, &quot;sr&quot;, &quot;st&quot;, &quot;sn&quot;, &quot;sd&quot;, &quot;si&quot;, &quot;sk&quot;, &quot;sl&quot;, &quot;so&quot;, &quot;es&quot;, &quot;su&quot;, &quot;sw&quot;, &quot;sv&quot;, &quot;tl&quot;, &quot;tg&quot;, &quot;ta&quot;, &quot;tt&quot;, &quot;te&quot;, &quot;th&quot;, &quot;tr&quot;, &quot;tk&quot;, &quot;uk&quot;, &quot;ur&quot;, &quot;ug&quot;, &quot;uz&quot;, &quot;vi&quot;, &quot;cy&quot;, &quot;xh&quot;, &quot;yi&quot;, &quot;ji&quot;, &quot;yo&quot;, &quot;zu&quot;.
+         * @param toLanguageCode Language code of the language to which the message is translated. Must be one of &quot;af&quot;, &quot;sq&quot;, &quot;am&quot;, &quot;ar&quot;, &quot;hy&quot;, &quot;az&quot;, &quot;eu&quot;, &quot;be&quot;, &quot;bn&quot;, &quot;bs&quot;, &quot;bg&quot;, &quot;ca&quot;, &quot;ceb&quot;, &quot;zh-CN&quot;, &quot;zh&quot;, &quot;zh-Hans&quot;, &quot;zh-TW&quot;, &quot;zh-Hant&quot;, &quot;co&quot;, &quot;hr&quot;, &quot;cs&quot;, &quot;da&quot;, &quot;nl&quot;, &quot;en&quot;, &quot;eo&quot;, &quot;et&quot;, &quot;fi&quot;, &quot;fr&quot;, &quot;fy&quot;, &quot;gl&quot;, &quot;ka&quot;, &quot;de&quot;, &quot;el&quot;, &quot;gu&quot;, &quot;ht&quot;, &quot;ha&quot;, &quot;haw&quot;, &quot;he&quot;, &quot;iw&quot;, &quot;hi&quot;, &quot;hmn&quot;, &quot;hu&quot;, &quot;is&quot;, &quot;ig&quot;, &quot;id&quot;, &quot;in&quot;, &quot;ga&quot;, &quot;it&quot;, &quot;ja&quot;, &quot;jv&quot;, &quot;kn&quot;, &quot;kk&quot;, &quot;km&quot;, &quot;rw&quot;, &quot;ko&quot;, &quot;ku&quot;, &quot;ky&quot;, &quot;lo&quot;, &quot;la&quot;, &quot;lv&quot;, &quot;lt&quot;, &quot;lb&quot;, &quot;mk&quot;, &quot;mg&quot;, &quot;ms&quot;, &quot;ml&quot;, &quot;mt&quot;, &quot;mi&quot;, &quot;mr&quot;, &quot;mn&quot;, &quot;my&quot;, &quot;ne&quot;, &quot;no&quot;, &quot;ny&quot;, &quot;or&quot;, &quot;ps&quot;, &quot;fa&quot;, &quot;pl&quot;, &quot;pt&quot;, &quot;pt-BR&quot;, &quot;pa&quot;, &quot;ro&quot;, &quot;ru&quot;, &quot;sm&quot;, &quot;gd&quot;, &quot;sr&quot;, &quot;st&quot;, &quot;sn&quot;, &quot;sd&quot;, &quot;si&quot;, &quot;sk&quot;, &quot;sl&quot;, &quot;so&quot;, &quot;es&quot;, &quot;su&quot;, &quot;sw&quot;, &quot;sv&quot;, &quot;tl&quot;, &quot;tg&quot;, &quot;ta&quot;, &quot;tt&quot;, &quot;te&quot;, &quot;th&quot;, &quot;tr&quot;, &quot;tk&quot;, &quot;uk&quot;, &quot;ur&quot;, &quot;ug&quot;, &quot;uz&quot;, &quot;vi&quot;, &quot;cy&quot;, &quot;xh&quot;, &quot;yi&quot;, &quot;ji&quot;, &quot;yo&quot;, &quot;zu&quot;.
+         * @param tone Tone of the translation; must be one of &quot;&quot;, &quot;formal&quot;, &quot;neutral&quot;, &quot;casual&quot;; defaults to &quot;neutral&quot;.
          */
-        public TranslateText(FormattedText text, String toLanguageCode) {
+        public TranslateText(FormattedText text, String toLanguageCode, String tone) {
             this.text = text;
             this.toLanguageCode = toLanguageCode;
+            this.tone = tone;
         }
 
         /**
          * Identifier uniquely determining type of the object.
          */
-        public static final int CONSTRUCTOR = 623011058;
+        public static final int CONSTRUCTOR = -617975379;
 
         /**
          * @return this.CONSTRUCTOR
