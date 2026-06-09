@@ -533,7 +533,8 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
 
                     if (result instanceof TdApi.ChatMember) {
                         TdApi.ChatMember member = (TdApi.ChatMember) result;
-                        String tag = getTagFromStatus(member.status);
+
+                        String tag = getTagFromMember(member);
 
                         chatMembersTags.put(userId, tag == null ? "" : tag);
 
@@ -550,21 +551,31 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
         return null;
     }
 
-    private String getTagFromStatus(TdApi.ChatMemberStatus status) {
-        switch (status.getConstructor()) {
-            case TdApi.ChatMemberStatusCreator.CONSTRUCTOR:
-                TdApi.ChatMemberStatusCreator creator = (TdApi.ChatMemberStatusCreator) status;
-                return !TextUtils.isEmpty(creator.customTitle) ? creator.customTitle : "Owner";
+//    private String getTagFromStatus(TdApi.ChatMemberStatus status) { // OLD (tdlib 1.8.61
+//        switch (status.getConstructor()) {
+//            case TdApi.ChatMemberStatusCreator.CONSTRUCTOR:
+//                TdApi.ChatMemberStatusCreator creator = (TdApi.ChatMemberStatusCreator) status;
+//                return !TextUtils.isEmpty(creator.customTitle) ? creator.customTitle : "Owner";
+//
+//            case TdApi.ChatMemberStatusAdministrator.CONSTRUCTOR:
+//                TdApi.ChatMemberStatusAdministrator admin = (TdApi.ChatMemberStatusAdministrator) status;
+//                return !TextUtils.isEmpty(admin.customTitle) ? admin.customTitle : "Admin";
+//
+//            case TdApi.ChatMemberStatusRestricted.CONSTRUCTOR:
+//                return null;
+//
+//            default:
+//                return null;
+//        }
+//    }
 
-            case TdApi.ChatMemberStatusAdministrator.CONSTRUCTOR:
-                TdApi.ChatMemberStatusAdministrator admin = (TdApi.ChatMemberStatusAdministrator) status;
-                return !TextUtils.isEmpty(admin.customTitle) ? admin.customTitle : "Admin";
-
-            case TdApi.ChatMemberStatusRestricted.CONSTRUCTOR:
-                return null;
-
-            default:
-                return null;
+    private String getTagFromMember(TdApi.ChatMember member) { // NEW (tdlib 1.8.64)
+        if (member.status instanceof TdApi.ChatMemberStatusCreator) {
+            return !TextUtils.isEmpty(member.tag) ? member.tag : "Owner";
+        } else if (member.status instanceof TdApi.ChatMemberStatusAdministrator) {
+            return !TextUtils.isEmpty(member.tag) ? member.tag : "Admin";
+        } else {
+            return null;
         }
     }
 
