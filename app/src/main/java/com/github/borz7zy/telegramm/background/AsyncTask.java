@@ -79,31 +79,33 @@ public abstract class AsyncTask<Params, Progress, Result> {
     public void execInCurrThread(Params... params) {
         synchronized (this.mLock) {
             AsyncResult<Progress, Result> result = new AsyncResult<>(this);
-            if (!this.mCancelled.get()) {
-                sHandler.dispatchPreExecute(result);
 
-                if (!this.mCancelled.get()) {
-                    try {
-                        result.result = doInBackground(params);
-
-                        if (!this.mCancelled.get()) {
-                            sHandler.dispatchPostExecute(result);
-                        } else {
-                            sHandler.dispatchCancel(result);
-                        }
-                    } catch (Throwable throwable) {
-                        if (!this.mCancelled.get()) {
-                            result.throwable = throwable;
-                            sHandler.dispatchError(result);
-                        } else {
-                            sHandler.dispatchCancel(result);
-                        }
-                    }
-                } else {
-                    sHandler.dispatchCancel(result);
-                }
-            } else {
+            if (this.mCancelled.get()) {
                 sHandler.dispatchCancel(result);
+                return;
+            }
+
+            sHandler.dispatchPreExecute(result);
+
+            if (this.mCancelled.get()) {
+                sHandler.dispatchCancel(result);
+                return;
+            }
+
+            try {
+                result.result = doInBackground(params);
+                if (this.mCancelled.get()) {
+                    sHandler.dispatchCancel(result);
+                } else {
+                    sHandler.dispatchPostExecute(result);
+                }
+            } catch (Throwable throwable) {
+                if (this.mCancelled.get()) {
+                    sHandler.dispatchCancel(result);
+                } else {
+                    result.throwable = throwable;
+                    sHandler.dispatchError(result);
+                }
             }
         }
     }

@@ -14,6 +14,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentContainerView;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -214,21 +215,32 @@ public class MainFragment extends Fragment {
         return 1;
     }
 
-    private void switchToFragment(int id) {
-        Fragment target;
+    private Fragment resolveTarget(int id) {
         if (id == R.id.nav_chats) {
             if (dialogsFragment == null) dialogsFragment = new DialogsFragment();
-            target = dialogsFragment;
-        } else if (id == R.id.nav_contacts) {
-            if (contactsFragment == null) contactsFragment = new ContactsFragment();
-            target = contactsFragment;
-        } else if (id == R.id.nav_settings) {
-            if (settingsFragment == null) settingsFragment = new SettingsFragment();
-            target = settingsFragment;
-        } else {
-            target = null;
+            return dialogsFragment;
         }
+        if (id == R.id.nav_contacts) {
+            if (contactsFragment == null) contactsFragment = new ContactsFragment();
+            return contactsFragment;
+        }
+        if (id == R.id.nav_settings) {
+            if (settingsFragment == null) settingsFragment = new SettingsFragment();
+            return settingsFragment;
+        }
+        return null;
+    }
 
+    private void hideInactiveFragments(FragmentTransaction transaction, Fragment target) {
+        for (Fragment f : new Fragment[]{dialogsFragment, contactsFragment, settingsFragment}) {
+            if (f != null && f.isAdded() && f != target) {
+                transaction.hide(f);
+            }
+        }
+    }
+
+    private void switchToFragment(int id) {
+        Fragment target = resolveTarget(id);
         if (target == null || target == currentFragment) return;
 
         var transaction = getChildFragmentManager().beginTransaction();
@@ -239,11 +251,7 @@ public class MainFragment extends Fragment {
         final int[] anim = getAnimation(from, to);
         if (anim != null) transaction.setCustomAnimations(anim[0], anim[1]);
 
-        for (Fragment f : new Fragment[]{dialogsFragment, contactsFragment, settingsFragment}) {
-            if (f != null && f.isAdded() && f != target) {
-                transaction.hide(f);
-            }
-        }
+        hideInactiveFragments(transaction, target);
 
         if (target.isAdded()) {
             if (target.isHidden()) transaction.show(target);
