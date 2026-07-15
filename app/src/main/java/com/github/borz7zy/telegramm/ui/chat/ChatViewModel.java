@@ -35,6 +35,8 @@ import java.util.concurrent.Executors;
 
 public class ChatViewModel extends ViewModel implements Client.ResultHandler {
 
+    private final String CLASS_NAME = "ChatViewModel";
+
     // --------------------
     // LiveData for UI
     // --------------------
@@ -116,7 +118,7 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
                 session.send(new TdApi.GetChat(chatId), obj->{
                     if(obj instanceof TdApi.Chat){
                         TdApi.Chat chat = (TdApi.Chat)obj;
-                        Log.d("ChatViewModel", "GetChat success. Title: " + chat.title);
+                        Log.d(CLASS_NAME, "GetChat success. Title: " + chat.title);
 
                         chatTitle.postValue(chat.title);
                         chatAvatar.postValue(chat.photo);
@@ -126,9 +128,9 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
                                 .seedChat(chat);
                     }else if(obj instanceof TdApi.Error){
                         TdApi.Error err = (TdApi.Error)obj;
-                        Logger.LOGE("ChatViewModel", "GetChat ERROR: " + err.code + " - " + err.message);
+                        Logger.LOGE(CLASS_NAME, "GetChat ERROR: " + err.code + " - " + err.message);
                     }else{
-                        Logger.LOGW("ChatViewModel", "GetChat Unknown result: " + obj.toString());
+                        Logger.LOGW(CLASS_NAME, "GetChat Unknown result: " + obj.toString());
                     }
                 });
 
