@@ -16,8 +16,7 @@ public class App extends Application {
 
         Logger.init(this);
 
-        if(INSTANCE == null)
-            INSTANCE = this;
+        setInstance(this);
 
         AppManager.init(this);
 
@@ -26,6 +25,11 @@ public class App extends Application {
         } catch (Exception e) {
             Logger.LOGE("TdLib", "Failed to set verbosity", e);
         }
+    }
+
+    private static void setInstance(App instance) {
+        if (INSTANCE == null)
+            INSTANCE = instance;
     }
 
     public static App getApplication(){
