@@ -231,78 +231,91 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
 
     @Override
     public void onResult(TdApi.Object object) {
-        if (object instanceof TdApi.Messages) {
-            handleHistory((TdApi.Messages) object);
+        if (object instanceof TdApi.Messages msgs) {
+            handleHistory(msgs);
+        } else if (object instanceof TdApi.UpdateNewMessage u) {
+            handleNewMessage(u);
+        } else if (object instanceof TdApi.UpdateMessageSendSucceeded u) {
+            handleSendSucceeded(u);
+        } else if (object instanceof TdApi.UpdateDeleteMessages u) {
+            handleDeleteMessages(u);
+        } else if (object instanceof TdApi.UpdateMessageEdited u) {
+            handleMessageEditedUpdate(u);
+        } else if (object instanceof TdApi.UpdateMessageContent u) {
+            handleContentUpdate(u);
+        } else if (object instanceof TdApi.Chat chat) {
+            handleChat(chat);
+        } else if (object instanceof TdApi.UpdateChatTitle u) {
+            handleChatTitle(u);
+        } else if (object instanceof TdApi.UpdateChatPhoto u) {
+            handleChatPhoto(u);
+        } else if (object instanceof TdApi.UpdateChatAction u) {
+            handleChatActionUpdate(u);
+        } else if (object instanceof TdApi.UpdateUser u) {
+            onUserLoaded(u.user);
+        } else if (object instanceof TdApi.User user) {
+            onUserLoaded(user);
         }
-        else if (object instanceof TdApi.UpdateNewMessage) {
-            TdApi.Message m = ((TdApi.UpdateNewMessage) object).message;
-            if (m != null && m.chatId == chatId) {
-                processMessageAndPut(m);
-                scheduleUiUpdate(false, true);
-            }
-        }
-        else if (object instanceof TdApi.UpdateMessageSendSucceeded) {
-            TdApi.UpdateMessageSendSucceeded u = (TdApi.UpdateMessageSendSucceeded) object;
-            if (u.message != null && u.message.chatId == chatId) {
-                byId.remove(u.oldMessageId);
-                rawMessages.remove(u.oldMessageId);
+    }
 
-                processMessageAndPut(u.message);
-                scheduleUiUpdate(false, true);
-            }
+    private void handleNewMessage(TdApi.UpdateNewMessage u) {
+        TdApi.Message m = u.message;
+        if (m != null && m.chatId == chatId) {
+            processMessageAndPut(m);
+            scheduleUiUpdate(false, true);
         }
-        else if (object instanceof TdApi.UpdateDeleteMessages) {
-            TdApi.UpdateDeleteMessages u = (TdApi.UpdateDeleteMessages) object;
-            if (u.chatId == chatId) {
-                for (long id : u.messageIds) {
-                    byId.remove(id);
-                    rawMessages.remove(id);
-                }
-                scheduleUiUpdate(false, false);
-            }
+    }
+
+    private void handleSendSucceeded(TdApi.UpdateMessageSendSucceeded u) {
+        if (u.message != null && u.message.chatId == chatId) {
+            byId.remove(u.oldMessageId);
+            rawMessages.remove(u.oldMessageId);
+
+            processMessageAndPut(u.message);
+            scheduleUiUpdate(false, true);
         }
-        else if (object instanceof TdApi.UpdateMessageEdited) {
-            TdApi.UpdateMessageEdited u = (TdApi.UpdateMessageEdited) object;
-            if (u.chatId == chatId) {
-                handleMessageEdit(u);
-            }
+    }
+
+    private void handleDeleteMessages(TdApi.UpdateDeleteMessages u) {
+        if (u.chatId != chatId) return;
+        for (long id : u.messageIds) {
+            byId.remove(id);
+            rawMessages.remove(id);
         }
-        else if (object instanceof TdApi.UpdateMessageContent) {
-            TdApi.UpdateMessageContent u = (TdApi.UpdateMessageContent) object;
-            if (u.chatId == chatId) {
-                TdApi.Message m = rawMessages.get(u.messageId);
-                if (m != null) {
-                    m.content = u.newContent;
-                    processMessageAndPut(m);
-                    scheduleUiUpdate(false, false);
-                }
-            }
+        scheduleUiUpdate(false, false);
+    }
+
+    private void handleMessageEditedUpdate(TdApi.UpdateMessageEdited u) {
+        if (u.chatId == chatId) {
+            handleMessageEdit(u);
         }
-        else if (object instanceof TdApi.Chat) {
-            TdApi.Chat chat = (TdApi.Chat) object;
-            if (chat.id == chatId) {
-                chatTitle.postValue(chat.title);
-                chatAvatar.postValue(chat.photo);
-            }
-        }
-        else if (object instanceof TdApi.UpdateChatTitle) {
-            TdApi.UpdateChatTitle u = (TdApi.UpdateChatTitle) object;
-            if (u.chatId == chatId) chatTitle.postValue(u.title);
-        }
-        else if (object instanceof TdApi.UpdateChatPhoto) {
-            TdApi.UpdateChatPhoto u = (TdApi.UpdateChatPhoto) object;
-            if (u.chatId == chatId) chatAvatar.postValue(u.photo);
-        }
-        else if (object instanceof TdApi.UpdateChatAction) {
-            TdApi.UpdateChatAction u = (TdApi.UpdateChatAction) object;
-            if (u.chatId == chatId) handleTyping(u);
-        }
-        else if (object instanceof TdApi.UpdateUser) {
-            onUserLoaded(((TdApi.UpdateUser) object).user);
-        }
-        else if (object instanceof TdApi.User) {
-            onUserLoaded((TdApi.User) object);
-        }
+    }
+
+    private void handleContentUpdate(TdApi.UpdateMessageContent u) {
+        if (u.chatId != chatId) return;
+        TdApi.Message m = rawMessages.get(u.messageId);
+        if (m == null) return;
+        m.content = u.newContent;
+        processMessageAndPut(m);
+        scheduleUiUpdate(false, false);
+    }
+
+    private void handleChat(TdApi.Chat chat) {
+        if (chat.id != chatId) return;
+        chatTitle.postValue(chat.title);
+        chatAvatar.postValue(chat.photo);
+    }
+
+    private void handleChatTitle(TdApi.UpdateChatTitle u) {
+        if (u.chatId == chatId) chatTitle.postValue(u.title);
+    }
+
+    private void handleChatPhoto(TdApi.UpdateChatPhoto u) {
+        if (u.chatId == chatId) chatAvatar.postValue(u.photo);
+    }
+
+    private void handleChatActionUpdate(TdApi.UpdateChatAction u) {
+        if (u.chatId == chatId) handleTyping(u);
     }
 
     private static final int MAX_INITIAL_RETRIES = 4;
@@ -311,48 +324,58 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
     private void handleHistory(TdApi.Messages msgs) {
         int count = (msgs == null || msgs.messages == null) ? 0 : msgs.messages.length;
 
+        ingestHistoryMessages(msgs, count);
+
+        if (isInitialLoad) {
+            handleInitialHistoryLoad(count);
+        } else {
+            handlePagingHistoryLoad(count);
+        }
+    }
+
+    private void ingestHistoryMessages(TdApi.Messages msgs, int count) {
         for (int i = 0; i < count; i++) {
             TdApi.Message m = msgs.messages[i];
             if (m == null || m.chatId != chatId) continue;
             processMessageAndPut(m);
             if (oldestId == 0 || m.id < oldestId) oldestId = m.id;
         }
+    }
 
-        if (isInitialLoad) {
-            // While the retry chain runs, only push items into the list — do
-            // NOT request scroll-to-bottom yet. Each retry would otherwise
-            // schedule another smoothScrollToPosition while the previous one
-            // is still animating, leaving the RV at a random offset.
-            if (count > 0) {
-                scheduleUiUpdate(false, false);
-            }
+    private void handleInitialHistoryLoad(int count) {
+        if (count > 0) {
+            scheduleUiUpdate(false, false);
+        }
 
-            boolean partial = count < INITIAL_PAGE_SIZE;
-            if (partial && initialLoadRetryCount < MAX_INITIAL_RETRIES) {
-                initialLoadRetryCount++;
-                mainHandler.postDelayed(() -> {
-                    if (isCleared || session == null) return;
-                    long from = oldestId == 0 ? 0L : oldestId;
-                    session.send(new TdApi.GetChatHistory(chatId, from, 0, INITIAL_PAGE_SIZE, false), this);
-                }, INITIAL_RETRY_DELAY_MS);
-                return;
-            }
+        boolean partial = count < INITIAL_PAGE_SIZE;
+        if (partial && initialLoadRetryCount < MAX_INITIAL_RETRIES) {
+            initialLoadRetryCount++;
+            scheduleInitialLoadRetry();
+            return;
+        }
 
-            isInitialLoad = false;
-            loading = false;
-            hasMore = count >= PAGE_SIZE && oldestId > 1;
-            topLoading.postValue(false);
-            // Initial chain settled — emit a single scroll-to-bottom request
-            // so the RV jumps to the latest message exactly once.
-            scheduleUiUpdate(false, true);
+        isInitialLoad = false;
+        loading = false;
+        hasMore = count >= PAGE_SIZE && oldestId > 1;
+        topLoading.postValue(false);
+        scheduleUiUpdate(false, true);
+    }
+
+    private void scheduleInitialLoadRetry() {
+        mainHandler.postDelayed(() -> {
+            if (isCleared || session == null) return;
+            long from = oldestId == 0 ? 0L : oldestId;
+            session.send(new TdApi.GetChatHistory(chatId, from, 0, INITIAL_PAGE_SIZE, false), this);
+        }, INITIAL_RETRY_DELAY_MS);
+    }
+
+    private void handlePagingHistoryLoad(int count) {
+        loading = false;
+        hasMore = count >= PAGE_SIZE && oldestId > 1;
+        if (count > 0) {
+            scheduleUiUpdate(true, false);
         } else {
-            loading = false;
-            hasMore = count >= PAGE_SIZE && oldestId > 1;
-            if (count > 0) {
-                scheduleUiUpdate(true, false);
-            } else {
-                topLoading.postValue(false);
-            }
+            topLoading.postValue(false);
         }
     }
 
@@ -370,27 +393,8 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
             }
         }
 
-        if (albumId != 0 && albumGroups.containsKey(albumId)) {
-            Long mainMessageId = albumGroups.get(albumId);
-            if(mainMessageId != null) {
-                MessageItem existingItem = byId.get(mainMessageId);
-                if (existingItem != null && photoData != null && existingItem.ui instanceof UiContent.Media) {
-                    boolean alreadyExists = false;
-                    if (existingItem.photos != null) {
-                        for (PhotoData p : existingItem.photos) {
-                            if (p.fileId == photoData.fileId) {
-                                alreadyExists = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (!alreadyExists) {
-                        MessageItem updatedItem = existingItem.withAddedPhoto(photoData, caption);
-                        byId.put(mainMessageId, updatedItem);
-                    }
-                    return;
-                }
-            }
+        if (tryAppendToAlbum(albumId, photoData, caption)) {
+            return;
         }
 
         MessageItem newItem = toItem(m);
@@ -398,6 +402,36 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
         if (albumId != 0) {
             albumGroups.put(albumId, m.id);
         }
+    }
+
+    private boolean tryAppendToAlbum(long albumId, PhotoData photoData, String caption) {
+        if (albumId == 0 || !albumGroups.containsKey(albumId)) {
+            return false;
+        }
+        Long mainMessageId = albumGroups.get(albumId);
+        if (mainMessageId == null) {
+            return false;
+        }
+        MessageItem existingItem = byId.get(mainMessageId);
+        if (existingItem == null || photoData == null || !(existingItem.ui instanceof UiContent.Media)) {
+            return false;
+        }
+        if (!containsPhoto(existingItem, photoData)) {
+            byId.put(mainMessageId, existingItem.withAddedPhoto(photoData, caption));
+        }
+        return true;
+    }
+
+    private boolean containsPhoto(MessageItem item, PhotoData photoData) {
+        if (item.photos == null) {
+            return false;
+        }
+        for (PhotoData p : item.photos) {
+            if (p.fileId == photoData.fileId) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void handleMessageEdit(TdApi.UpdateMessageEdited u) {
@@ -491,66 +525,70 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
     }
 
     private String extractSenderName(TdApi.Message m) {
-        if (m.senderId instanceof TdApi.MessageSenderUser) {
-            long userId = ((TdApi.MessageSenderUser) m.senderId).userId;
-            TdApi.User user = fullUserCache.get(userId);
-            if (user != null) {
-                String first = user.firstName != null ? user.firstName : "";
-                String last = user.lastName != null ? user.lastName : "";
-                return (first + " " + last).trim();
-            } else {
-                if (!pendingUserRequests.contains(userId)) {
-                    pendingUserRequests.add(userId);
-                    session.send(new TdApi.GetUser(userId), result -> {
-                        pendingUserRequests.remove(userId);
-                        if (result instanceof TdApi.User) {
-                            onUserLoaded((TdApi.User) result);
-                        }
-                    });
-                }
-                return null; // loading...
+        if (!(m.senderId instanceof TdApi.MessageSenderUser)) {
+            return null; // channel or unknown
+        }
+        long userId = ((TdApi.MessageSenderUser) m.senderId).userId;
+        TdApi.User user = fullUserCache.get(userId);
+        if (user == null) {
+            requestUser(userId);
+            return null; // loading...
+        }
+        String first = user.firstName != null ? user.firstName : "";
+        String last = user.lastName != null ? user.lastName : "";
+        return (first + " " + last).trim();
+    }
+
+    private void requestUser(long userId) {
+        if (pendingUserRequests.contains(userId)) {
+            return;
+        }
+        pendingUserRequests.add(userId);
+        session.send(new TdApi.GetUser(userId), result -> {
+            pendingUserRequests.remove(userId);
+            if (result instanceof TdApi.User) {
+                onUserLoaded((TdApi.User) result);
             }
-        }
-        if (m.senderId instanceof TdApi.MessageSenderChat) {
-            return null; // channel
-        }
-        return null; // unknown
+        });
     }
 
 
     private String extractGcTag(TdApi.Message m) {
-        if (m.senderId instanceof TdApi.MessageSenderUser) {
-            long userId = ((TdApi.MessageSenderUser) m.senderId).userId;
-
-            String cachedTag = chatMembersTags.get(userId);
-            if (cachedTag != null) {
-                return cachedTag.isEmpty() ? null : cachedTag;
-            }
-
-            if (!pendingMemberRequests.contains(userId)) {
-                pendingMemberRequests.add(userId);
-
-                session.send(new TdApi.GetChatMember(chatId, new TdApi.MessageSenderUser(userId)), result -> {
-                    pendingMemberRequests.remove(userId);
-
-                    if (result instanceof TdApi.ChatMember) {
-                        TdApi.ChatMember member = (TdApi.ChatMember) result;
-
-                        String tag = getTagFromMember(member);
-
-                        chatMembersTags.put(userId, tag == null ? "" : tag);
-
-                        if (tag != null) {
-                            triggerUpdateForUser(userId);
-                        }
-                    } else {
-                        chatMembersTags.put(userId, "");
-                    }
-                });
-            }
+        if (!(m.senderId instanceof TdApi.MessageSenderUser)) {
             return null;
         }
+        long userId = ((TdApi.MessageSenderUser) m.senderId).userId;
+
+        String cachedTag = chatMembersTags.get(userId);
+        if (cachedTag != null) {
+            return cachedTag.isEmpty() ? null : cachedTag;
+        }
+
+        requestMemberTag(userId);
         return null;
+    }
+
+    private void requestMemberTag(long userId) {
+        if (pendingMemberRequests.contains(userId)) {
+            return;
+        }
+        pendingMemberRequests.add(userId);
+        session.send(new TdApi.GetChatMember(chatId, new TdApi.MessageSenderUser(userId)), result ->
+                onMemberTagLoaded(userId, result));
+    }
+
+    private void onMemberTagLoaded(long userId, TdApi.Object result) {
+        pendingMemberRequests.remove(userId);
+
+        if (!(result instanceof TdApi.ChatMember)) {
+            chatMembersTags.put(userId, "");
+            return;
+        }
+        String tag = getTagFromMember((TdApi.ChatMember) result);
+        chatMembersTags.put(userId, tag == null ? "" : tag);
+        if (tag != null) {
+            triggerUpdateForUser(userId);
+        }
     }
 
 //    private String getTagFromStatus(TdApi.ChatMemberStatus status) { // OLD (tdlib 1.8.61
@@ -680,6 +718,7 @@ public class ChatViewModel extends ViewModel implements Client.ResultHandler {
                 case "y": sizeY = sz; break;
                 case "x": sizeX = sz; break;
                 case "m": sizeM = sz; break;
+                default: break;
             }
         }
         if (sizeY != null) return sizeY;
