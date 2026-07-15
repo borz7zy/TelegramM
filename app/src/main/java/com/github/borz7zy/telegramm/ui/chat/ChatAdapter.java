@@ -195,11 +195,7 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
     }
 
     @UnstableApi
-    private void bindUserMessage(VH h, MessageItem m) {
-        resetMedia(h);
-
-        applyThemeToHolder(h, m);
-
+    private void bindMessageText(VH h, MessageItem m) {
         String text = "";
         org.drinkless.tdlib.TdApi.TextEntity[] entities = null;
         if (m.ui instanceof UiContent.Text t) {
@@ -210,27 +206,36 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
             entities = md.entities;
         }
 
-        h.text.setVisibility(TextUtils.isEmpty(text) ? View.GONE : View.VISIBLE);
-        if (!TextUtils.isEmpty(text)) {
-            if (h.text instanceof com.github.borz7zy.telegramm.ui.emoji.EmojiTextView etv) {
-                etv.setFormattedText(text, entities);
-            } else {
-                h.text.setText(text);
-            }
+        boolean empty = TextUtils.isEmpty(text);
+        h.text.setVisibility(empty ? View.GONE : View.VISIBLE);
+        if (empty) return;
+
+        if (h.text instanceof com.github.borz7zy.telegramm.ui.emoji.EmojiTextView etv) {
+            etv.setFormattedText(text, entities);
+        } else {
+            h.text.setText(text);
         }
+    }
+
+    private void bindOptionalLabel(TextView view, String value) {
+        if (view == null) return;
+        boolean has = !TextUtils.isEmpty(value) && !"null".equals(value);
+        view.setVisibility(has ? View.VISIBLE : View.GONE);
+        if (has) view.setText(value);
+    }
+
+    private void bindUserMessage(VH h, MessageItem m) {
+        resetMedia(h);
+
+        applyThemeToHolder(h, m);
+
+        bindMessageText(h, m);
 
         h.time.setText(m.time);
 
-        if (h.userName != null) {
-            boolean hasName = !TextUtils.isEmpty(m.senderName) && !"null".equals(m.senderName);
-            h.userName.setVisibility(hasName ? View.VISIBLE : View.GONE);
-            if (hasName) h.userName.setText(m.senderName);
-        }
-        if (h.groupChatUserTag != null) {
-            boolean hasTag = !TextUtils.isEmpty(m.gcTag) && !"null".equals(m.gcTag);
-            h.groupChatUserTag.setVisibility(hasTag ? View.VISIBLE : View.GONE);
-            if (hasTag) h.groupChatUserTag.setText(m.gcTag);
-        }
+        bindOptionalLabel(h.userName, m.senderName);
+        bindOptionalLabel(h.groupChatUserTag, m.gcTag);
+
         if (h.emojiStatus != null) {
             h.emojiStatus.setEmojiStatus(m.senderEmojiCustomEmojiId);
         }
@@ -387,22 +392,14 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         // targeting the right binding before mutating it.
         final String contentKey = "sticker_" + sticker.fileId;
         final boolean isVideo = sticker.type == UiContent.StickerType.VIDEO_WEBM;
+        final View target = isVideo ? h.stickerPlayerView : h.stickerView;
 
-        if (isVideo) {
-            h.stickerPlayerView.setTag(contentKey);
-            h.stickerPlayerView.setVisibility(View.VISIBLE);
-        } else {
-            h.stickerView.setTag(contentKey);
-            h.stickerView.setVisibility(View.VISIBLE);
-        }
+        target.setTag(contentKey);
+        target.setVisibility(View.VISIBLE);
 
         String cached = TdMediaRepository.get().getCachedPath(sticker.fileId);
         if (!TextUtils.isEmpty(cached)) {
-            if (isVideo) {
-                renderSticker(h.stickerPlayerView, cached, sticker.type);
-            } else {
-                renderSticker(h.stickerView, cached, sticker.type);
-            }
+            renderSticker(target, cached, sticker.type);
             return;
         }
 
@@ -414,33 +411,27 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         final long requestId = REQUEST_ID_GEN.incrementAndGet();
         h.mediaRequestId = requestId;
 
-        WeakReference<ImageView> weakImg = new WeakReference<>(h.stickerView);
-        WeakReference<PlayerView> weakPlayer = new WeakReference<>(h.stickerPlayerView);
+        WeakReference<View> weakTarget = new WeakReference<>(target);
 
-        TdMediaRepository.get().getPathOrRequest(sticker.fileId, path -> {
-            // The callback runs on the main thread (fired from finish() via mainHandler).
+        TdMediaRepository.get().getPathOrRequest(sticker.fileId, path ->
+            onStickerPathReady(h, weakTarget, contentKey, requestId, path, sticker.type));
+    }
+
+    private void onStickerPathReady(VH h, WeakReference<View> weakTarget, String contentKey,
+                                    long requestId, String path, UiContent.StickerType type) {
+        // Runs on the main thread (fired from finish() via mainHandler).
+        if (h.mediaRequestId != requestId) return;
+        if (TextUtils.isEmpty(path)) return;
+
+        View target = weakTarget.get();
+        if (target == null || !contentKey.equals(target.getTag())) return;
+
+        // Re-verify inside post(): the holder may be rebound between the check
+        // above and the runnable being dispatched.
+        target.post(() -> {
+            if (!contentKey.equals(target.getTag())) return;
             if (h.mediaRequestId != requestId) return;
-            if (TextUtils.isEmpty(path)) return;
-
-            if (isVideo) {
-                PlayerView pv = weakPlayer.get();
-                if (pv == null || !contentKey.equals(pv.getTag())) return;
-                // Re-verify inside post(): the holder may be rebound between the
-                // check above and the runnable being dispatched.
-                pv.post(() -> {
-                    if (!contentKey.equals(pv.getTag())) return;
-                    if (h.mediaRequestId != requestId) return;
-                    renderSticker(pv, path, sticker.type);
-                });
-            } else {
-                ImageView iv = weakImg.get();
-                if (iv == null || !contentKey.equals(iv.getTag())) return;
-                iv.post(() -> {
-                    if (!contentKey.equals(iv.getTag())) return;
-                    if (h.mediaRequestId != requestId) return;
-                    renderSticker(iv, path, sticker.type);
-                });
-            }
+            renderSticker(target, path, type);
         });
     }
 
@@ -597,22 +588,8 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         VH h = (VH) holder;
 
         if((mask & PAYLOAD_USER_INFO) != 0){
-            if (h.userName != null) {
-                if (!TextUtils.isEmpty(item.senderName) && !item.senderName.equals("null")) {
-                    h.userName.setText(item.senderName);
-                    h.userName.setVisibility(View.VISIBLE);
-                } else {
-                    h.userName.setVisibility(View.GONE);
-                }
-            }
-            if (h.groupChatUserTag != null) {
-                if (!TextUtils.isEmpty(item.gcTag) && !item.gcTag.equals("null")) {
-                    h.groupChatUserTag.setText(item.gcTag);
-                    h.groupChatUserTag.setVisibility(View.VISIBLE);
-                } else {
-                    h.groupChatUserTag.setVisibility(View.GONE);
-                }
-            }
+            bindOptionalLabel(h.userName, item.senderName);
+            bindOptionalLabel(h.groupChatUserTag, item.gcTag);
             if (h.emojiStatus != null) {
                 h.emojiStatus.setEmojiStatus(item.senderEmojiCustomEmojiId);
             }
@@ -620,26 +597,7 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         }
 
         if ((mask & PAYLOAD_TEXT) != 0) {
-            String text = "";
-            org.drinkless.tdlib.TdApi.TextEntity[] entities = null;
-            if (item.ui instanceof UiContent.Text t) {
-                text = t.text;
-                entities = t.entities;
-            } else if (item.ui instanceof UiContent.Media md) {
-                text = md.caption;
-                entities = md.entities;
-            }
-
-            if (TextUtils.isEmpty(text)) {
-                h.text.setVisibility(View.GONE);
-            } else {
-                h.text.setVisibility(View.VISIBLE);
-                if (h.text instanceof com.github.borz7zy.telegramm.ui.emoji.EmojiTextView etv) {
-                    etv.setFormattedText(text, entities);
-                } else {
-                    h.text.setText(text);
-                }
-            }
+            bindMessageText(h, item);
             h.time.setText(item.time);
         }
 
@@ -853,30 +811,8 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         }
 
         final int count = photos.size();
-        int targetHeight = (count == 1) ? bubbleWidth : dp(layout, 120);
-
-        if (!Objects.equals(layout.getTag(R.id.tag_layout_mode), targetHeight)) {
-            layout.setTag(R.id.tag_layout_mode, targetHeight);
-
-            if (count == 1) {
-                layout.setTargetRowHeightPx(bubbleWidth);
-                layout.setRowHeightBoundsPx(dp(layout, 100), dp(layout, 450));
-                layout.setJustifyLastRow(false);
-            } else {
-                layout.setTargetRowHeightPx(dp(layout, 120));
-                layout.setRowHeightBoundsPx(dp(layout, 80), dp(layout, 200));
-                layout.setJustifyLastRow(true);
-            }
-            layout.setSpacingPx(dp(layout, 2));
-        }
-
-        while (layout.getChildCount() < MAX_PHOTO_POOL) {
-            ImageView iv = new ImageView(layout.getContext());
-            iv.setScaleType(ImageView.ScaleType.CENTER_CROP);
-            iv.setClipToOutline(true);
-            iv.setOutlineProvider(new RoundedOutlineProvider(dp(layout, 10)));
-            layout.addView(iv);
-        }
+        configureImageLayoutMode(layout, count, bubbleWidth);
+        ensureImagePool(layout);
 
         // Bind-time request id captured once: reject only callbacks for *previous* binds,
         // not other photos in the same album.
@@ -885,49 +821,84 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         for (int i = 0; i < MAX_PHOTO_POOL; ++i) {
             ImageView iv = (ImageView) layout.getChildAt(i);
             if (i >= count) {
-                Glide.with(iv).clear(iv);
-                iv.setImageDrawable(null);
-                iv.setTag(null);
-                iv.setVisibility(View.GONE);
-                continue;
-            }
-
-            iv.setVisibility(View.VISIBLE);
-            PhotoData photo = photos.get(i);
-
-            JustifiedLayout.LayoutParams lp = (JustifiedLayout.LayoutParams) iv.getLayoutParams();
-            if (lp == null || Math.abs(lp.aspectRatio - photo.aspectRatio) > 0.001f) {
-                if (lp == null) lp = new JustifiedLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                lp.aspectRatio = photo.aspectRatio;
-                iv.setLayoutParams(lp);
-            }
-
-            String contentKey = (photo.fileId != 0) ? "remote_" + photo.fileId : "local_" + photo.localPath;
-            if (Objects.equals(contentKey, iv.getTag())) continue;
-
-            iv.setTag(contentKey);
-
-            String path = photo.localPath;
-            if (TextUtils.isEmpty(path) && photo.fileId != 0) {
-                path = TdMediaRepository.get().getCachedPath(photo.fileId);
-            }
-
-            if (!TextUtils.isEmpty(path)) {
-                loadGlideImage(iv, path);
-            } else if (photo.fileId != 0) {
-                iv.setImageResource(R.drawable.bg_msg_bubble);
-
-                WeakReference<ImageView> weak = new WeakReference<>(iv);
-                final String reqKey = contentKey;
-
-                TdMediaRepository.get().getPathOrRequest(photo.fileId, p -> {
-                    if (h.mediaRequestId != bindReqId) return;
-                    ImageView v = weak.get();
-                    if (v == null || !Objects.equals(v.getTag(), reqKey) || TextUtils.isEmpty(p)) return;
-                    v.post(() -> loadGlideImage(v, p));
-                });
+                clearImageSlot(iv);
+            } else {
+                bindPhotoSlot(h, iv, photos.get(i), bindReqId);
             }
         }
+    }
+
+    private void configureImageLayoutMode(JustifiedLayout layout, int count, int bubbleWidth) {
+        int targetHeight = (count == 1) ? bubbleWidth : dp(layout, 120);
+        if (Objects.equals(layout.getTag(R.id.tag_layout_mode), targetHeight)) return;
+
+        layout.setTag(R.id.tag_layout_mode, targetHeight);
+
+        if (count == 1) {
+            layout.setTargetRowHeightPx(bubbleWidth);
+            layout.setRowHeightBoundsPx(dp(layout, 100), dp(layout, 450));
+            layout.setJustifyLastRow(false);
+        } else {
+            layout.setTargetRowHeightPx(dp(layout, 120));
+            layout.setRowHeightBoundsPx(dp(layout, 80), dp(layout, 200));
+            layout.setJustifyLastRow(true);
+        }
+        layout.setSpacingPx(dp(layout, 2));
+    }
+
+    private void ensureImagePool(JustifiedLayout layout) {
+        while (layout.getChildCount() < MAX_PHOTO_POOL) {
+            ImageView iv = new ImageView(layout.getContext());
+            iv.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            iv.setClipToOutline(true);
+            iv.setOutlineProvider(new RoundedOutlineProvider(dp(layout, 10)));
+            layout.addView(iv);
+        }
+    }
+
+    private void clearImageSlot(ImageView iv) {
+        Glide.with(iv).clear(iv);
+        iv.setImageDrawable(null);
+        iv.setTag(null);
+        iv.setVisibility(View.GONE);
+    }
+
+    private void bindPhotoSlot(VH h, ImageView iv, PhotoData photo, long bindReqId) {
+        iv.setVisibility(View.VISIBLE);
+
+        JustifiedLayout.LayoutParams lp = (JustifiedLayout.LayoutParams) iv.getLayoutParams();
+        if (lp == null || Math.abs(lp.aspectRatio - photo.aspectRatio) > 0.001f) {
+            if (lp == null) lp = new JustifiedLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            lp.aspectRatio = photo.aspectRatio;
+            iv.setLayoutParams(lp);
+        }
+
+        String contentKey = (photo.fileId != 0) ? "remote_" + photo.fileId : "local_" + photo.localPath;
+        if (Objects.equals(contentKey, iv.getTag())) return;
+
+        iv.setTag(contentKey);
+
+        String path = photo.localPath;
+        if (TextUtils.isEmpty(path) && photo.fileId != 0) {
+            path = TdMediaRepository.get().getCachedPath(photo.fileId);
+        }
+
+        if (!TextUtils.isEmpty(path)) {
+            loadGlideImage(iv, path);
+        } else if (photo.fileId != 0) {
+            iv.setImageResource(R.drawable.bg_msg_bubble);
+            requestPhoto(h, iv, photo.fileId, contentKey, bindReqId);
+        }
+    }
+
+    private void requestPhoto(VH h, ImageView iv, int fileId, String contentKey, long bindReqId) {
+        WeakReference<ImageView> weak = new WeakReference<>(iv);
+        TdMediaRepository.get().getPathOrRequest(fileId, p -> {
+            if (h.mediaRequestId != bindReqId) return;
+            ImageView v = weak.get();
+            if (v == null || !Objects.equals(v.getTag(), contentKey) || TextUtils.isEmpty(p)) return;
+            v.post(() -> loadGlideImage(v, p));
+        });
     }
 
     private void loadGlideImage(ImageView iv, String path) {
