@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
@@ -24,30 +24,30 @@ jobs:
           cache: gradle
 
       - name: Generate local.properties
-        shell: powershell
         env:
           API_ID: ${{ secrets.API_ID }}
           API_HASH: ${{ secrets.API_HASH }}
         run: |
-          if (-Not $env:API_ID) { Write-Error "API_ID secret not set"; exit 1 }
-          if (-Not $env:API_HASH) { Write-Error "API_HASH secret not set"; exit 1 }
+          set -e
+          if [ -z "$API_ID" ]; then echo "API_ID secret not set" >&2; exit 1; fi
+          if [ -z "$API_HASH" ]; then echo "API_HASH secret not set" >&2; exit 1; fi
 
-          @"
-          api_id=$env:API_ID
-          api_hash=$env:API_HASH
-          "@ | Out-File -Encoding ascii local.properties
+          cat > local.properties <<EOF
+          api_id=$API_ID
+          api_hash=$API_HASH
+          EOF
 
       - name: Check gradlew
-        shell: powershell
         run: |
-          if (-Not (Test-Path "gradlew.bat")) {
-            Write-Error "gradlew.bat not found!"
+          set -e
+          if [ ! -f "gradlew" ]; then
+            echo "gradlew not found!" >&2
             exit 1
-          }
+          fi
+          chmod +x gradlew
 
       - name: Build Debug and Release
-        shell: powershell
-        run: .\gradlew.bat clean assembleDebug assembleRelease
+        run: ./gradlew clean assembleDebug assembleRelease
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
