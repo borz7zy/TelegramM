@@ -25,7 +25,6 @@ import com.github.borz7zy.telegramm.ui.base.BaseTelegramFragment;
 import com.github.borz7zy.telegramm.ui.chat.ChatFragment;
 import com.github.borz7zy.telegramm.ui.model.DialogItem;
 import com.github.borz7zy.telegramm.ui.model.FolderItem;
-import com.github.borz7zy.telegramm.ui.widget.SpringRecyclerView;
 import com.github.borz7zy.telegramm.utils.Logger;
 import com.github.borz7zy.telegramm.utils.TdMediaRepository;
 
@@ -41,7 +40,7 @@ import java.util.Map;
 public class DialogsFragment extends BaseTelegramFragment implements Client.ResultHandler {
 
     private DialogsAdapter adapter;
-    private SpringRecyclerView recyclerView;
+    private RecyclerView recyclerView;
     private RecyclerView foldersRecyclerView;
     private FoldersAdapter foldersAdapter;
     private View progressBar;

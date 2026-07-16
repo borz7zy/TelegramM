@@ -54,7 +54,6 @@ import com.github.borz7zy.telegramm.ui.model.MessageItem;
 import com.github.borz7zy.telegramm.ui.theme.BackgroundResolver;
 import com.github.borz7zy.telegramm.ui.theme.ThemeRepository;
 import com.github.borz7zy.telegramm.ui.widget.EdgeSwipeDismissLayout;
-import com.github.borz7zy.telegramm.ui.widget.SpringRecyclerView;
 import com.github.borz7zy.telegramm.ui.widget.TypingDrawable;
 import com.github.borz7zy.telegramm.utils.TdMediaRepository;
 import com.masoudss.lib.WaveformSeekBar;
@@ -91,7 +90,7 @@ public class ChatFragment extends DialogFragment {
     private ImageView typingIcon;
     private TypingDrawable typingDrawable;
 
-    private SpringRecyclerView rv;
+    private RecyclerView rv;
     private ConcatAdapter concat;
     private LinearLayoutManager lm;
     private TopLoadingAdapter topLoading;
@@ -514,9 +513,9 @@ public class ChatFragment extends DialogFragment {
         final boolean finalIsDark = isDark;
         final int seedFallback = themeAccent;
         bgResolver.resolve(requireContext(), bg, finalDimming, finalIsDark, fallbackColor, result -> {
-            // Render the wallpaper on the BlurTarget (the RV's parent) so the
-            // SpringRecyclerView's overscroll TranslationY does not drag the
-            // wallpaper with it (visible "spring" on the wallpaper otherwise).
+            // Render the wallpaper on the BlurTarget (the RV's parent) rather
+            // than on the RecyclerView itself, so the list scrolls over a
+            // stationary wallpaper.
             if (content != null) {
                 View bgHost = content.findViewById(R.id.blur_target);
                 if (bgHost != null) bgHost.setBackground(result.drawable);
@@ -692,7 +691,7 @@ public class ChatFragment extends DialogFragment {
     private void applyInsets(View root, View content) {
         BlurView header = content.findViewById(R.id.header_blur);
         BlurView inputBar = content.findViewById(R.id.input_blur);
-        SpringRecyclerView rv = content.findViewById(R.id.rv_messages);
+        RecyclerView rv = content.findViewById(R.id.rv_messages);
 
         final int headerBaseTop = header.getPaddingTop();
         final int headerBaseBottom = header.getPaddingBottom();

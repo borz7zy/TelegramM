@@ -11,6 +11,7 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.github.borz7zy.telegramm.AppManager;
 import com.github.borz7zy.telegramm.R;
@@ -20,7 +21,6 @@ import com.github.borz7zy.telegramm.core.accounts.AccountStorage;
 import com.github.borz7zy.telegramm.ui.MainViewModel;
 import com.github.borz7zy.telegramm.ui.base.BaseTelegramFragment;
 import com.github.borz7zy.telegramm.ui.model.ContactItem;
-import com.github.borz7zy.telegramm.ui.widget.SpringRecyclerView;
 import com.github.borz7zy.telegramm.utils.TdMediaRepository;
 
 import org.drinkless.tdlib.Client;
@@ -36,7 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ContactsFragment extends BaseTelegramFragment implements Client.ResultHandler {
     
     private ContactsAdapter adapter;
-    private SpringRecyclerView recyclerView;
+    private RecyclerView recyclerView;
 
     private final Map<Long, ContactItem> contactsMap = new ConcurrentHashMap<>();
 

@@ -12,7 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <com.github.borz7zy.telegramm.ui.widget.SpringRecyclerView
+        <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rv_messages"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
