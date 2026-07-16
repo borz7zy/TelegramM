@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
 }
 
 def localProps = new Properties()
@@ -65,9 +64,6 @@ android {
     buildFeatures {
         viewBinding true
     }
-    kotlinOptions {
-        jvmTarget = '17'
-    }
 }
 
 dependencies {
@@ -75,15 +71,14 @@ dependencies {
     implementation libs.material
     implementation libs.recyclerview
     implementation libs.constraintlayout
-    implementation libs.lifecycle.livedata.ktx
-    implementation libs.lifecycle.viewmodel.ktx
+    implementation libs.lifecycle.livedata
+    implementation libs.lifecycle.viewmodel
     implementation libs.navigation.fragment
     implementation libs.navigation.ui
-    implementation libs.core.ktx
     implementation libs.fragment
     implementation libs.preference
 
-    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.10.0'
+    implementation 'androidx.lifecycle:lifecycle-runtime:2.10.0'
 
     implementation 'androidx.core:core:1.17.0'
     implementation 'androidx.dynamicanimation:dynamicanimation:1.0.0'
@@ -96,7 +91,6 @@ dependencies {
 
     implementation 'com.github.bumptech.glide:glide:5.0.5'
     implementation libs.legacy.support.v4
-    implementation libs.fragment.ktx
     annotationProcessor 'com.github.bumptech.glide:compiler:5.0.5'
 
     implementation project(':SlidingMenu')
