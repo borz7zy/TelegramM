@@ -15,7 +15,6 @@ import android.graphics.Paint;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.Spannable;
@@ -563,7 +562,7 @@ public class Emoji {
         if (emojis.isEmpty()) return cs;
         EmojiSpan span;
         Drawable drawable;
-        int limitCount = 100;
+        int limitCount = 4096;
         for (int i = 0; i < emojis.size(); ++i) {
             try {
                 EmojiSpanRange emojiRange = emojis.get(i);
@@ -577,7 +576,7 @@ public class Emoji {
             } catch (Exception e) {
                 Logger.LOGE(TAG, "replaceEmoji setSpan", e);
             }
-            if ((Build.VERSION.SDK_INT < 23 || Build.VERSION.SDK_INT >= 29) && (i + 1) >= limitCount) break;
+            if ((i + 1) >= limitCount) break;
         }
         return s;
     }

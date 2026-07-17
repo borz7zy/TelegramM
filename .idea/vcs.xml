@@ -2,6 +2,7 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/ffmpeg/src/main/cpp/ffmpeg" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/rlottie/src/main/cpp/rlottie" vcs="Git" />
   </component>
 </project>

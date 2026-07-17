@@ -1,29 +1,18 @@
 package com.github.borz7zy.telegramm.ui.widget;
 
 import android.content.Context;
-import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.TextUtils;
 import android.util.AttributeSet;
-import android.view.LayoutInflater;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
-import com.github.borz7zy.telegramm.R;
-
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.media3.common.C;
-import androidx.media3.common.MediaItem;
-import androidx.media3.common.Player;
-import androidx.media3.common.util.UnstableApi;
-import androidx.media3.datasource.DefaultDataSource;
-import androidx.media3.exoplayer.ExoPlayer;
-import androidx.media3.exoplayer.source.LoopingMediaSource;
-import androidx.media3.exoplayer.source.MediaSource;
-import androidx.media3.exoplayer.source.ProgressiveMediaSource;
-import androidx.media3.ui.AspectRatioFrameLayout;
-import androidx.media3.ui.PlayerView;
 
 import com.bumptech.glide.Glide;
+import com.github.borz7zy.ffmpeg.VideoStickerDrawable;
 import com.github.borz7zy.rlottie.RLottieAnimationView;
 import com.github.borz7zy.telegramm.utils.EmojiStatusRepository;
 import com.github.borz7zy.telegramm.utils.TdMediaRepository;
@@ -31,15 +20,28 @@ import com.github.borz7zy.telegramm.utils.TdMediaRepository;
 import org.drinkless.tdlib.TdApi;
 
 import java.io.File;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 
-@UnstableApi
 public class EmojiStatusView extends FrameLayout {
+
+    private static final Handler MAIN = new Handler(Looper.getMainLooper());
+
+    private static final ExecutorService VIDEO_EXEC = Executors.newSingleThreadExecutor(
+            new ThreadFactory() {
+                private final AtomicInteger n = new AtomicInteger();
+                @Override public Thread newThread(@NonNull Runnable r) {
+                    Thread t = new Thread(r, "emoji-status-video-" + n.incrementAndGet());
+                    t.setPriority(Thread.NORM_PRIORITY - 1);
+                    return t;
+                }
+            });
 
     private final ImageView imageView;
     private final RLottieAnimationView lottieView;
-    private final PlayerView playerView;
-    @Nullable private ExoPlayer player;
-    @Nullable private String currentVideoPath;
+    @Nullable private VideoStickerDrawable videoDrawable;
 
     private long currentCustomEmojiId = 0L;
     private long generation = 0L;
@@ -62,16 +64,6 @@ public class EmojiStatusView extends FrameLayout {
         lottieView.setVisibility(GONE);
         lottieView.setRepeatCount(RLottieAnimationView.INFINITE);
         addView(lottieView, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
-
-        playerView = (PlayerView) LayoutInflater.from(context)
-                .inflate(R.layout.widget_emoji_status_player, this, false);
-        playerView.setUseController(false);
-        playerView.setKeepContentOnPlayerReset(true);
-        playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
-        playerView.setClickable(false);
-        playerView.setFocusable(false);
-        playerView.setVisibility(GONE);
-        addView(playerView);
 
         setVisibility(GONE);
     }
@@ -133,8 +125,8 @@ public class EmojiStatusView extends FrameLayout {
 
     private void renderTgs(String path, long g) {
         if (g != generation) return;
+        releaseVideoDrawable();
         imageView.setVisibility(GONE);
-        playerView.setVisibility(GONE);
         lottieView.setVisibility(VISIBLE);
         lottieView.setRepeatCount(RLottieAnimationView.INFINITE);
         lottieView.setTgsFile(path, path);
@@ -142,8 +134,9 @@ public class EmojiStatusView extends FrameLayout {
 
     private void renderStatic(String path, long g) {
         if (g != generation) return;
+        releaseVideoDrawable();
         lottieView.setVisibility(GONE);
-        playerView.setVisibility(GONE);
+        imageView.setImageDrawable(null);
         imageView.setVisibility(VISIBLE);
         Glide.with(imageView).load(new File(path)).into(imageView);
     }
@@ -151,55 +144,50 @@ public class EmojiStatusView extends FrameLayout {
     private void renderWebm(String path, long g) {
         if (g != generation) return;
 
-        if (player != null && TextUtils.equals(path, currentVideoPath)) {
-            if (!player.getPlayWhenReady()) player.setPlayWhenReady(true);
-            return;
-        }
+        final int w = getWidth() > 0 ? getWidth() : 128;
+        final int h = getHeight() > 0 ? getHeight() : 128;
 
-        releasePlayer();
-        currentVideoPath = path;
-
-        Context ctx = getContext();
-        ExoPlayer p = new ExoPlayer.Builder(ctx).build();
-        p.setTrackSelectionParameters(
-                p.getTrackSelectionParameters().buildUpon()
-                        .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, true)
-                        .build()
-        );
-        p.setVolume(0f);
-
-        MediaSource src = new ProgressiveMediaSource.Factory(new DefaultDataSource.Factory(ctx))
-                .createMediaSource(MediaItem.fromUri(Uri.fromFile(new File(path))));
-        p.setMediaSource(new LoopingMediaSource(src));
-        p.setRepeatMode(Player.REPEAT_MODE_OFF);
-        p.prepare();
-        p.setPlayWhenReady(true);
-
-        player = p;
-        imageView.setVisibility(GONE);
-        lottieView.setVisibility(GONE);
-        playerView.setVisibility(VISIBLE);
-        playerView.setPlayer(p);
+        VIDEO_EXEC.execute(() -> {
+            VideoStickerDrawable d = new VideoStickerDrawable(path, "webm:" + path, w, h);
+            if (!d.isValid()) {
+                d.release();
+                return;
+            }
+            MAIN.post(() -> {
+                if (g != generation) {
+                    d.release();
+                    return;
+                }
+                releaseVideoDrawable();
+                videoDrawable = d;
+                lottieView.setVisibility(GONE);
+                try { Glide.with(imageView).clear(imageView); } catch (Exception ignored) {}
+                imageView.setVisibility(VISIBLE);
+                imageView.setImageDrawable(d);
+                d.setRepeatCount(VideoStickerDrawable.INFINITE);
+                d.start();
+            });
+        });
     }
 
-    private void releasePlayer() {
-        if (player != null) {
-            player.release();
-            player = null;
+    private void releaseVideoDrawable() {
+        if (videoDrawable != null) {
+            if (imageView.getDrawable() == videoDrawable) {
+                imageView.setImageDrawable(null);
+            }
+            videoDrawable.release();
+            videoDrawable = null;
         }
-        playerView.setPlayer(null);
-        currentVideoPath = null;
     }
 
     private void clearViews() {
         try { Glide.with(imageView).clear(imageView); } catch (Exception ignored) {}
+        releaseVideoDrawable();
         imageView.setImageDrawable(null);
         imageView.setVisibility(GONE);
         lottieView.cancelAnimation();
         lottieView.setImageDrawable(null);
         lottieView.setVisibility(GONE);
-        releasePlayer();
-        playerView.setVisibility(GONE);
     }
 
     @Override
@@ -208,8 +196,8 @@ public class EmojiStatusView extends FrameLayout {
         if (lottieView.getVisibility() == VISIBLE) {
             lottieView.pauseAnimation();
         }
-        if (player != null) {
-            player.pause();
+        if (videoDrawable != null) {
+            videoDrawable.stop();
         }
     }
 
@@ -219,8 +207,8 @@ public class EmojiStatusView extends FrameLayout {
         if (lottieView.getVisibility() == VISIBLE && lottieView.getLottieDrawable() != null) {
             lottieView.playAnimation();
         }
-        if (player != null && playerView.getVisibility() == VISIBLE) {
-            player.setPlayWhenReady(true);
+        if (videoDrawable != null && videoDrawable.isValid()) {
+            videoDrawable.start();
         }
     }
 }

@@ -63,16 +63,6 @@
                 android:background="@android:color/transparent"
                 android:scaleType="fitCenter"/>
 
-            <androidx.media3.ui.PlayerView
-                android:id="@+id/sticker_player_view"
-                android:layout_width="200dp"
-                android:layout_height="200dp"
-                app:surface_type="texture_view"
-                app:shutter_background_color="@android:color/transparent"
-                android:background="@android:color/transparent"
-                app:use_controller="false"
-                android:visibility="gone"/>
-
             <LinearLayout
                 android:id="@+id/buttons_container"
                 android:layout_width="match_parent"

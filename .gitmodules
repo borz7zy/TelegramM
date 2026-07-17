@@ -1,3 +1,7 @@
 [submodule "rlottie/src/main/cpp/rlottie"]
 	path = rlottie/src/main/cpp/rlottie
 	url = https://github.com/Samsung/rlottie.git
+[submodule "ffmpeg/src/main/cpp/ffmpeg"]
+	path = ffmpeg/src/main/cpp/ffmpeg
+	url = https://github.com/FFmpeg/FFmpeg.git
+	branch = release/7.1

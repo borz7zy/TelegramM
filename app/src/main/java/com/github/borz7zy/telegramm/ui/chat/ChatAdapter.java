@@ -1,8 +1,6 @@
 package com.github.borz7zy.telegramm.ui.chat;
 
 import android.content.Context;
-import android.graphics.Color;
-import android.net.Uri;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,25 +10,17 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import android.os.Handler;
+import android.os.Looper;
+
 import androidx.annotation.NonNull;
-import androidx.media3.common.C;
-import androidx.media3.common.MediaItem;
-import androidx.media3.common.Player;
-import androidx.media3.common.util.UnstableApi;
-import androidx.media3.datasource.DefaultDataSource;
-import androidx.media3.exoplayer.DefaultLoadControl;
-import androidx.media3.exoplayer.ExoPlayer;
-import androidx.media3.exoplayer.source.LoopingMediaSource;
-import androidx.media3.exoplayer.source.MediaSource;
-import androidx.media3.exoplayer.source.ProgressiveMediaSource;
-import androidx.media3.ui.AspectRatioFrameLayout;
-import androidx.media3.ui.PlayerView;
 import androidx.paging.PagingDataAdapter;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
+import com.github.borz7zy.ffmpeg.VideoStickerDrawable;
 import com.github.borz7zy.rlottie.RLottieAnimationView;
 import com.github.borz7zy.telegramm.R;
 import com.github.borz7zy.telegramm.ui.ThemeEngine;
@@ -47,6 +37,10 @@ import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.ViewHolder> {
@@ -87,6 +81,18 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
     }
 
     private static final AtomicLong REQUEST_ID_GEN = new AtomicLong();
+
+    private static final Handler MAIN = new Handler(Looper.getMainLooper());
+
+    private static final ExecutorService VIDEO_EXEC = Executors.newSingleThreadExecutor(
+            new ThreadFactory() {
+                private final AtomicInteger n = new AtomicInteger();
+                @Override public Thread newThread(@NonNull Runnable r) {
+                    Thread t = new Thread(r, "chat-video-sticker-" + n.incrementAndGet());
+                    t.setPriority(Thread.NORM_PRIORITY - 1);
+                    return t;
+                }
+            });
 
     public interface OnBtnClickListener {
         void onBtnClick(MessageItem item, UiContent.UiButton btn);
@@ -143,7 +149,6 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         }
     }
 
-    @UnstableApi
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         if (position < LOAD_MORE_THRESHOLD && loadMoreListener != null) {
@@ -194,7 +199,6 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         }
     }
 
-    @UnstableApi
     private void bindMessageText(VH h, MessageItem m) {
         String text = "";
         org.drinkless.tdlib.TdApi.TextEntity[] entities = null;
@@ -325,16 +329,11 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         // after the holder has been rebound to a different message.
         h.stickerView.setTag(null);
 
-        h.stickerPlayerView.setVisibility(View.GONE);
-        h.stickerPlayerView.setPlayer(null);
-        h.stickerPlayerView.setTag(null);
-
         h.mediaRequestId = REQUEST_ID_GEN.incrementAndGet();
 
-        if (h.player != null) {
-            h.player.release();
-            h.player = null;
-            h.currentVideoPath = null;
+        if (h.videoDrawable != null) {
+            h.videoDrawable.release();
+            h.videoDrawable = null;
         }
     }
 
@@ -362,13 +361,9 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         super.onViewRecycled(holder);
         if (holder instanceof VH) {
             VH h = (VH) holder;
-            if (h.player != null) {
-                h.player.release();
-                h.player = null;
-                h.currentVideoPath = null;
-            }
-            if (h.stickerPlayerView != null) {
-                h.stickerPlayerView.setPlayer(null);
+            if (h.videoDrawable != null) {
+                h.videoDrawable.release();
+                h.videoDrawable = null;
             }
         }
     }
@@ -376,99 +371,86 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
     @Override
     public void onViewDetachedFromWindow(@NonNull RecyclerView.ViewHolder holder) {
         super.onViewDetachedFromWindow(holder);
-        if (holder instanceof VH h && h.player != null) {
-            h.player.pause();
+        if (holder instanceof VH h && h.videoDrawable != null) {
+            h.videoDrawable.stop();
         }
     }
 
-    @UnstableApi
+    @Override
+    public void onViewAttachedToWindow(@NonNull RecyclerView.ViewHolder holder) {
+        super.onViewAttachedToWindow(holder);
+        if (holder instanceof VH h && h.videoDrawable != null && h.videoDrawable.isValid()) {
+            h.videoDrawable.start();
+        }
+    }
+
     private void bindSticker(VH h, UiContent.Sticker sticker) {
         if (sticker.fileId == 0) return;
 
         int[] size = computeStickerSizePx(h.itemView, sticker.width, sticker.height, sticker.isAnimatedEmoji);
-        applyStickerSize(h, sticker.type, size[0], size[1]);
+        applyStickerSize(h, size[0], size[1]);
 
-        // Tag the active sticker view so async callbacks can verify they're still
-        // targeting the right binding before mutating it.
         final String contentKey = "sticker_" + sticker.fileId;
-        final boolean isVideo = sticker.type == UiContent.StickerType.VIDEO_WEBM;
-        final View target = isVideo ? h.stickerPlayerView : h.stickerView;
+        final RLottieAnimationView target = h.stickerView;
 
         target.setTag(contentKey);
         target.setVisibility(View.VISIBLE);
 
         String cached = TdMediaRepository.get().getCachedPath(sticker.fileId);
         if (!TextUtils.isEmpty(cached)) {
-            renderSticker(target, cached, sticker.type);
+            renderSticker(h, cached, sticker.type);
             return;
         }
 
-        // Show an empty target while the file is downloading.
-        if (!isVideo) {
-            h.stickerView.setImageDrawable(null);
-        }
+        target.setImageDrawable(null);
 
         final long requestId = REQUEST_ID_GEN.incrementAndGet();
         h.mediaRequestId = requestId;
 
-        WeakReference<View> weakTarget = new WeakReference<>(target);
-
         TdMediaRepository.get().getPathOrRequest(sticker.fileId, path ->
-            onStickerPathReady(h, weakTarget, contentKey, requestId, path, sticker.type));
+            onStickerPathReady(h, contentKey, requestId, path, sticker.type));
     }
 
-    private void onStickerPathReady(VH h, WeakReference<View> weakTarget, String contentKey,
+    private void onStickerPathReady(VH h, String contentKey,
                                     long requestId, String path, UiContent.StickerType type) {
         // Runs on the main thread (fired from finish() via mainHandler).
         if (h.mediaRequestId != requestId) return;
         if (TextUtils.isEmpty(path)) return;
 
-        View target = weakTarget.get();
-        if (target == null || !contentKey.equals(target.getTag())) return;
+        final RLottieAnimationView target = h.stickerView;
+        if (!contentKey.equals(target.getTag())) return;
 
         // Re-verify inside post(): the holder may be rebound between the check
         // above and the runnable being dispatched.
         target.post(() -> {
             if (!contentKey.equals(target.getTag())) return;
             if (h.mediaRequestId != requestId) return;
-            renderSticker(target, path, type);
+            renderSticker(h, path, type);
         });
     }
 
-    private void applyStickerSize(VH h, UiContent.StickerType type, int w, int h2) {
-        if (type != UiContent.StickerType.VIDEO_WEBM) {
-            ViewGroup.LayoutParams lp = h.stickerView.getLayoutParams();
-            lp.width = w;
-            lp.height = h2;
-            h.stickerView.setLayoutParams(lp);
-        } else {
-            ViewGroup.LayoutParams lp = h.stickerPlayerView.getLayoutParams();
-            lp.width = w;
-            lp.height = h2;
-            h.stickerPlayerView.setLayoutParams(lp);
-        }
+    private void applyStickerSize(VH h, int w, int h2) {
+        ViewGroup.LayoutParams lp = h.stickerView.getLayoutParams();
+        lp.width = w;
+        lp.height = h2;
+        h.stickerView.setLayoutParams(lp);
     }
 
-    @UnstableApi
-    private void renderSticker(Object obj, String path, UiContent.StickerType type) {
+    private void renderSticker(VH h, String path, UiContent.StickerType type) {
+        RLottieAnimationView lav = h.stickerView;
+
         if (type == UiContent.StickerType.VIDEO_WEBM) {
-            if (!(obj instanceof PlayerView)) return;
-            PlayerView pv = (PlayerView) obj;
-            pv.setVisibility(View.VISIBLE);
-            renderVideoSticker(pv, path);
+            renderVideoSticker(h, path);
             return;
         }
 
-        if (!(obj instanceof RLottieAnimationView)) return;
-        RLottieAnimationView lav = (RLottieAnimationView) obj;
-
         if (type == UiContent.StickerType.STATIC) {
-            // Make sure any TGS animation from a prior binding is stopped before
-            // Glide overwrites the drawable.
+            releaseVideoDrawable(h);
             lav.cancelAnimation();
             lav.setVisibility(View.VISIBLE);
             Glide.with(lav).load(path).dontAnimate().into(lav);
         } else if (type == UiContent.StickerType.ANIMATED_TGS) {
+            releaseVideoDrawable(h);
             renderTgsSticker(lav, path);
         }
     }
@@ -484,54 +466,41 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         lav.setTgsFile(path, "tgs:" + path);
     }
 
-    @UnstableApi
-    private void renderVideoSticker(PlayerView view, String path) {
-        VH h = (VH) view.getTag(R.id.tag_holder);
-        if (h == null) return;
-
-        if (h.player != null && TextUtils.equals(path, h.currentVideoPath)) {
-            if (!h.player.getPlayWhenReady()) h.player.setPlayWhenReady(true);
-            return;
+    private void releaseVideoDrawable(VH h) {
+        if (h.videoDrawable != null) {
+            h.videoDrawable.release();
+            h.videoDrawable = null;
         }
+    }
 
-        if (h.player != null) {
-            h.player.release();
-            h.player = null;
-        }
-        h.currentVideoPath = path;
+    private void renderVideoSticker(VH h, String path) {
+        final RLottieAnimationView view = h.stickerView;
+        final Object key = view.getTag();
+        final long requestId = h.mediaRequestId;
+        final int w = Math.max(1, view.getLayoutParams().width);
+        final int h2 = Math.max(1, view.getLayoutParams().height);
 
-        view.setUseController(false);
-        view.setShutterBackgroundColor(Color.TRANSPARENT);
-        view.setKeepContentOnPlayerReset(true);
-        view.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
-        view.setClickable(false);
-        view.setFocusable(false);
-
-        Context ctx = view.getContext();
-
-        DefaultLoadControl loadControl = new DefaultLoadControl.Builder()
-                .setBufferDurationsMs(10000, 50000, 1000, 1000)
-                .build();
-
-        ExoPlayer player = new ExoPlayer.Builder(ctx).setLoadControl(loadControl).build();
-        h.player = player;
-
-        player.setTrackSelectionParameters(
-                player.getTrackSelectionParameters().buildUpon()
-                        .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, true)
-                        .build()
-        );
-        player.setVolume(0f);
-
-        MediaSource source = new ProgressiveMediaSource.Factory(new DefaultDataSource.Factory(ctx))
-                .createMediaSource(MediaItem.fromUri(Uri.fromFile(new File(path))));
-
-        player.setMediaSource(new LoopingMediaSource(source));
-        player.setRepeatMode(Player.REPEAT_MODE_OFF);
-        player.prepare();
-        player.setPlayWhenReady(true);
-
-        view.setPlayer(player);
+        VIDEO_EXEC.execute(() -> {
+            VideoStickerDrawable d = new VideoStickerDrawable(path, "webm:" + path, w, h2);
+            if (!d.isValid()) {
+                d.release();
+                return;
+            }
+            MAIN.post(() -> {
+                if (h.mediaRequestId != requestId || !Objects.equals(key, view.getTag())) {
+                    d.release();
+                    return;
+                }
+                releaseVideoDrawable(h);
+                h.videoDrawable = d;
+                view.cancelAnimation();
+                Glide.with(view).clear(view);
+                view.setVisibility(View.VISIBLE);
+                view.setImageDrawable(d);
+                d.setRepeatCount(VideoStickerDrawable.INFINITE);
+                d.start();
+            });
+        });
     }
 
     private void bindButtons(VH h, MessageItem item) {
@@ -628,9 +597,7 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
         final JustifiedLayout imageBoardTop;
         final JustifiedLayout imageBoardBottom;
         final RLottieAnimationView stickerView;
-        PlayerView stickerPlayerView;
-        ExoPlayer player;
-        String currentVideoPath;
+        VideoStickerDrawable videoDrawable;
         final ImageView avatar;
         final ViewGroup buttonsContainer;
 
@@ -660,8 +627,6 @@ public class ChatAdapter extends PagingDataAdapter<MessageItem, RecyclerView.Vie
             imageBoardBottom = itemView.findViewById(R.id.image_board_bottom);
 
             stickerView = itemView.findViewById(R.id.sticker_view);
-            stickerPlayerView = itemView.findViewById(R.id.sticker_player_view);
-            stickerPlayerView.setTag(R.id.tag_holder, this);
 
             avatar = itemView.findViewById(R.id.msg_avatar);
 

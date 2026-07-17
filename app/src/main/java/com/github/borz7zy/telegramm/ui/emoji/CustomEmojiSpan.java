@@ -16,6 +16,7 @@ import android.text.style.ReplacementSpan;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.github.borz7zy.ffmpeg.VideoStickerDrawable;
 import com.github.borz7zy.rlottie.RLottieDrawable;
 import com.github.borz7zy.telegramm.AppManager;
 import com.github.borz7zy.telegramm.utils.EmojiStatusRepository;
@@ -49,13 +50,13 @@ public class CustomEmojiSpan extends ReplacementSpan {
     /** Decompressed Lottie JSON keyed by document id — avoids re-reading + gunzipping the .tgs. */
     private static final Map<Long, String> JSON_CACHE = new ConcurrentHashMap<>();
     private static final Map<Long, Bitmap> BITMAP_CACHE = new ConcurrentHashMap<>();
-    private static final Map<Long, Boolean> NO_ANIMATION = new ConcurrentHashMap<>();
 
     public final long documentId;
     private final int size;
     @Nullable private final Paint.FontMetricsInt fontMetrics;
 
     @Nullable private RLottieDrawable lottieDrawable;
+    @Nullable private VideoStickerDrawable videoDrawable;
     @Nullable private Bitmap bitmap;
 
     private boolean loadStarted;
@@ -73,7 +74,8 @@ public class CustomEmojiSpan extends ReplacementSpan {
     }
 
     public boolean isAnimated() {
-        return lottieDrawable != null && lottieDrawable.isValid();
+        return (lottieDrawable != null && lottieDrawable.isValid())
+                || (videoDrawable != null && videoDrawable.isValid());
     }
 
     @Override
@@ -108,6 +110,14 @@ public class CustomEmojiSpan extends ReplacementSpan {
             }
             d.setBounds(left, yc - s / 2, left + s, yc + s / 2);
             d.draw(canvas);
+            return;
+        }
+
+        VideoStickerDrawable vd = videoDrawable;
+        if (vd != null && vd.isValid()) {
+            vd.step();
+            vd.setBounds(left, yc - s / 2, left + s, yc + s / 2);
+            vd.draw(canvas);
             return;
         }
 
@@ -157,10 +167,7 @@ public class CustomEmojiSpan extends ReplacementSpan {
         if (sticker.format instanceof TdApi.StickerFormatTgs) {
             DECODE_EXEC.execute(() -> decodeTgs(path));
         } else if (sticker.format instanceof TdApi.StickerFormatWebm) {
-            // WebM video stickers require ExoPlayer — not viable inside a span.
-            // Fall back to the static thumbnail if TDLib provided one.
-            NO_ANIMATION.put(documentId, Boolean.TRUE);
-            decodeThumbnail(sticker);
+            DECODE_EXEC.execute(() -> decodeWebm(path));
         } else {
             DECODE_EXEC.execute(() -> decodeStatic(path));
         }
@@ -203,17 +210,19 @@ public class CustomEmojiSpan extends ReplacementSpan {
         }
     }
 
-    private void decodeThumbnail(TdApi.Sticker sticker) {
-        if (sticker.thumbnail == null || sticker.thumbnail.file == null) return;
-        int thumbId = sticker.thumbnail.file.id;
-        if (thumbId == 0) return;
-        String thumbPath = TdMediaRepository.get().getCachedPath(thumbId);
-        if (!TextUtils.isEmpty(thumbPath)) {
-            DECODE_EXEC.execute(() -> decodeStatic(thumbPath));
-        } else {
-            TdMediaRepository.get().getPathOrRequest(thumbId, p -> {
-                if (!TextUtils.isEmpty(p)) DECODE_EXEC.execute(() -> decodeStatic(p));
-            });
+    private void decodeWebm(String path) {
+        try {
+            VideoStickerDrawable d = new VideoStickerDrawable(path, "ce:" + documentId, size, size);
+            if (!d.isValid()) {
+                d.release();
+                return;
+            }
+            d.setRepeatCount(VideoStickerDrawable.INFINITE);
+            // No start(): frames advance via step() from draw(), so a stale span
+            // doesn't keep a ticker (and its native decoder) alive.
+            MAIN.post(() -> this.videoDrawable = d);
+        } catch (Throwable e) {
+            Logger.LOGE(TAG, "decodeWebm failed for " + documentId, e);
         }
     }
 

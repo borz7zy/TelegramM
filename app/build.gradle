@@ -86,8 +86,7 @@ dependencies {
     implementation 'com.github.lincollincol:amplituda:2.2.2'
 
     implementation project(':rlottie')
-    implementation "androidx.media3:media3-exoplayer:1.9.2"
-    implementation "androidx.media3:media3-ui:1.9.2"
+    implementation project(':ffmpeg')
 
     implementation 'com.github.bumptech.glide:glide:5.0.5'
     implementation libs.legacy.support.v4
