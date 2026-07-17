@@ -15,6 +15,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          submodules: recursive
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -45,6 +46,27 @@ jobs:
             exit 1
           fi
           chmod +x gradlew
+
+      - name: Install NDK
+        run: |
+          set -e
+          "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --install "ndk;27.0.12077973"
+          echo "ANDROID_NDK=$ANDROID_SDK_ROOT/ndk/27.0.12077973" >> $GITHUB_ENV
+
+      - name: Resolve FFmpeg revision
+        id: ffmpeg-rev
+        run: echo "sha=$(git -C ffmpeg/src/main/cpp/ffmpeg rev-parse HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Cache prebuilt FFmpeg
+        id: ffmpeg-cache
+        uses: actions/cache@v4
+        with:
+          path: ffmpeg/src/main/cpp/prebuilt
+          key: ffmpeg-${{ runner.os }}-ndk27-${{ steps.ffmpeg-rev.outputs.sha }}-${{ hashFiles('ffmpeg/tools/build_ffmpeg.sh') }}
+
+      - name: Build FFmpeg
+        if: steps.ffmpeg-cache.outputs.cache-hit != 'true'
+        run: bash ffmpeg/tools/build_ffmpeg.sh
 
       - name: Build Debug and Release
         run: ./gradlew clean assembleDebug assembleRelease
