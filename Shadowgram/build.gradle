@@ -30,6 +30,9 @@ android {
                 localProps.getProperty("api_hash", "")
         def testDc = localProps.getProperty("test_dc", "false").toBoolean()
         resValue "bool", "test_dc", testDc.toString()
+
+        resValue "string", "app_name",
+                gradleProps.getProperty("app.name", "Shadowgram")
         resValue "string", "version_code",
                 gradleProps.getProperty("app.versionCode", "1")
         resValue "string", "version_name",
@@ -55,6 +58,14 @@ android {
         }
         debug {
             signingConfig = signingConfigs.getByName("defaultSignKey")
+        }
+    }
+    splits {
+        abi {
+            enable true
+            reset()
+            include 'arm64-v8a', 'armeabi-v7a', 'x86', 'x86_64'
+            universalApk false
         }
     }
     compileOptions {

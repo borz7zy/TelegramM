@@ -1,5 +1,4 @@
 <resources>
-    <string name="app_name">Telegram M</string>
     <string name="enter_phone_number">Enter phone number</string>
     <string name="next_step">Next step</string>
     <string name="messages_header">Messages</string>

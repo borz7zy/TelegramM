@@ -111,16 +111,33 @@ jobs:
           curl -X PUT -H "Authorization: OAuth $YD_TOKEN" \
             "https://cloud-api.yandex.net/v1/disk/resources?path=$BASE_PATH"
 
-          for file in $(find apk -type f -name "*.apk"); do
+          mapfile -t APKS < <(find apk -type f -name "*.apk" | sort)
+
+          echo "Found ${#APKS[@]} APK(s):"
+          printf '  %s\n' "${APKS[@]}"
+
+          for abi in arm64-v8a armeabi-v7a x86 x86_64; do
+            if ! printf '%s\n' "${APKS[@]}" | grep -q -- "-$abi-debug.apk$"; then
+              echo "Missing debug APK for $abi" >&2
+              exit 1
+            fi
+          done
+
+          for file in "${APKS[@]}"; do
             FILE_NAME=$(basename "$file")
-          
+
             echo "Uploading $FILE_NAME..."
 
             UPLOAD_URL=$(curl -s -H "Authorization: OAuth $YD_TOKEN" \
               "https://cloud-api.yandex.net/v1/disk/resources/upload?path=$BASE_PATH/$FILE_NAME&overwrite=true" \
               | jq -r '.href')
 
-            curl -T "$file" "$UPLOAD_URL"
+            if [ -z "$UPLOAD_URL" ] || [ "$UPLOAD_URL" = "null" ]; then
+              echo "Failed to get upload URL for $FILE_NAME" >&2
+              exit 1
+            fi
+
+            curl -sf -T "$file" "$UPLOAD_URL"
           done
 
           curl -X PUT -H "Authorization: OAuth $YD_TOKEN" \

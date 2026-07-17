@@ -21,10 +21,11 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Telegram M"
-include ':app'
+include ':Shadowgram'
 include ':tdlib'
 include ':SharedUtils'
 include ':SlidingMenu'
 include ':LibMonet'
 include ':rlottie'
 include ':ffmpeg'
+include ':ShadowgramUI'
