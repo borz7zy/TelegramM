@@ -82,7 +82,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: release-apk
-          path: app/build/outputs/apk/**/release/*.apk
+          path: Shadowgram/build/outputs/apk/**/release/*.apk
           if-no-files-found: warn
 
   telegram:
