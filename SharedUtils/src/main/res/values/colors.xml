@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Fallback theme seed. AppManager bootstraps ThemeEngine with this before
+         the persisted preference (and later TDLib's EmojiChatTheme) is read, so
+         it has to be resolvable from the core layer. -->
+    <color name="primaryColor">#6E9BFF</color>
+</resources>

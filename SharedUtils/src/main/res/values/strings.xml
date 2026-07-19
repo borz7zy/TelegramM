@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Message-content placeholders used by TgUtils.getMessageText(). They live
+         here rather than in the UI module because the core layer formats chat
+         previews before any UI is involved. -->
+    <string name="photo">Photo</string>
+    <string name="video">Video</string>
+    <string name="voice_message">Voice message</string>
+    <string name="sticker">Sticker</string>
+    <string name="message">Message</string>
+    <string name="animation">Animation</string>
+</resources>

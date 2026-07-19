@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="photo">Фотография</string>
+    <string name="video">Видео</string>
+    <string name="voice_message">Голосовое сообщение</string>
+    <string name="sticker">Стикер</string>
+    <string name="message">Сообщение</string>
+    <string name="animation">Анимация</string>
+</resources>
